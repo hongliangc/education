@@ -1,0 +1,19 @@
+// __TOPIC__ — <一句话描述：如"生活常识"、"科学探索"、"安全教育">
+export interface KnowledgeQuestion {
+  q: string;             // 题目
+  choices: string[];     // 4 个选项
+  answer: number;        // 正确选项 index（0-3）
+  explain?: string;      // 答案解释
+  image?: string;        // 可选 emoji 图示
+}
+
+export const __TOPIC___QUESTIONS: KnowledgeQuestion[] = [
+  {
+    q: "<题目示例>",
+    choices: ["<A>", "<B>", "<C>", "<D>"],
+    answer: 0,
+    explain: "<为什么>",
+    image: "🌟",
+  },
+  // 至少 10 个题目起步
+];

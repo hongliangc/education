@@ -1,0 +1,36 @@
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/db";
+
+// __DESCRIPTION__ — 一句话说明本路由
+
+export async function __METHOD__(
+  req: Request,
+  // 如有动态段：{ params }: { params: Promise<{ <segment>: string }> }
+) {
+  // 1) 鉴权
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // 2) 解析与校验输入
+  const body = await req.json().catch(() => ({}));
+  const __FIELD__ = String(body.__FIELD__ ?? "").trim();
+  if (!__FIELD__) {
+    return NextResponse.json({ error: "缺少必填字段" }, { status: 400 });
+  }
+
+  // 3) 如涉及 child，校验归属
+  // const child = await prisma.child.findFirst({
+  //   where: { id: childId, parentId: session.user.id },
+  // });
+  // if (!child) return NextResponse.json({ error: "Not found" }, { status: 404 });
+
+  // 4) 业务逻辑
+  const result = await prisma.__MODEL__.__OPERATION__({
+    // ... data
+  });
+
+  return NextResponse.json({ data: result });
+}

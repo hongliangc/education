@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@theme inline {
+  --color-sky-1: #bae6fd;
+  --color-sky-2: #7dd3fc;
+  --color-grass: #86efac;
+  --color-pink: #f9a8d4;
+  --color-rose: #fda4af;
+  --color-yellow-soft: #fde68a;
+  --color-orange-soft: #fdba74;
+  --color-purple-soft: #c4b5fd;
+  --color-blue-soft: #93c5fd;
+  --color-ink: #1f2937;
+  --color-paper: #fff7ed;
+  --color-cream: #fef3c7;
+  --font-sans: var(--font-kid), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+}
+
+html, body {
+  background: linear-gradient(180deg, #bae6fd 0%, #7dd3fc 40%, #86efac 100%);
+  color: var(--color-ink);
+  min-height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ===== Keyframes (移植自原型) ===== */
+@keyframes float {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50%      { transform: translateY(-12px) rotate(2deg); }
+}
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-6px); }
+}
+@keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes pulse-soft {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%      { transform: scale(1.05); opacity: 0.85; }
+}
+@keyframes pop-in {
+  0%   { transform: scale(0.3); opacity: 0; }
+  60%  { transform: scale(1.08); opacity: 1; }
+  100% { transform: scale(1); }
+}
+@keyframes slide-up {
+  from { transform: translateY(40px); opacity: 0; }
+  to   { transform: translateY(0); opacity: 1; }
+}
+@keyframes slide-in-right {
+  from { transform: translateX(40px); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25%      { transform: translateX(-8px); }
+  75%      { transform: translateX(8px); }
+}
+@keyframes correct-pulse {
+  0%   { transform: scale(1); background-color: #4ade80; }
+  50%  { transform: scale(1.1); background-color: #22c55e; }
+  100% { transform: scale(1); background-color: #4ade80; }
+}
+@keyframes confetti {
+  0%   { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120vh) rotate(720deg); opacity: 0; }
+}
+@keyframes star-twinkle {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 1; }
+}
+@keyframes path-dash {
+  to { stroke-dashoffset: 0; }
+}
+
+.anim-float        { animation: float 3s ease-in-out infinite; }
+.anim-bob          { animation: bob 2s ease-in-out infinite; }
+.anim-spin-slow    { animation: spin-slow 6s linear infinite; }
+.anim-pulse-soft   { animation: pulse-soft 2s ease-in-out infinite; }
+.anim-pop-in       { animation: pop-in 0.35s ease-out both; }
+.anim-slide-up     { animation: slide-up 0.45s ease-out both; }
+.anim-slide-right  { animation: slide-in-right 0.4s ease-out both; }
+.anim-shake        { animation: shake 0.3s ease-in-out; }
+.anim-correct      { animation: correct-pulse 0.45s ease-in-out; }
+.anim-twinkle      { animation: star-twinkle 1.6s ease-in-out infinite; }
+
+/* 隐藏滚动条但保留滚动 */
+.scroll-hide::-webkit-scrollbar { display: none; }
+.scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }

@@ -1,0 +1,17 @@
+// __NAME__ — <一句话描述>
+import { shuffle } from "@/lib/utils";
+
+export interface __NAME__Item {
+  prompt: string;   // 题面（文字或 emoji）
+  answer: string;   // 正确答案
+  hint?: string;    // 可选提示
+}
+
+export const __NAME___ITEMS: __NAME__Item[] = [
+  { prompt: "<示例题面>", answer: "<示例答案>", hint: "<可选>" },
+  // 至少 10 个起步，后续 mlk-add-knowledge-pack 扩库
+];
+
+export function generate__NAME__Round(n = 5): __NAME__Item[] {
+  return shuffle(__NAME___ITEMS).slice(0, n);
+}

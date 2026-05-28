@@ -1,0 +1,119 @@
+// 魔法学习王国 — Prisma Schema
+// 注：开发环境使用 SQLite。生产环境可切换 PostgreSQL（参考 docs/01）。
+// SQLite 不支持 enum，因此用 String + 应用层校验。
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(cuid())
+  phone        String?       @unique
+  email        String?       @unique
+  passwordHash String?
+  role         String        @default("PARENT") // PARENT | CHILD | ADMIN
+  children     Child[]
+  subscription Subscription?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Child {
+  id            String             @id @default(cuid())
+  parentId      String
+  parent        User               @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  name          String
+  age           Int
+  avatar        String             @default("🌸")
+  fairyLevel    Int                @default(1)
+  totalStars    Int                @default(0)
+  hearts        Int                @default(3)
+  streakDays    Int                @default(0)
+  lastLoginDate DateTime?
+  progress      LearningProgress[]
+  sessions      GameSession[]
+  achievements  Achievement[]
+  weeklyReports WeeklyReport[]
+  fairyDialogs  FairyDialogue[]
+  createdAt     DateTime           @default(now())
+
+  @@index([parentId])
+}
+
+model LearningProgress {
+  id          String    @id @default(cuid())
+  childId     String
+  child       Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  module      String // WRITING | ALPHABET | WORDS | MATH | STORY | LIFE
+  level       Int       @default(1)
+  stars       Int       @default(0)
+  masteryPct  Int       @default(0)
+  completedAt DateTime?
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([childId, module])
+}
+
+model GameSession {
+  id          String   @id @default(cuid())
+  childId     String
+  child       Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  module      String
+  score       Int
+  totalQ      Int
+  correctQ    Int
+  durationSec Int
+  starsEarned Int
+  createdAt   DateTime @default(now())
+
+  @@index([childId, createdAt])
+}
+
+model FairyDialogue {
+  id        String   @id @default(cuid())
+  childId   String
+  child     Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  userMsg   String
+  aiReply   String
+  context   String?
+  createdAt DateTime @default(now())
+
+  @@index([childId, createdAt])
+}
+
+model WeeklyReport {
+  id          String   @id @default(cuid())
+  childId     String
+  child       Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  weekStart   DateTime
+  summaryJson String // JSON 字符串（SQLite 无 Json 原生类型）
+  aiAdvice    String
+  createdAt   DateTime @default(now())
+
+  @@index([childId, weekStart])
+}
+
+model Subscription {
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan      String    @default("FREE") // FREE | MONTHLY | YEARLY | OVERSEAS
+  startsAt  DateTime  @default(now())
+  expiresAt DateTime?
+  status    String    @default("ACTIVE") // ACTIVE | CANCELLED | EXPIRED
+}
+
+model Achievement {
+  id       String   @id @default(cuid())
+  childId  String
+  child    Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  badge    String
+  earnedAt DateTime @default(now())
+
+  @@index([childId])
+}
