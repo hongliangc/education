@@ -18,8 +18,6 @@ interface GameState {
   activeChild: ChildSummary | null;
   setActiveChild: (c: ChildSummary | null) => void;
   bumpStars: (n: number) => void;
-  loseHeart: () => void;
-  refillHearts: () => void;
 }
 
 export const useGameStore = create<GameState>()(
@@ -32,21 +30,6 @@ export const useGameStore = create<GameState>()(
           s.activeChild
             ? { activeChild: { ...s.activeChild, totalStars: s.activeChild.totalStars + n } }
             : s,
-        ),
-      loseHeart: () =>
-        set((s) =>
-          s.activeChild
-            ? {
-                activeChild: {
-                  ...s.activeChild,
-                  hearts: Math.max(0, s.activeChild.hearts - 1),
-                },
-              }
-            : s,
-        ),
-      refillHearts: () =>
-        set((s) =>
-          s.activeChild ? { activeChild: { ...s.activeChild, hearts: 3 } } : s,
         ),
     }),
     { name: "mlk-game-store" },

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { CloudBG } from "@/components/CloudBG";
 import { Btn } from "@/components/Btn";
+import { CardSkeleton } from "@/components/skeleton/CardSkeleton";
 import { useGameStore, type ChildSummary } from "@/store/gameStore";
 
 const AVATARS = ["🌸", "🐯", "🦄", "🐰", "🦊", "🐼", "🐧", "🦁", "🐸", "🐢"];
@@ -45,7 +46,7 @@ export default function ChildSelectPage() {
           <p className="text-white/90 mt-1">谁来开始今天的旅程？</p>
         </div>
 
-        {loading && <p className="text-white/80">加载中…</p>}
+        {loading && <CardSkeleton count={3} />}
 
         {!loading && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 w-full max-w-2xl">

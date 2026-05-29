@@ -107,6 +107,7 @@ export function WritingGame({ onComplete }: { onComplete: OnComplete }) {
         <div className="text-sm text-slate-500">{item.meaning} · {item.hint}</div>
         <button
           onClick={() => speakText(item.char, { lang: "zh-CN" })}
+          aria-label={`朗读 ${item.char}`}
           className="mt-1 text-sm text-pink-600 underline"
         >
           🔊 听这个字
@@ -126,10 +127,10 @@ export function WritingGame({ onComplete }: { onComplete: OnComplete }) {
       />
 
       <div className="mt-4 flex gap-3">
-        <Btn variant="ghost" onClick={clearCanvas}>
+        <Btn variant="ghost" onClick={clearCanvas} ariaLabel="清空重写">
           🧽 清空重写
         </Btn>
-        <Btn variant="primary" onClick={next}>
+        <Btn variant="primary" onClick={next} ariaLabel="完成此字">
           写好了 ✓
         </Btn>
       </div>

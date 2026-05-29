@@ -86,6 +86,7 @@ export function AlphabetGame({ onComplete }: { onComplete: OnComplete }) {
         <div className="mt-2 text-2xl font-bold text-slate-700">{item.word}</div>
         <button
           onClick={() => speakText(item.word, { lang: "en-US", rate: 0.85 })}
+          aria-label={`重新朗读 ${item.word}`}
           className="mt-1 text-sm text-sky-600 underline"
         >
           🔊 再听一次

@@ -100,6 +100,7 @@ export function WordsGame({ onComplete }: { onComplete: OnComplete }) {
                 key={`zh-${w.zh}`}
                 onClick={() => onPickZh(w)}
                 disabled={isMatched}
+                aria-label={`配对：${w.zh}`}
                 className={`w-full py-4 rounded-2xl text-xl font-bold transition shadow ${
                   isMatched
                     ? "bg-emerald-100 text-emerald-700 line-through opacity-70"
@@ -123,6 +124,7 @@ export function WordsGame({ onComplete }: { onComplete: OnComplete }) {
                 key={`em-${w.zh}`}
                 onClick={() => onPickEmoji(w)}
                 disabled={isMatched}
+                aria-label={`图：${w.emoji} 代表 ${w.zh}`}
                 className={`w-full py-4 rounded-2xl text-5xl transition shadow ${
                   isMatched
                     ? "bg-emerald-100 opacity-70"

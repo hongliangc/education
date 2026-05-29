@@ -12,6 +12,7 @@ export function HUD() {
     <div className="fixed top-3 left-3 right-3 z-30 flex items-center justify-between gap-2 pointer-events-none">
       <button
         onClick={() => router.push("/child-select")}
+        aria-label={`${child.name} 的档案`}
         className="pointer-events-auto flex items-center gap-2 bg-white/85 backdrop-blur px-3 py-2 rounded-2xl shadow-lg ring-1 ring-white/40 hover:bg-white"
       >
         <span className="text-2xl">{child.avatar}</span>

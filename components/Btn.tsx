@@ -30,6 +30,7 @@ export function Btn({
   disabled,
   className,
   type = "button",
+  ariaLabel,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
@@ -38,12 +39,14 @@ export function Btn({
   disabled?: boolean;
   className?: string;
   type?: "button" | "submit" | "reset";
+  ariaLabel?: string;
 }) {
   return (
     <button
       type={type}
       onClick={onClick}
       disabled={disabled}
+      aria-label={ariaLabel}
       className={cn(
         "inline-flex items-center justify-center gap-2 font-bold transition-all select-none",
         "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0",

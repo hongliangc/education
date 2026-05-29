@@ -36,7 +36,7 @@ export function GameModal({
           <button
             onClick={onClose}
             className="text-white/90 hover:text-white text-2xl bg-white/20 rounded-full w-9 h-9 flex items-center justify-center"
-            aria-label="关闭"
+            aria-label="关闭游戏"
           >
             ×
           </button>
