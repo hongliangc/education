@@ -1,13 +1,13 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { Suspense, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Btn } from "@/components/Btn";
 import { CloudBG } from "@/components/CloudBG";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const search = useSearchParams();
   const next = search.get("next") ?? "/child-select";
@@ -108,5 +108,14 @@ export default function LoginPage() {
         </div>
       </main>
     </>
+  );
+}
+
+// useSearchParams 需要 Suspense 边界，否则 next build 预渲染 /login 会失败
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<CloudBG />}>
+      <LoginForm />
+    </Suspense>
   );
 }
