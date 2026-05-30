@@ -14,12 +14,15 @@ export async function POST(req: Request) {
     // 未配置 → 让客户端回退 Web Speech
     return NextResponse.json({ error: "speech_unconfigured" }, { status: 503 });
   }
-  const { text, lang } = await req.json().catch(() => ({}));
+  const { text, lang, voice } = await req.json().catch(() => ({}));
   if (!text || typeof text !== "string") {
     return NextResponse.json({ error: "text required" }, { status: 400 });
   }
   try {
-    const { audioBase64, format } = await synthesize(text, { lang });
+    const { audioBase64, format } = await synthesize(text, {
+      lang,
+      voice: typeof voice === "number" ? voice : undefined,
+    });
     return NextResponse.json({ audioBase64, format, source: "tencent" });
   } catch (e) {
     console.error("[tts] failed:", e);
