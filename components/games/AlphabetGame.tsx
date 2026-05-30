@@ -9,7 +9,13 @@ import { shuffle } from "@/lib/utils";
 import type { OnComplete } from "./types";
 import { GameDone } from "./GameDone";
 
-export function AlphabetGame({ onComplete }: { onComplete: OnComplete }) {
+export function AlphabetGame({
+  onComplete,
+  onExit,
+}: {
+  onComplete: OnComplete;
+  onExit: () => void;
+}) {
   const [round, setRound] = useState(() => makeRound());
   const [qi, setQi] = useState(0);
   const [correctQ, setCorrectQ] = useState(0);
@@ -40,9 +46,7 @@ export function AlphabetGame({ onComplete }: { onComplete: OnComplete }) {
           setDone(false);
           startedAt.current = Date.now();
         }}
-        onClose={() => {
-          // GameModal close 由父级管理
-        }}
+        onClose={onExit}
       />
     );
   }

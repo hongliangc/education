@@ -69,11 +69,11 @@ export default function PlayPage({
 
   return (
     <GameModal title={meta.label} emoji={meta.emoji} color={meta.color} onClose={back}>
-      {slug === "writing" && <WritingGame onComplete={onSessionComplete} />}
-      {slug === "alphabet" && <AlphabetGame onComplete={onSessionComplete} />}
-      {slug === "words" && <WordsGame onComplete={onSessionComplete} />}
-      {slug === "math" && <MathGame onComplete={onSessionComplete} />}
-      {slug === "story" && <StoryGame onComplete={onSessionComplete} />}
+      {slug === "writing" && <WritingGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "alphabet" && <AlphabetGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "words" && <WordsGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "math" && <MathGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "story" && <StoryGame onComplete={onSessionComplete} onExit={back} />}
     </GameModal>
   );
 }

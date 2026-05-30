@@ -11,7 +11,13 @@ import { StoryMoral } from "./story/StoryMoral";
 
 type Phase = "reading" | "question" | "moral" | "done";
 
-export function StoryGame({ onComplete }: { onComplete: OnComplete }) {
+export function StoryGame({
+  onComplete,
+  onExit,
+}: {
+  onComplete: OnComplete;
+  onExit: () => void;
+}) {
   const [storyIdx, setStoryIdx] = useState(0);
   const story = STORIES[storyIdx];
   const [phase, setPhase] = useState<Phase>("reading");
@@ -43,7 +49,7 @@ export function StoryGame({ onComplete }: { onComplete: OnComplete }) {
         correctQ={correctQ}
         totalQ={story.questions.length}
         onAgain={() => resetStory((storyIdx + 1) % STORIES.length)}
-        onClose={() => undefined}
+        onClose={onExit}
       />
     );
   }

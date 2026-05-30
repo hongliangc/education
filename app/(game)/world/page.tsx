@@ -65,6 +65,29 @@ export default function WorldMapPage() {
           </div>
         )}
 
+        {/* 模块选择器（顶部） */}
+        <div className="mb-6">
+          <div className="mb-2 px-1 text-sm font-bold text-white/90 drop-shadow">
+            选一个去玩 🎮
+          </div>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {MODULES.map((m) => {
+              const meta = MODULE_META[m];
+              return (
+                <button
+                  key={m}
+                  onClick={() => open(m)}
+                  aria-label={`进入${meta.label}`}
+                  className="rounded-2xl bg-white/80 py-3 shadow ring-1 ring-white backdrop-blur transition hover:scale-105"
+                >
+                  <div className="text-3xl">{meta.emoji}</div>
+                  <div className="text-xs font-bold text-slate-700">{meta.label}</div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         <div className="relative rounded-[2.5rem] bg-white/30 backdrop-blur ring-1 ring-white/40 shadow-xl overflow-hidden">
           <svg viewBox="0 0 1000 600" className="w-full h-auto block">
             {/* 节点之间的虚线路径 */}
@@ -144,23 +167,6 @@ export default function WorldMapPage() {
             <div className="text-sm text-slate-500">今日任务</div>
             <div className="font-bold text-slate-700">完成 3 个关卡赢取额外 ⭐⭐⭐</div>
           </div>
-        </div>
-
-        {/* 调试用：所有模块快捷入口 */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-2">
-          {MODULES.map((m) => {
-            const meta = MODULE_META[m];
-            return (
-              <button
-                key={m}
-                onClick={() => open(m)}
-                className="rounded-2xl bg-white/80 backdrop-blur py-3 shadow ring-1 ring-white hover:scale-105 transition"
-              >
-                <div className="text-3xl">{meta.emoji}</div>
-                <div className="text-xs font-bold text-slate-700">{meta.label}</div>
-              </button>
-            );
-          })}
         </div>
       </div>
     </main>

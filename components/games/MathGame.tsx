@@ -7,7 +7,13 @@ import { generateChoices, generateMathRound, type MathProblem } from "@/content/
 import type { OnComplete } from "./types";
 import { GameDone } from "./GameDone";
 
-export function MathGame({ onComplete }: { onComplete: OnComplete }) {
+export function MathGame({
+  onComplete,
+  onExit,
+}: {
+  onComplete: OnComplete;
+  onExit: () => void;
+}) {
   const [round, setRound] = useState<MathProblem[]>(() => generateMathRound(5));
   const [qi, setQi] = useState(0);
   const [correctQ, setCorrectQ] = useState(0);
@@ -33,7 +39,7 @@ export function MathGame({ onComplete }: { onComplete: OnComplete }) {
           setDone(false);
           startedAt.current = Date.now();
         }}
-        onClose={() => undefined}
+        onClose={onExit}
       />
     );
   }
