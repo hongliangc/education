@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
-import { speakText, stopSpeaking } from "@/lib/speech";
+import { speakText, stopSpeaking, type SpeechController } from "@/lib/speech";
 import type { Story } from "@/content/stories";
 
 const RATES = [
@@ -22,40 +22,59 @@ export function StoryReader({
   onFinish: () => void;
 }) {
   const [rate, setRate] = useState(1);
-  const [playing, setPlaying] = useState(false);
+  const [status, setStatus] = useState<"idle" | "playing" | "paused">("idle");
   const [highlight, setHighlight] = useState<number>(-1);
   const { sfx } = useSFX();
-  const stopRef = useRef<(() => void) | null>(null);
+  const ctrlRef = useRef<SpeechController | null>(null);
 
   const chars = Array.from(story.text);
 
   useEffect(() => {
     return () => {
+      ctrlRef.current?.stop();
+      ctrlRef.current = null;
       stopSpeaking();
-      stopRef.current?.();
     };
   }, []);
 
-  const play = async () => {
-    if (playing) {
-      stopRef.current?.();
-      setPlaying(false);
-      setHighlight(-1);
-      return;
-    }
+  // 从头开始朗读整篇故事
+  const startReading = () => {
+    ctrlRef.current?.stop();
     sfx.pageFlip();
-    setPlaying(true);
+    setStatus("playing");
     setHighlight(0);
-    const stop = await speakText(story.text, {
+    ctrlRef.current = speakText(story.text, {
       lang: "zh-CN",
       rate,
       onWord: (i) => setHighlight(i),
       onEnd: () => {
-        setPlaying(false);
+        ctrlRef.current = null;
+        setStatus("idle");
         setHighlight(-1);
       },
     });
-    stopRef.current = stop;
+  };
+
+  // 播放按钮：idle→开始，playing→暂停，paused→从原处继续
+  const togglePlay = () => {
+    if (status === "playing") {
+      ctrlRef.current?.pause();
+      setStatus("paused");
+    } else if (status === "paused") {
+      ctrlRef.current?.resume();
+      setStatus("playing");
+    } else {
+      startReading();
+    }
+  };
+
+  // 单字点读：停掉整篇朗读，单独读这个字
+  const speakChar = (i: number, c: string) => {
+    ctrlRef.current?.stop();
+    ctrlRef.current = null;
+    setStatus("idle");
+    setHighlight(i);
+    speakText(c, { lang: "zh-CN", rate });
   };
 
   return (
@@ -64,11 +83,7 @@ export function StoryReader({
         {chars.map((c, i) => (
           <span
             key={i}
-            onClick={() => {
-              stopSpeaking();
-              setHighlight(i);
-              speakText(c, { lang: "zh-CN", rate });
-            }}
+            onClick={() => speakChar(i, c)}
             className={`cursor-pointer transition ${
               i === highlight
                 ? "bg-amber-200 text-amber-900 rounded px-0.5"
@@ -82,12 +97,16 @@ export function StoryReader({
 
       <div className="mt-4 flex flex-wrap items-center gap-2 justify-center">
         <Btn
-          onClick={play}
+          onClick={togglePlay}
           variant="primary"
           size="md"
-          ariaLabel={playing ? "暂停朗读" : "朗读故事"}
+          ariaLabel={status === "playing" ? "暂停朗读" : "朗读故事"}
         >
-          {playing ? "⏸ 暂停" : "▶ 听故事"}
+          {status === "playing"
+            ? "⏸ 暂停"
+            : status === "paused"
+            ? "▶ 继续"
+            : "▶ 听故事"}
         </Btn>
         <div className="flex items-center gap-1 bg-white rounded-2xl px-2 py-1 ring-1 ring-slate-200">
           {RATES.map((r) => (
@@ -108,8 +127,9 @@ export function StoryReader({
         <Btn
           variant="secondary"
           onClick={() => {
-            stopSpeaking();
-            setPlaying(false);
+            ctrlRef.current?.stop();
+            ctrlRef.current = null;
+            setStatus("idle");
             onFinish();
           }}
         >

@@ -78,7 +78,11 @@ export function StoryGame({
       </div>
 
       {phase === "reading" && (
-        <StoryReader story={story} onFinish={() => setPhase("question")} />
+        <StoryReader
+          key={story.id}
+          story={story}
+          onFinish={() => setPhase("question")}
+        />
       )}
 
       {phase === "question" && (
