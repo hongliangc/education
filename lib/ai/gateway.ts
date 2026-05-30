@@ -35,9 +35,15 @@ export function resolveFairyProvider(): FairyProvider {
   return "mock";
 }
 
+export interface ChatTurn {
+  role: "user" | "fairy";
+  content: string;
+}
+
 export interface GenerateArgs {
   system: string;
   userMessage: string;
+  history?: ChatTurn[];
   maxTokens?: number;
 }
 
@@ -67,6 +73,7 @@ export async function generateFairyReply(
 async function callDeepSeek({
   system,
   userMessage,
+  history = [],
   maxTokens = 150,
 }: GenerateArgs): Promise<string> {
   const res = await fetch(DEEPSEEK_URL, {
@@ -80,6 +87,10 @@ async function callDeepSeek({
       max_tokens: maxTokens,
       messages: [
         { role: "system", content: system },
+        ...history.map((t) => ({
+          role: t.role === "fairy" ? "assistant" : "user",
+          content: t.content,
+        })),
         { role: "user", content: userMessage },
       ],
     }),
@@ -92,6 +103,7 @@ async function callDeepSeek({
 async function callClaude({
   system,
   userMessage,
+  history = [],
   maxTokens = 150,
 }: GenerateArgs): Promise<string> {
   const Anthropic = (await import("@anthropic-ai/sdk")).default;
@@ -104,7 +116,13 @@ async function callClaude({
     model: "claude-sonnet-4-6",
     max_tokens: maxTokens,
     system,
-    messages: [{ role: "user", content: userMessage }],
+    messages: [
+      ...history.map((t) => ({
+        role: (t.role === "fairy" ? "assistant" : "user") as "assistant" | "user",
+        content: t.content,
+      })),
+      { role: "user" as const, content: userMessage },
+    ],
   });
   return res.content
     .map((b) => (b.type === "text" ? b.text : ""))

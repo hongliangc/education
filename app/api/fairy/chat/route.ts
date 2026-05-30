@@ -16,10 +16,25 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { message, childName, age, recentModule, stars } = await req
+  const { message, history, childName, age, recentModule, stars } = await req
     .json()
     .catch(() => ({}));
   const userMessage = String(message ?? "你好");
+
+  // 多轮历史：只取最近 6 条、裁剪单条长度，防 token 膨胀与提示注入
+  const safeHistory = Array.isArray(history)
+    ? history
+        .filter(
+          (t: unknown): t is { role: "user" | "fairy"; content: string } =>
+            !!t &&
+            typeof t === "object" &&
+            ((t as { role?: string }).role === "user" ||
+              (t as { role?: string }).role === "fairy") &&
+            typeof (t as { content?: unknown }).content === "string",
+        )
+        .slice(-6)
+        .map((t) => ({ role: t.role, content: t.content.slice(0, 500) }))
+    : [];
 
   // 内容安全：本地黑名单 + 可疑内容 AI 复核（仅在有 DeepSeek key 时启用复核）
   const provider = resolveFairyProvider();
@@ -38,6 +53,7 @@ export async function POST(req: Request) {
   const { reply, source } = await generateFairyReply({
     system,
     userMessage,
+    history: safeHistory,
     maxTokens: 150,
   });
 
