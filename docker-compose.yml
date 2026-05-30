@@ -35,6 +35,9 @@ services:
       TENCENT_SECRETID: "${TENCENT_SECRETID:-}"
       TENCENT_SECRETKEY: "${TENCENT_SECRETKEY:-}"
       TTS_CACHE_DIR: "/app/.cache/tts"
+      # 大模型音色（扣大模型预付费包）：601009 爱小芊(童趣女声,9情感) / 501009 WeWinny(英文女声)
+      TTS_VOICE_ZH: "${TTS_VOICE_ZH:-601009}"
+      TTS_VOICE_EN: "${TTS_VOICE_EN:-501009}"
     expose:
       - "3000"
     volumes:
