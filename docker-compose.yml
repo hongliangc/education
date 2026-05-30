@@ -31,8 +31,14 @@ services:
       # 值来自 gitignored .env 的同名变量，不硬编码进本文件；留空则走 mock
       DEEPSEEK_API_KEY: "${DEEPSEEK_API_KEY:-}"
       # ANTHROPIC_API_KEY: "${ANTHROPIC_API_KEY:-}"
+      # 腾讯云语音（ASR+TTS）；留空则客户端回退 Web Speech
+      TENCENT_SECRETID: "${TENCENT_SECRETID:-}"
+      TENCENT_SECRETKEY: "${TENCENT_SECRETKEY:-}"
+      TTS_CACHE_DIR: "/app/.cache/tts"
     expose:
       - "3000"
+    volumes:
+      - ttscache:/app/.cache/tts
     depends_on:
       db:
         condition: service_healthy
@@ -61,3 +67,4 @@ services:
 
 volumes:
   pgdata:
+  ttscache:
