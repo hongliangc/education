@@ -85,6 +85,10 @@ async function callDeepSeek({
     body: JSON.stringify({
       model: DEEPSEEK_MODEL,
       max_tokens: maxTokens,
+      // 关闭思考：v4-flash 默认是「思考」变体，精灵闲聊不需要推理。
+      // 开着会先烧 ~100+ reasoning token 才出内容——既拖慢实时语音(~2.3s→~0.7s)，
+      // 又会在 max_tokens 不够时把内容挤成空字符串（多轮空回复的根因）。
+      thinking: { type: "disabled" },
       messages: [
         { role: "system", content: system },
         ...history.map((t) => ({
@@ -97,7 +101,10 @@ async function callDeepSeek({
   });
   if (!res.ok) throw new Error(`DeepSeek HTTP ${res.status}`);
   const data = await res.json();
-  return (data.choices?.[0]?.message?.content ?? "").trim();
+  const content = (data.choices?.[0]?.message?.content ?? "").trim();
+  // 空内容按失败处理 → 上层走 mock 兜底，绝不把空回复透传到前端
+  if (!content) throw new Error("DeepSeek empty content");
+  return content;
 }
 
 async function callClaude({
@@ -124,10 +131,13 @@ async function callClaude({
       { role: "user" as const, content: userMessage },
     ],
   });
-  return res.content
+  const text = res.content
     .map((b) => (b.type === "text" ? b.text : ""))
     .join("\n")
     .trim();
+  // 与 DeepSeek 一致：空内容按失败处理 → 上层走 mock 兜底，绝不透传空回复
+  if (!text) throw new Error("Claude empty content");
+  return text;
 }
 
 // 给 safety.ts 用的 AI 内容复核：优先走 DeepSeek（便宜、快）。
@@ -143,6 +153,9 @@ export async function aiSafetyCheck(text: string): Promise<boolean> {
     body: JSON.stringify({
       model: DEEPSEEK_MODEL,
       max_tokens: 5,
+      // 同 callDeepSeek：v4-flash 默认思考，会先烧 reasoning token，
+      // 5 token 预算下正文必空 → YES/NO 判定恒为 NO（误杀正常内容）。
+      thinking: { type: "disabled" },
       messages: [
         {
           role: "user",

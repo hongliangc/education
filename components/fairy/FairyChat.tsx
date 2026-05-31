@@ -84,7 +84,9 @@ export function FairyChat({
         }),
       });
       const { reply } = await res.json();
-      const text = String(reply ?? "我想想哦～");
+      // ?? 不拦空串：reply 为 "" 时会渲染空气泡（多轮空回复的前端表象）。
+      // 这里兜底成友好提示，配合后端「空内容按失败」双重防护。
+      const text = String(reply ?? "").trim() || "我想想哦，等下再问我一次好吗？✨";
       setMessages((m) => [...m, { role: "fairy", content: text }]);
       setStatus("speaking");
       speakRef.current = speakText(text, {

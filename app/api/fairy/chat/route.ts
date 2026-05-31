@@ -54,7 +54,7 @@ export async function POST(req: Request) {
     system,
     userMessage,
     history: safeHistory,
-    maxTokens: 150,
+    maxTokens: 200,
   });
 
   return NextResponse.json({ reply, source });
