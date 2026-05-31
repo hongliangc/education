@@ -275,48 +275,131 @@ function arrayBufferToBase64(buf: ArrayBuffer): string {
   return btoa(binary);
 }
 
-/** 可控录音器：按下 start()、松手 stop() 取回 blob。给"按住说话"用。 */
+// 腾讯云一句话识别只认 [mp3,wav,pcm,m4a,speex,silk,aac,ogg-opus,amr]，
+// 而浏览器 MediaRecorder 在 Chrome/Edge 只能出 webm/opus（容器不被接受）。
+// 所以这里用 Web Audio 抓 16k 单声道 PCM，自己封 WAV，发 format=wav（16k_zh 引擎要 16k）。
+const TARGET_RATE = 16000;
+
+/** 把若干段 Float32 采样降到 16k 后封成 16-bit PCM WAV。 */
+function encodeWav(buffers: Float32Array[], inRate: number): ArrayBuffer {
+  const total = buffers.reduce((n, b) => n + b.length, 0);
+  const merged = new Float32Array(total);
+  let o = 0;
+  for (const b of buffers) {
+    merged.set(b, o);
+    o += b.length;
+  }
+  // 降采样到 16k（多数浏览器已按请求出 16k，则比例为 1，等同直拷）
+  const ratio = inRate / TARGET_RATE;
+  const outLen = ratio > 1 ? Math.floor(merged.length / ratio) : merged.length;
+  const samples = new Float32Array(outLen);
+  if (ratio > 1) {
+    for (let i = 0; i < outLen; i++) {
+      const start = Math.floor(i * ratio);
+      const end = Math.floor((i + 1) * ratio);
+      let sum = 0;
+      let c = 0;
+      for (let j = start; j < end && j < merged.length; j++) {
+        sum += merged[j];
+        c++;
+      }
+      samples[i] = c ? sum / c : merged[start] ?? 0;
+    }
+  } else {
+    samples.set(merged);
+  }
+
+  const buffer = new ArrayBuffer(44 + samples.length * 2);
+  const view = new DataView(buffer);
+  const writeStr = (off: number, s: string) => {
+    for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i));
+  };
+  writeStr(0, "RIFF");
+  view.setUint32(4, 36 + samples.length * 2, true);
+  writeStr(8, "WAVE");
+  writeStr(12, "fmt ");
+  view.setUint32(16, 16, true); // PCM 子块大小
+  view.setUint16(20, 1, true); // 格式 = PCM
+  view.setUint16(22, 1, true); // 单声道
+  view.setUint32(24, TARGET_RATE, true);
+  view.setUint32(28, TARGET_RATE * 2, true); // 字节率 = 采样率 * 块对齐
+  view.setUint16(32, 2, true); // 块对齐 = 声道 * 每样本字节
+  view.setUint16(34, 16, true); // 16 bit
+  writeStr(36, "data");
+  view.setUint32(40, samples.length * 2, true);
+  let off = 44;
+  for (let i = 0; i < samples.length; i++, off += 2) {
+    const s = Math.max(-1, Math.min(1, samples[i]));
+    view.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7fff, true);
+  }
+  return buffer;
+}
+
+/** 可控录音器：按下 start()、松手 stop() 取回 16k 单声道 WAV blob。给"按住说话"用。 */
 export function createRecorder(): {
   start: () => Promise<void>;
   stop: () => Promise<Blob>;
   cancel: () => void;
 } {
-  let rec: MediaRecorder | null = null;
   let stream: MediaStream | null = null;
-  const chunks: BlobPart[] = [];
+  let ctx: AudioContext | null = null;
+  let source: MediaStreamAudioSourceNode | null = null;
+  let processor: ScriptProcessorNode | null = null;
+  let buffers: Float32Array[] = [];
+  let inRate = TARGET_RATE;
+
+  const teardown = () => {
+    try {
+      processor?.disconnect();
+    } catch {
+      /* ignore */
+    }
+    try {
+      source?.disconnect();
+    } catch {
+      /* ignore */
+    }
+    stream?.getTracks().forEach((t) => t.stop());
+    void ctx?.close();
+    processor = null;
+    source = null;
+    ctx = null;
+    stream = null;
+  };
+
   return {
     async start() {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      rec = new MediaRecorder(stream);
-      rec.ondataavailable = (e) => chunks.push(e.data);
-      rec.start();
+      buffers = [];
+      stream = await navigator.mediaDevices.getUserMedia({
+        audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
+      });
+      ctx = new AudioContext({ sampleRate: TARGET_RATE });
+      inRate = ctx.sampleRate; // 浏览器可能忽略请求的采样率，记真实值用于降采样
+      source = ctx.createMediaStreamSource(stream);
+      processor = ctx.createScriptProcessor(4096, 1, 1);
+      processor.onaudioprocess = (e) => {
+        buffers.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+      };
+      source.connect(processor);
+      // 接到 destination 才会持续触发 onaudioprocess；我们不写输出，故是静音、无回授
+      processor.connect(ctx.destination);
     },
     stop() {
       return new Promise<Blob>((resolve) => {
-        const finish = () => {
-          stream?.getTracks().forEach((t) => t.stop());
-          resolve(new Blob(chunks, { type: "audio/webm" }));
-        };
-        if (rec && rec.state !== "inactive") {
-          rec.onstop = finish;
-          rec.stop();
-        } else {
-          finish();
-        }
+        const collected = buffers;
+        const rate = inRate;
+        teardown();
+        resolve(new Blob([encodeWav(collected, rate)], { type: "audio/wav" }));
       });
     },
     cancel() {
-      try {
-        if (rec && rec.state !== "inactive") rec.stop();
-      } catch {
-        /* ignore */
-      }
-      stream?.getTracks().forEach((t) => t.stop());
+      buffers = [];
+      teardown();
     },
   };
 }
 
-/** 把一段录音 blob 送服务端「一句话识别」转文字。format 默认 webm（联调期按需改 wav/pcm）。 */
+/** 把一段录音 blob 送服务端「一句话识别」转文字。默认 wav（createRecorder 产出 16k WAV）。 */
 export async function recognizeBlob(
   blob: Blob,
   opts: { lang?: string; format?: string } = {},
@@ -328,7 +411,7 @@ export async function recognizeBlob(
     body: JSON.stringify({
       audioBase64,
       lang: opts.lang ?? "zh-CN",
-      format: opts.format ?? "webm",
+      format: opts.format ?? "wav",
     }),
   });
   if (!res.ok) return "";
@@ -337,28 +420,16 @@ export async function recognizeBlob(
 }
 
 /**
- * 录一句话并识别成文字。需浏览器麦克风权限 + 服务端已开通语音识别。
- * 注意：MediaRecorder 默认产出 webm/opus，腾讯云一句话识别对 webm 容器支持有限，
- * #5a 联调时若识别为空，改用 wav/pcm 编码并相应传 format（已知不确定点）。
+ * 录固定时长一句话并识别成文字。需浏览器麦克风权限 + 服务端已开通语音识别。
+ * 复用 createRecorder（16k 单声道 WAV，腾讯云一句话识别可直接接受）。
  */
 export async function recognizeOnce(
   opts: { lang?: string; maxMs?: number } = {},
 ): Promise<string> {
   if (typeof navigator === "undefined" || !navigator.mediaDevices?.getUserMedia) return "";
-  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-  const rec = new MediaRecorder(stream);
-  const chunks: BlobPart[] = [];
-  rec.ondataavailable = (e) => chunks.push(e.data);
-  const stopped = new Promise<void>((resolve) => {
-    rec.onstop = () => resolve();
-  });
-  rec.start();
-  setTimeout(() => {
-    if (rec.state !== "inactive") rec.stop();
-  }, opts.maxMs ?? 6000);
-  await stopped;
-  stream.getTracks().forEach((t) => t.stop());
-
-  const blob = new Blob(chunks, { type: "audio/webm" });
-  return recognizeBlob(blob, { lang: opts.lang ?? "zh-CN", format: "webm" });
+  const rec = createRecorder();
+  await rec.start();
+  await new Promise((resolve) => setTimeout(resolve, opts.maxMs ?? 6000));
+  const blob = await rec.stop();
+  return recognizeBlob(blob, { lang: opts.lang ?? "zh-CN", format: "wav" });
 }
