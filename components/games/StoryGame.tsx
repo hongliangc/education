@@ -80,7 +80,7 @@ export function StoryGame({
       {phase === "reading" && (
         <StoryReader
           key={story.id}
-          story={story}
+          text={story.text}
           onFinish={() => setPhase("question")}
         />
       )}

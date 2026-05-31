@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
 import { speakText, stopSpeaking, type SpeechController } from "@/lib/speech";
-import type { Story } from "@/content/stories";
 
 const RATES = [
   { label: "🐢 0.5x", value: 0.5 },
@@ -15,10 +14,10 @@ const RATES = [
 ];
 
 export function StoryReader({
-  story,
+  text,
   onFinish,
 }: {
-  story: Story;
+  text: string;
   onFinish: () => void;
 }) {
   const [rate, setRate] = useState(1);
@@ -27,7 +26,7 @@ export function StoryReader({
   const { sfx } = useSFX();
   const ctrlRef = useRef<SpeechController | null>(null);
 
-  const chars = Array.from(story.text);
+  const chars = Array.from(text);
 
   useEffect(() => {
     return () => {
@@ -43,7 +42,7 @@ export function StoryReader({
     sfx.pageFlip();
     setStatus("playing");
     setHighlight(0);
-    ctrlRef.current = speakText(story.text, {
+    ctrlRef.current = speakText(text, {
       lang: "zh-CN",
       rate,
       onWord: (i) => setHighlight(i),
