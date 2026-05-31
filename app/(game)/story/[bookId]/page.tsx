@@ -117,9 +117,8 @@ export default function BookDetailPage({
     );
   }
 
-  // —— 章节目录 ——
+  // —— 章节目录（自由选章：任意章节都可点开，进度只用于 ✓ 标记与续读书签）——
   const openChapter = (idx: number) => {
-    if (idx > completed) return; // 锁定
     sfx.pageFlip();
     setReading(idx);
   };
@@ -141,28 +140,25 @@ export default function BookDetailPage({
             <Btn
               variant="primary"
               className="mt-4 w-full"
-              onClick={() => openChapter(Math.min(lastIdx, completed))}
+              onClick={() => openChapter(lastIdx)}
             >
-              {completed === 0 ? "开始阅读 ▶" : `继续阅读 · 第 ${Math.min(lastIdx, completed) + 1} 章 ▶`}
+              {completed === 0 ? "开始阅读 ▶" : `继续阅读 · 第 ${lastIdx + 1} 章 ▶`}
             </Btn>
           )}
 
           <div className="mt-4 space-y-2">
             {book.chapters.map((c) => {
               const isDone = c.idx < completed;
-              const isLocked = c.idx > completed;
+              const isCurrent = c.idx === lastIdx;
               return (
                 <button
                   key={c.idx}
                   onClick={() => openChapter(c.idx)}
-                  disabled={isLocked}
-                  className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 ring-1 text-left transition ${
-                    isLocked
-                      ? "bg-slate-100 ring-slate-200 text-slate-400 cursor-not-allowed"
-                      : "bg-white ring-slate-200 hover:bg-purple-50 text-slate-700"
+                  className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 ring-1 text-left transition hover:bg-purple-50 text-slate-700 ${
+                    isCurrent ? "bg-purple-50 ring-purple-300" : "bg-white ring-slate-200"
                   }`}
                 >
-                  <span className="text-2xl">{isLocked ? "🔒" : c.emoji}</span>
+                  <span className="text-2xl">{c.emoji}</span>
                   <span className="flex-1 font-bold">
                     {total > 1 ? `第 ${c.idx + 1} 章 · ` : ""}{c.title}
                   </span>
