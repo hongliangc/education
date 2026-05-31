@@ -24,7 +24,7 @@ function tale(b: {
 }
 
 export const TALES: StoryBook[] = [
-  // —— 迁移自 content/stories.ts（逐字照搬）——
+  // —— 迁移自旧故事模块（逐字照搬）——
   tale({
     id: "tortoise-hare",
     emoji: "🐢🐇",

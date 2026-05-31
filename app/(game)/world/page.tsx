@@ -55,7 +55,7 @@ export default function WorldMapPage() {
 
   const open = (m: ModuleId) => {
     sfx.click();
-    router.push(`/play/${m.toLowerCase()}`);
+    router.push(m === "STORY" ? "/story" : `/play/${m.toLowerCase()}`);
   };
 
   return (
