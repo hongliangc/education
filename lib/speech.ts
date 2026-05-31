@@ -279,71 +279,176 @@ export function stopSpeaking(): void {
 }
 
 /**
- * 流式朗读：把 <audio> 指向流式 TTS 路由，浏览器边下边播（首声 ~1s，远快于整段 ~4.7s）。
- * 给精灵实时对话用。失败（路由不可用 / 自动播放被拦）自动回退整段 speakText（其内部再回退 Web Speech）。
+ * 流式朗读：边收边播腾讯云流式 TTS。用 MediaSource 渐进追加 mp3 分块，首声 ~0.6s
+ * （远快于整段 ~4.7s），并在流结束时 `endOfStream()` 收尾——否则裸 <audio> 播放无
+ * Content-Length 的分块流会算错时长、丢掉尾音（精灵语音末尾几个字听不到的根因）。
+ * MSE 不支持 audio/mpeg 的浏览器（如 Firefox）→ 整段 Blob 播放（时长准确、不丢尾音）。
+ * 取流失败 / 自动播放被拦 → 回退整段 speakText（其内部再回退 Web Speech）。
  * 不做逐词高亮（对话不需要）；控制器 pause/resume/stop 与 speakText 同形。
  */
 export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechController {
   const lang = opts.lang ?? "zh-CN";
-  // 本会话已探测云 TTS 不可用，或非浏览器环境 → 直接走整段路径（它会回退 Web Speech）
   if (cloudTtsUnavailable || typeof window === "undefined") return speakText(text, opts);
 
+  const url = `/api/speech/tts-stream?${new URLSearchParams({
+    text,
+    lang,
+    voice: String(resolveVoice(lang, opts.voice)),
+  }).toString()}`;
+  const canMse =
+    typeof MediaSource !== "undefined" && MediaSource.isTypeSupported("audio/mpeg");
+
   let aborted = false;
-  let started = false; // 是否已成功开播流式音频
+  let ended = false;
   let inner: SpeechController | null = null; // 回退后的整段控制器
-  const voice = resolveVoice(lang, opts.voice);
-  const qs = new URLSearchParams({ text, lang, voice: String(voice) });
+  let audio: HTMLAudioElement | null = null;
+  let objUrl: string | null = null;
+  const ac = new AbortController();
 
-  stopSpeaking(); // 停掉其它正在播的
-  const a = new Audio(`/api/speech/tts-stream?${qs.toString()}`);
-  currentAudio = a;
-
-  const goFallback = () => {
-    if (aborted || started || inner) return;
-    if (currentAudio === a) currentAudio = null;
-    a.onerror = null;
-    a.removeAttribute("src");
-    inner = speakText(text, opts); // 整段合成；其 play() 再被拦则回退 Web Speech
-  };
-
-  a.onplaying = () => {
-    started = true;
-  };
-  a.onended = () => {
-    if (currentAudio === a) currentAudio = null;
-    opts.onEnd?.();
-  };
-  a.onerror = () => {
-    // 还没开播就错（503/401/网络）→ 回退；已开播中途断 → 当作正常结束，让 UI 恢复
-    if (started) {
-      if (currentAudio === a) currentAudio = null;
-      opts.onEnd?.();
-    } else {
-      goFallback();
+  const cleanup = () => {
+    if (objUrl) {
+      URL.revokeObjectURL(objUrl);
+      objUrl = null;
     }
   };
-  // 自动播放被拦时 play() reject 且未 started → 回退整段
-  void a.play().catch(() => {
-    if (!started) goFallback();
-  });
+  const endNow = () => {
+    if (ended) return;
+    ended = true;
+    if (audio && currentAudio === audio) currentAudio = null;
+    cleanup();
+    opts.onEnd?.();
+  };
+  const fallbackWhole = () => {
+    if (aborted || inner || ended) return;
+    cleanup();
+    inner = speakText(text, opts); // onEnd 改由 inner 触发
+  };
+  const attach = (a: HTMLAudioElement) => {
+    audio = a;
+    currentAudio = a;
+    a.onended = endNow;
+    a.onerror = endNow; // 已接上音频，出错也当结束，避免卡在 speaking
+    a.play().catch(() => {
+      // 自动播放被拦 → 放弃流式，回退整段（其内部再回退 Web Speech）
+      if (currentAudio === a) currentAudio = null;
+      audio = null;
+      try {
+        ac.abort();
+      } catch {
+        /* ignore */
+      }
+      fallbackWhole();
+    });
+  };
+
+  void (async () => {
+    try {
+      const res = await fetch(url, { signal: ac.signal });
+      if (aborted) return;
+      if (!res.ok || !res.body) {
+        fallbackWhole();
+        return;
+      }
+      stopSpeaking(); // 停掉其它正在播的
+
+      if (!canMse) {
+        const blob = await res.blob(); // 整段下完再播：时长准确、不丢尾音
+        if (aborted) return;
+        if (!blob.size) {
+          fallbackWhole();
+          return;
+        }
+        objUrl = URL.createObjectURL(blob);
+        attach(new Audio(objUrl));
+        return;
+      }
+
+      const ms = new MediaSource();
+      objUrl = URL.createObjectURL(ms);
+      attach(new Audio(objUrl));
+      await new Promise<void>((resolve) =>
+        ms.addEventListener("sourceopen", () => resolve(), { once: true }),
+      );
+      if (aborted) return;
+      const sb = ms.addSourceBuffer("audio/mpeg");
+      const appendChunk = (chunk: Uint8Array) =>
+        new Promise<void>((resolve, reject) => {
+          const ok = () => {
+            sb.removeEventListener("updateend", ok);
+            sb.removeEventListener("error", no);
+            resolve();
+          };
+          const no = () => {
+            sb.removeEventListener("updateend", ok);
+            sb.removeEventListener("error", no);
+            reject(new Error("sourcebuffer append error"));
+          };
+          sb.addEventListener("updateend", ok);
+          sb.addEventListener("error", no);
+          // 拷进独立 ArrayBuffer：reader 给的 Uint8Array 泛型是 ArrayBufferLike，
+          // 不直接满足 appendBuffer 的 BufferSource（ArrayBuffer）类型。
+          const buf = new ArrayBuffer(chunk.byteLength);
+          new Uint8Array(buf).set(chunk);
+          sb.appendBuffer(buf);
+        });
+
+      const reader = res.body.getReader();
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (aborted) {
+          try {
+            await reader.cancel();
+          } catch {
+            /* ignore */
+          }
+          return;
+        }
+        if (done) break;
+        if (value) await appendChunk(value);
+      }
+      // 关键：流结束时收尾，duration 才定得下来，尾音才会播完
+      if (!aborted && ms.readyState === "open") {
+        if (sb.updating) {
+          await new Promise((r) =>
+            sb.addEventListener("updateend", () => r(null), { once: true }),
+          );
+        }
+        ms.endOfStream();
+      }
+    } catch (e) {
+      if (aborted || (e as { name?: string })?.name === "AbortError") return;
+      // 建链阶段失败（还没接上音频元素）→ 回退整段；已接上 → 当作结束让 UI 恢复
+      if (!audio) fallbackWhole();
+      else endNow();
+    }
+  })();
 
   return {
     pause() {
       if (inner) inner.pause();
-      else a.pause();
+      else audio?.pause();
     },
     resume() {
       if (inner) inner.resume();
-      else void a.play().catch(() => {});
+      else void audio?.play().catch(() => {});
     },
     stop() {
       aborted = true;
+      try {
+        ac.abort();
+      } catch {
+        /* ignore */
+      }
       if (inner) {
         inner.stop();
         return;
       }
-      a.pause();
-      if (currentAudio === a) currentAudio = null;
+      if (audio) {
+        audio.pause();
+        if (currentAudio === audio) currentAudio = null;
+        audio = null;
+      }
+      cleanup();
     },
   };
 }
