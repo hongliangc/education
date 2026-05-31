@@ -102,9 +102,10 @@ export function FairyChat({
     }
   };
 
-  // 按住说话：按下
+  // 按住说话：按下。允许在「说话中」直接打断并开始录音（避免万一卡在 speaking 时锁死入口）；
+  // 仅在 listening / thinking 时忽略，防止重复录音或抢答。
   const startTalk = async () => {
-    if (status !== "idle") return;
+    if (status === "listening" || status === "thinking") return;
     speakRef.current?.stop();
     stopSpeaking();
     try {
@@ -224,7 +225,7 @@ export function FairyChat({
               onPointerDown={startTalk}
               onPointerUp={endTalk}
               onPointerLeave={endTalk}
-              disabled={status === "thinking" || status === "speaking"}
+              disabled={status === "thinking"}
               className={`select-none touch-none rounded-full w-44 h-16 font-bold text-white text-lg shadow-lg transition active:scale-95 disabled:opacity-50 ${
                 status === "listening" ? "bg-rose-500 animate-pulse" : "bg-pink-500"
               }`}

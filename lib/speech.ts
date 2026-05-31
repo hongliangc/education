@@ -208,7 +208,21 @@ export function speakText(text: string, opts: SpeakOptions = {}): SpeechControll
             stopRaf();
             rafId = requestAnimationFrame(() => tick(a));
           };
-          if (!userPaused) await a.play().catch(() => {});
+          if (!userPaused) {
+            try {
+              await a.play();
+            } catch {
+              // 自动播放被浏览器拦截（播放已脱离用户手势的同步栈，常见于
+              // 录音→识别→对话→TTS 多次 await 之后）：被拒的 play() 既不会
+              // 触发 onended 也不会触发 onerror → onEnd 永不回调 → 上层永久卡在
+              // 「说话中」。这里丢掉这段播不响的云音频，回退 Web Speech（对自动
+              // 播放更宽松），它播完/出错都会回调 onEnd，让 UI 恢复可交互。
+              if (aborted) return;
+              if (currentAudio === a) currentAudio = null;
+              audio = null;
+              void fallbackWebSpeech();
+            }
+          }
           return;
         }
         if (res.status === 503) cloudTtsUnavailable = true;
