@@ -25,23 +25,24 @@ model User {
 }
 
 model Child {
-  id            String             @id @default(cuid())
-  parentId      String
-  parent        User               @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  name          String
-  age           Int
-  avatar        String             @default("🌸")
-  fairyLevel    Int                @default(1)
-  totalStars    Int                @default(0)
-  hearts        Int                @default(3)
-  streakDays    Int                @default(0)
-  lastLoginDate DateTime?
-  progress      LearningProgress[]
-  sessions      GameSession[]
-  achievements  Achievement[]
-  weeklyReports WeeklyReport[]
-  fairyDialogs  FairyDialogue[]
-  createdAt     DateTime           @default(now())
+  id              String             @id @default(cuid())
+  parentId        String
+  parent          User               @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  name            String
+  age             Int
+  avatar          String             @default("🌸")
+  fairyLevel      Int                @default(1)
+  totalStars      Int                @default(0)
+  hearts          Int                @default(3)
+  streakDays      Int                @default(0)
+  lastLoginDate   DateTime?
+  progress        LearningProgress[]
+  sessions        GameSession[]
+  achievements    Achievement[]
+  weeklyReports   WeeklyReport[]
+  fairyDialogs    FairyDialogue[]
+  readingProgress ReadingProgress[]
+  createdAt       DateTime           @default(now())
 
   @@index([parentId])
 }
@@ -116,5 +117,19 @@ model Achievement {
   badge    String
   earnedAt DateTime @default(now())
 
+  @@index([childId])
+}
+
+model ReadingProgress {
+  id                String   @id @default(cuid())
+  childId           String
+  child             Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  bookId            String // StoryBook.id（内容层常量，非外键）
+  lastChapterIdx    Int      @default(0) // 续读书签：最近阅读到的章节
+  completedChapters Int      @default(0) // 已通关章节数（顺序解锁依据）
+  finished          Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+
+  @@unique([childId, bookId])
   @@index([childId])
 }
