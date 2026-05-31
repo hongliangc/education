@@ -34,6 +34,8 @@ services:
       # 腾讯云语音（ASR+TTS）；留空则客户端回退 Web Speech
       TENCENT_SECRETID: "${TENCENT_SECRETID:-}"
       TENCENT_SECRETKEY: "${TENCENT_SECRETKEY:-}"
+      # 流式 TTS（stream_wsv2）握手需要 AppId（账号级公开标识，非密钥）
+      TENCENT_APPID: "${TENCENT_APPID:-1307984055}"
       TTS_CACHE_DIR: "/app/.cache/tts"
       # 大模型音色（扣大模型预付费包）：601009 爱小芊(童趣女声,9情感) / 501009 WeWinny(英文女声)
       TTS_VOICE_ZH: "${TTS_VOICE_ZH:-601009}"

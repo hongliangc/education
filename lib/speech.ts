@@ -278,6 +278,76 @@ export function stopSpeaking(): void {
   if (isSpeechSupported()) window.speechSynthesis.cancel();
 }
 
+/**
+ * 流式朗读：把 <audio> 指向流式 TTS 路由，浏览器边下边播（首声 ~1s，远快于整段 ~4.7s）。
+ * 给精灵实时对话用。失败（路由不可用 / 自动播放被拦）自动回退整段 speakText（其内部再回退 Web Speech）。
+ * 不做逐词高亮（对话不需要）；控制器 pause/resume/stop 与 speakText 同形。
+ */
+export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechController {
+  const lang = opts.lang ?? "zh-CN";
+  // 本会话已探测云 TTS 不可用，或非浏览器环境 → 直接走整段路径（它会回退 Web Speech）
+  if (cloudTtsUnavailable || typeof window === "undefined") return speakText(text, opts);
+
+  let aborted = false;
+  let started = false; // 是否已成功开播流式音频
+  let inner: SpeechController | null = null; // 回退后的整段控制器
+  const voice = resolveVoice(lang, opts.voice);
+  const qs = new URLSearchParams({ text, lang, voice: String(voice) });
+
+  stopSpeaking(); // 停掉其它正在播的
+  const a = new Audio(`/api/speech/tts-stream?${qs.toString()}`);
+  currentAudio = a;
+
+  const goFallback = () => {
+    if (aborted || started || inner) return;
+    if (currentAudio === a) currentAudio = null;
+    a.onerror = null;
+    a.removeAttribute("src");
+    inner = speakText(text, opts); // 整段合成；其 play() 再被拦则回退 Web Speech
+  };
+
+  a.onplaying = () => {
+    started = true;
+  };
+  a.onended = () => {
+    if (currentAudio === a) currentAudio = null;
+    opts.onEnd?.();
+  };
+  a.onerror = () => {
+    // 还没开播就错（503/401/网络）→ 回退；已开播中途断 → 当作正常结束，让 UI 恢复
+    if (started) {
+      if (currentAudio === a) currentAudio = null;
+      opts.onEnd?.();
+    } else {
+      goFallback();
+    }
+  };
+  // 自动播放被拦时 play() reject 且未 started → 回退整段
+  void a.play().catch(() => {
+    if (!started) goFallback();
+  });
+
+  return {
+    pause() {
+      if (inner) inner.pause();
+      else a.pause();
+    },
+    resume() {
+      if (inner) inner.resume();
+      else void a.play().catch(() => {});
+    },
+    stop() {
+      aborted = true;
+      if (inner) {
+        inner.stop();
+        return;
+      }
+      a.pause();
+      if (currentAudio === a) currentAudio = null;
+    },
+  };
+}
+
 // ---------- STT 一句话识别（给 #5a 语音提问用） ----------
 function arrayBufferToBase64(buf: ArrayBuffer): string {
   const bytes = new Uint8Array(buf);

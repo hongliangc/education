@@ -7,6 +7,7 @@ import { FairySprite, type FairyMood } from "@/components/fairy/FairySprite";
 import { useSFX } from "@/components/audio/useSFX";
 import {
   speakText,
+  speakTextStream,
   stopSpeaking,
   createRecorder,
   recognizeBlob,
@@ -89,7 +90,8 @@ export function FairyChat({
       const text = String(reply ?? "").trim() || "我想想哦，等下再问我一次好吗？✨";
       setMessages((m) => [...m, { role: "fairy", content: text }]);
       setStatus("speaking");
-      speakRef.current = speakText(text, {
+      // 流式朗读：首声 ~1s（整段约 4.7s）；失败自动回退整段/Web Speech
+      speakRef.current = speakTextStream(text, {
         lang: "zh-CN",
         onEnd: () => setStatus("idle"),
       });
