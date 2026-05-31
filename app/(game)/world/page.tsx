@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { FairyBubble } from "@/components/fairy/FairyBubble";
+import { FairyChat } from "@/components/fairy/FairyChat";
 import { useSFX } from "@/components/audio/useSFX";
 import { MODULES, MODULE_META, type ModuleId } from "@/lib/utils";
 
@@ -28,6 +29,7 @@ export default function WorldMapPage() {
   const child = useGameStore((s) => s.activeChild);
   const [progressMap, setProgressMap] = useState<Record<string, NodeProgress>>({});
   const [hello, setHello] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
   const { sfx } = useSFX();
 
   useEffect(() => {
@@ -61,7 +63,16 @@ export default function WorldMapPage() {
       <div className="max-w-5xl mx-auto">
         {hello && (
           <div className="mb-6">
-            <FairyBubble text={hello} mood="excited" />
+            <button
+              onClick={() => setChatOpen(true)}
+              className="block text-left"
+              aria-label="和精灵聊天"
+            >
+              <FairyBubble text={hello} mood="excited" />
+              <div className="mt-1 ml-2 text-xs font-bold text-white/90 drop-shadow animate-bounce">
+                👆 点我问问题
+              </div>
+            </button>
           </div>
         )}
 
@@ -169,6 +180,13 @@ export default function WorldMapPage() {
           </div>
         </div>
       </div>
+
+      {chatOpen && (
+        <FairyChat
+          child={{ name: child.name, totalStars: child.totalStars }}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
     </main>
   );
 }
