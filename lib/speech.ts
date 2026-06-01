@@ -305,6 +305,34 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
   let objUrl: string | null = null;
   const ac = new AbortController();
 
+  // 逐词高亮（故事朗读用）：由真实音频进度驱动；MSE 流式期间 duration 尚未定，
+  // 先用按字数估算的总时长兜底，endOfStream 后自动切到真实 duration 并校正位置。
+  const hlTokens = opts.onWord ? tokenize(text, lang) : [];
+  const PER_TOKEN = lang.startsWith("zh") ? 0.2 : 0.32;
+  let rafId: number | null = null;
+  const stopRaf = () => {
+    if (rafId != null) cancelAnimationFrame(rafId);
+    rafId = null;
+  };
+  const tick = (a: HTMLAudioElement) => {
+    if (aborted || a.paused || a.ended) {
+      rafId = null;
+      return;
+    }
+    if (opts.onWord && hlTokens.length) {
+      const dur =
+        Number.isFinite(a.duration) && a.duration > 0
+          ? a.duration
+          : hlTokens.length * PER_TOKEN;
+      const idx = Math.min(
+        hlTokens.length - 1,
+        Math.floor((a.currentTime / dur) * hlTokens.length),
+      );
+      opts.onWord(idx, hlTokens[idx] ?? "");
+    }
+    rafId = requestAnimationFrame(() => tick(a));
+  };
+
   const cleanup = () => {
     if (objUrl) {
       URL.revokeObjectURL(objUrl);
@@ -314,6 +342,7 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
   const endNow = () => {
     if (ended) return;
     ended = true;
+    stopRaf();
     if (audio && currentAudio === audio) currentAudio = null;
     cleanup();
     opts.onEnd?.();
@@ -326,8 +355,13 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
   const attach = (a: HTMLAudioElement) => {
     audio = a;
     currentAudio = a;
+    if (opts.rate && opts.rate !== 1) a.playbackRate = opts.rate; // 语速按钮对云音频也生效
     a.onended = endNow;
     a.onerror = endNow; // 已接上音频，出错也当结束，避免卡在 speaking
+    a.onplay = () => {
+      stopRaf();
+      rafId = requestAnimationFrame(() => tick(a));
+    };
     a.play().catch(() => {
       // 自动播放被拦 → 放弃流式，回退整段（其内部再回退 Web Speech）
       if (currentAudio === a) currentAudio = null;
@@ -434,6 +468,7 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
     },
     stop() {
       aborted = true;
+      stopRaf();
       try {
         ac.abort();
       } catch {
