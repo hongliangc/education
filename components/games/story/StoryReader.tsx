@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
-import { speakText, speakTextStream, stopSpeaking, type SpeechController } from "@/lib/speech";
+import { speakText, speakChunks, stopSpeaking, type SpeechController } from "@/lib/speech";
 
 const RATES = [
   { label: "🐢 0.5x", value: 0.5 },
@@ -42,9 +42,9 @@ export function StoryReader({
     sfx.pageFlip();
     setStatus("playing");
     setHighlight(0);
-    // 整章朗读走流式腾讯云 TTS（与精灵语音同一实现）：长文不受单次合成长度限制、
-    // 真实童声、首声快；逐词高亮由音频进度驱动。失败自动回退整段 / Web Speech。
-    ctrlRef.current = speakTextStream(text, {
+    // 整章朗读按句分段、依次走云端 REST TTS：每段 ≤150 字（不触发长度上限 → 稳定真实童声），
+    // 且每段独立命中服务端缓存（重听不再合成、不再扣字符额度）。逐字高亮按全局字符索引推进。
+    ctrlRef.current = speakChunks(text, {
       lang: "zh-CN",
       rate,
       onWord: (i) => setHighlight(i),

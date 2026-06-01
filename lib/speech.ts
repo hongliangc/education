@@ -197,6 +197,7 @@ export function speakText(text: string, opts: SpeakOptions = {}): SpeechControll
           const a = new Audio(`data:audio/${format};base64,${audioBase64}`);
           audio = a;
           currentAudio = a;
+          if (opts.rate && opts.rate !== 1) a.playbackRate = opts.rate; // 语速按钮对云音频也生效
           const finish = () => {
             stopRaf();
             if (currentAudio === a) currentAudio = null;
@@ -484,6 +485,112 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
         audio = null;
       }
       cleanup();
+    },
+  };
+}
+
+// ---------- 长文分段朗读（故事整章用） ----------
+// 腾讯云 REST `TextToVoice`(一句话合成)单次文本上限 150 字符，整章(850–1200 字)
+// 一次性发会 502(TextTooLong)→回退机械音。这里按句切成「尽量贴近上限」的小段，
+// 依次走 speakText(REST)：每段都命中服务端 ttsCache（按 文本+音色 缓存），
+// 重听不再合成、不再扣大模型字符额度。各段拼接后等于原文，onWord 用全局字符索引高亮。
+const TTS_MAX_CHARS = 148; // 留 2 字余量
+
+function splitForTts(text: string, maxLen: number): string[] {
+  // 按句末标点/换行切句并保留分隔符；空段过滤后拼接仍等于原文
+  const sentences =
+    text.match(/[^。！？!?；;\n]*[。！？!?；;\n]?/g)?.filter((s) => s.length) ?? [text];
+  const chunks: string[] = [];
+  let buf = "";
+  for (const s of sentences) {
+    if (buf && Array.from(buf + s).length > maxLen) {
+      chunks.push(buf);
+      buf = "";
+    }
+    if (Array.from(s).length > maxLen) {
+      // 单句仍超长（少见）：硬切
+      const cs = Array.from(s);
+      for (let i = 0; i < cs.length; i += maxLen) chunks.push(cs.slice(i, i + maxLen).join(""));
+    } else {
+      buf += s;
+    }
+  }
+  if (buf) chunks.push(buf);
+  return chunks;
+}
+
+/**
+ * 分段朗读长文：按句切成 ≤150 字小段，依次用云端 REST TTS 朗读（每段独立缓存）。
+ * 控制器 pause/resume/stop 与 speakText 同形；onWord 回调用全局字符索引。
+ */
+export function speakChunks(
+  text: string,
+  opts: SpeakOptions & { maxLen?: number } = {},
+): SpeechController {
+  const chunks = splitForTts(text, opts.maxLen ?? TTS_MAX_CHARS);
+  // 每段首字符在全局 Array.from(text) 中的偏移（与 StoryReader 的逐字渲染对齐）
+  const offsets: number[] = [];
+  let acc = 0;
+  for (const c of chunks) {
+    offsets.push(acc);
+    acc += Array.from(c).length;
+  }
+
+  let stopped = false;
+  let paused = false;
+  let idx = 0;
+  let pendingNext: number | null = null;
+  let cur: SpeechController | null = null;
+
+  const playFrom = (k: number) => {
+    if (stopped) return;
+    if (k >= chunks.length) {
+      opts.onEnd?.();
+      return;
+    }
+    idx = k;
+    pendingNext = null;
+    const base = offsets[k];
+    cur = speakText(chunks[k], {
+      lang: opts.lang,
+      rate: opts.rate,
+      pitch: opts.pitch,
+      voice: opts.voice,
+      onWord: opts.onWord ? (i, w) => opts.onWord!(base + i, w) : undefined,
+      onEnd: () => {
+        cur = null;
+        if (stopped) return;
+        if (paused) {
+          pendingNext = k + 1; // 在段间暂停：记住续点，resume 时再播
+          return;
+        }
+        playFrom(k + 1);
+      },
+    });
+  };
+  playFrom(0);
+
+  return {
+    pause() {
+      paused = true;
+      cur?.pause();
+    },
+    resume() {
+      if (!paused) return;
+      paused = false;
+      if (cur) cur.resume();
+      else if (pendingNext !== null) {
+        const n = pendingNext;
+        pendingNext = null;
+        playFrom(n);
+      } else {
+        playFrom(idx);
+      }
+    },
+    stop() {
+      stopped = true;
+      cur?.stop();
+      cur = null;
     },
   };
 }
