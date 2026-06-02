@@ -109,8 +109,8 @@ Size：sm（紧凑）/ md（默认）/ lg（CTA）。
 ## 验证
 
 改完 UI 后：
-1. `npx tsc --noEmit` 不报错
-2. 浏览器打开对应页面，目测动画流畅度
-3. Lighthouse a11y 分数不下降（C 批后会加自动检查）
+1. 类型检查：见 `AGENTS.md` 标准验证。
+2. 浏览器打开对应页面，目测动画流畅度。
+3. Lighthouse a11y 分数不下降（C 批后会加自动检查）。
 
 Last verified against: prisma schema v1 · Next.js 16.2.6 · Tailwind 4 · 2026-05-27

@@ -47,10 +47,8 @@ description: Use when adapting or rewriting a classic story into MLK child-reade
 - ❌ `answer` 写成字符串、`questions` 缺 `explain`
 
 ## 验证
-```bash
-wsl -e bash -ic "cd ~/workspace/education && npx tsc --noEmit"
-# 字数：逐章 [...c.text].length 落在 850–1200；validateStoryBooks 是 dev 守卫
-```
+- 类型检查：见 `AGENTS.md` 标准验证。
+- 字数：逐章 `[...c.text].length` 落在 850–1200；`validateStoryBooks` 是 dev 守卫。
 
 ## 提交（共享工作树）
 另一个 Claude 可能并发改 `lib/speech*`。**点名提交内容文件**，别 `git add -A`：

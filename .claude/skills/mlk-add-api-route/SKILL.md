@@ -93,15 +93,7 @@ const data = await res.json();
 
 ## 验证
 
-```bash
-# 1. 类型检查
-wsl -e bash -ic "cd ~/workspace/education && npx tsc --noEmit"
-
-# 2. 鉴权测试（应返 401）
-wsl -e bash -ic "curl -sI -X POST http://localhost:3000/api/<your-path> -o /dev/null -w '%{http_code}\n'"
-# 期望：401
-
-# 3. 已登录测试（需先获取 cookie，见 mlk-local-dev）
-```
+- 类型检查 + 鉴权 401 冒烟：见 `AGENTS.md` 标准验证（把 `<path>` 换成本路由）。
+- 已登录测试（需先获取 cookie）：见 `mlk-local-dev`。
 
 Last verified against: lib/auth.ts · lib/db.ts · 2026-05-27

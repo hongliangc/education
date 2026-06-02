@@ -17,6 +17,18 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
 ## 现有脚本
 
 - **`docker-rebuild-web.sh`** — 重建并重启 `web` 容器。改了 `app/` `components/` `content/` `lib/` 等代码后用：生产构建无热更，必须重建镜像；完成后浏览器要硬刷新（bundle 带 hash 缓存）。
+- **`smoke-health.sh`** — 起 dev server → 轮询 `/api/health` → 打印 health + 日志尾 → 关掉 dev。改完功能做一次性冒烟用。
+- **`dev-status.sh`** — 只读现状：dev 日志尾 + `:3000` 端口占用 + curl 可用性。dev 起不来/异常时先跑它看现场。
+- **`docker-recreate.sh`** — `docker compose up -d` 后轮询 `education-web-1` 健康状态直到 healthy（约 30s 超时）。容器模式重启栈用。
+
+## 待补（下次需要时直接写成本目录脚本，别再写 `/tmp`）
+
+历史上这些常用运维操作曾以一次性 `/tmp` 脚本反复手搓、脚本随用随删、内容已丢。下次再用到时，**直接在本目录建提交脚本**：
+
+- **`speech-e2e.sh`** — 语音子系统端到端冒烟（TTS / STT 链路）。语音子系统正在改动，定型后再补。
+- **`deploy.sh`** — 部署流程。
+- **`tts-verify.sh`** — TTS 输出校验。
+- **`stt-probe.sh`** — STT 探针。
 
 ## 新增约定
 

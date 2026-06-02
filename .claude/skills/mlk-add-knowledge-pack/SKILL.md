@@ -53,16 +53,8 @@ description: Use when expanding learning content in the Magic Learning Kingdom p
 
 ## 验证
 
-```bash
-# 1. 类型检查
-wsl -e bash -ic "cd ~/workspace/education && npx tsc --noEmit"
-
-# 2. 数据完整性：每个新增条目都符合 shape
-# 例如 stories.ts 每个 story.questions.length === 3
-
-# 3. 体验
-wsl -e bash -ic "cd ~/workspace/education && npm run dev"
-# 进 /world，新模块/扩充后的题目可见、可玩
-```
+- 类型检查：见 `AGENTS.md` 标准验证。
+- 数据完整性：每个新增条目符合 shape（如 `stories.ts` 每个 `story.questions.length === 3`）。
+- 体验（见 `mlk-local-dev`）：进 `/world`，新模块/扩充题目可见、可玩。
 
 Last verified against: content/*.ts shapes · 2026-05-27
