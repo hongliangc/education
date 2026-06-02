@@ -15,6 +15,7 @@ export interface Chapter {
   text: string; // 改编儿童版正文；段落用 \n 分隔（StoryReader 逐字渲染）。篇幅/人物/改编风格标准 → skill: mlk-adapt-classic-story（唯一真源）
   questions: StoryQuestion[]; // 每章 2–3 题
   moral?: string; // 章末道理；短篇必填，长篇可逐章给或书末给
+  images?: string[]; // 有序插画 public 相对路径（如 "/illustrations/<book>/x.webp"）；StoryPlayer 按朗读进度轮播；缺省回退 emoji
 }
 
 export interface StoryBook {
@@ -25,4 +26,5 @@ export interface StoryBook {
   kind: "tale" | "novel"; // 短篇=tale(恰 1 章) / 长篇=novel(多章)
   ageBand: "5-7" | "8-10";
   chapters: Chapter[];
+  cover?: string; // 封面图 public 相对路径；书架/书详情/播放器空闲态可用
 }
