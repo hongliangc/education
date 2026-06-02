@@ -88,6 +88,10 @@ sfx.click()   // 点击
 - [ ] 支付/订阅（Phase 5，本次未实现）
 - [ ] 部署/Docker（Phase 5，本次未实现）
 
+## 脚本（scripts/）
+
+可复用脚本（docker 运维、数据校验等）放 `scripts/`、随仓库提交；一次性/临时操作（如提交时的 `index.lock` 守卫、探针）写 `/tmp` 跑完即弃。WSL 内运行：`bash scripts/<name>.sh`。清单与约定见 `scripts/README.md`。
+
 ## 自带 Skills（项目本地）
 
 `.claude/skills/mlk-*` 下有 7 个项目本地 skill，按 frontmatter description 自动加载，无需手动 `/skill-name` 调用：
