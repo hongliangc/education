@@ -3,6 +3,7 @@
 "use client";
 
 import { DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN } from "./speech/voices";
+import { TTS_MAX_CHARS, splitForTts } from "./speech/chunking";
 
 export interface SpeakOptions {
   lang?: string;
@@ -490,51 +491,15 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
 }
 
 // ---------- 长文分段朗读（故事整章用） ----------
-// 腾讯云 REST `TextToVoice`(一句话合成)单次文本上限 150 字符，整章(850–1200 字)
-// 一次性发会 502(TextTooLong)→回退机械音。这里按句切段、依次走 REST(每段命中服务端
-// ttsCache，重听免合成、免扣额度)。两条提速：①首段刻意切短(少量文字→合成快→快速出声)；
-// ②播当前段时**并发预取下一段**音频，当前段播完即接上、几乎无段间等待。
-// 各段拼接 === 原文，onWord 用全局字符索引高亮。
-const TTS_MAX_CHARS = 148; // 留 2 字余量（上限 150）
-
-// 段长上限随段序由小变大：首段极短(快速出声)、次段稍短(趁首段播放时就合成好)，其后吃满上限。
-function chunkCap(k: number, maxLen: number): number {
-  if (k === 0) return Math.min(24, maxLen);
-  if (k === 1) return Math.min(60, maxLen);
-  return maxLen;
-}
-
-function splitForTts(text: string, maxLen: number): string[] {
-  // 按句末标点/换行切句并保留分隔符；空段过滤后拼接仍等于原文
-  const sentences =
-    text.match(/[^。！？!?；;\n]*[。！？!?；;\n]?/g)?.filter((s) => s.length) ?? [text];
-  const chunks: string[] = [];
-  let buf = "";
-  for (const s of sentences) {
-    if (buf && Array.from(buf + s).length > chunkCap(chunks.length, maxLen)) {
-      chunks.push(buf);
-      buf = "";
-    }
-    if (Array.from(s).length > chunkCap(chunks.length, maxLen)) {
-      // 单句仍超长（少见）：按当前段上限硬切
-      const cs = Array.from(s);
-      let i = 0;
-      while (i < cs.length) {
-        const c = chunkCap(chunks.length, maxLen);
-        chunks.push(cs.slice(i, i + c).join(""));
-        i += c;
-      }
-    } else {
-      buf += s;
-    }
-  }
-  if (buf) chunks.push(buf);
-  return chunks;
-}
+// 按句切段后逐段走**流式端点** /api/speech/tts-stream（边合成边播，首声 ~0.6–1s，
+// 远快于整段 REST 的 ~4.7s），服务端在每段合成完整时落缓存——首听按需实时合成、之后
+// 重听/其他孩子听同段即缓存命中(~7ms、免合成、免扣额度)。播当前段时并发预取下一段
+// （同时藏住段间等待 + 在服务端预热缓存）。各段拼接 === 原文，onWord 用全局字符索引高亮。
+// 切分逻辑(splitForTts/chunkCap/TTS_MAX_CHARS)抽在 ./speech/chunking，与服务端缓存键一致。
 
 /**
- * 分段朗读长文：按句切段(首段短→快速出声)，依次用云端 REST TTS 朗读；**播当前段时并发
- * 预取下一段音频**，段间近乎无缝。每段独立命中服务端缓存(重听免合成、免扣额度)。
+ * 分段朗读长文：按句切段(首段短→快速出声)，逐段走流式 TTS(边收边播、MSE 渐进追加)；
+ * **播当前段时并发预取下一段**，段间近乎无缝。首听实时合成并落缓存，重听走缓存秒开免扣额度。
  * onWord 用全局字符索引；pause/resume/stop 与 speakText 同形。
  */
 export function speakChunks(
@@ -564,27 +529,143 @@ export function speakChunks(
   let rafId: number | null = null;
   const ac = new AbortController();
   const audioCache: Array<Promise<HTMLAudioElement | null> | undefined> = [];
+  const objUrls: Array<string | null> = []; // 每段 blob / MediaSource 的 objectURL，stop/段末回收
+  const canMse =
+    typeof MediaSource !== "undefined" && MediaSource.isTypeSupported("audio/mpeg");
 
   const stopRaf = () => {
     if (rafId != null) cancelAnimationFrame(rafId);
     rafId = null;
   };
 
-  // 预取第 k 段音频（只取不播）；失败/未配置返回 null → 调用方回退 speakText。
+  const revoke = (k: number) => {
+    if (objUrls[k]) {
+      URL.revokeObjectURL(objUrls[k]!);
+      objUrls[k] = null;
+    }
+  };
+
+  // 预取第 k 段音频（只取不播）：走流式端点 /api/speech/tts-stream。
+  // 命中缓存→整段 mp3（带 Content-Length，时长已知）；未命中→MSE 渐进追加(边收边播)，
+  // 服务端在 final 时落缓存（重听免合成）。返回的 Promise 在「首帧就绪 / 整段就绪」时 resolve，
+  // 失败 / 空流 / 未配置 → null，调用方回退 speakText。
   const fetchAudio = (k: number): Promise<HTMLAudioElement | null> => {
     if (audioCache[k]) return audioCache[k]!;
     const p = (async (): Promise<HTMLAudioElement | null> => {
       try {
-        const res = await fetch("/api/speech/tts", {
-          method: "POST",
-          headers: { "content-type": "application/json" },
-          body: JSON.stringify({ text: chunks[k], lang, voice }),
-          signal: ac.signal,
-        });
-        if (!res.ok) return null;
-        const { audioBase64, format } = await res.json();
-        const a = new Audio(`data:audio/${format};base64,${audioBase64}`);
+        const url = `/api/speech/tts-stream?${new URLSearchParams({
+          text: chunks[k],
+          lang,
+          voice: String(voice),
+        }).toString()}`;
+        const res = await fetch(url, { signal: ac.signal });
+        if (!res.ok || !res.body) return null;
+
+        // 命中缓存（整段、带长度）或浏览器不支持 MSE → 整段 Blob：时长准确、不丢尾音。
+        if (res.headers.get("content-length") != null || !canMse) {
+          const blob = await res.blob();
+          if (!blob.size) return null;
+          objUrls[k] = URL.createObjectURL(blob);
+          const a = new Audio(objUrls[k]!);
+          if (opts.rate && opts.rate !== 1) a.playbackRate = opts.rate;
+          return a;
+        }
+
+        // 未命中：MSE 渐进追加。首帧到达即 resolve（首声快），其余在后台继续灌入。
+        const ms = new MediaSource();
+        objUrls[k] = URL.createObjectURL(ms);
+        const a = new Audio(objUrls[k]!);
         if (opts.rate && opts.rate !== 1) a.playbackRate = opts.rate;
+        const body = res.body;
+        let firstResolve!: () => void;
+        let firstReject!: (e: unknown) => void;
+        const firstFrame = new Promise<void>((rs, rj) => {
+          firstResolve = rs;
+          firstReject = rj;
+        });
+        void (async () => {
+          try {
+            await new Promise<void>((resolve) =>
+              ms.addEventListener("sourceopen", () => resolve(), { once: true }),
+            );
+            if (stopped) {
+              firstReject(new Error("stopped"));
+              return;
+            }
+            const sb = ms.addSourceBuffer("audio/mpeg");
+            const appendChunk = (chunk: Uint8Array) =>
+              new Promise<void>((resolve, reject) => {
+                const ok = () => {
+                  sb.removeEventListener("updateend", ok);
+                  sb.removeEventListener("error", no);
+                  resolve();
+                };
+                const no = () => {
+                  sb.removeEventListener("updateend", ok);
+                  sb.removeEventListener("error", no);
+                  reject(new Error("sourcebuffer append error"));
+                };
+                sb.addEventListener("updateend", ok);
+                sb.addEventListener("error", no);
+                // 拷进独立 ArrayBuffer（reader 的 Uint8Array 泛型不满足 appendBuffer 的 BufferSource）
+                const buf = new ArrayBuffer(chunk.byteLength);
+                new Uint8Array(buf).set(chunk);
+                sb.appendBuffer(buf);
+              });
+            const reader = body.getReader();
+            let gotFrame = false;
+            for (;;) {
+              const { done, value } = await reader.read();
+              if (stopped) {
+                firstReject(new Error("stopped")); // 首帧前已 resolve 时此为 no-op
+                try {
+                  await reader.cancel();
+                } catch {
+                  /* ignore */
+                }
+                return;
+              }
+              if (done) break;
+              if (value) {
+                await appendChunk(value);
+                if (!gotFrame) {
+                  gotFrame = true;
+                  firstResolve(); // 首帧已可播 → fetchAudio 可以返回这个 audio 了
+                }
+              }
+            }
+            if (!gotFrame) {
+              firstReject(new Error("empty stream"));
+              return;
+            }
+            // 流结束收尾：duration 才定得下来、尾音才播得全
+            if (!stopped && ms.readyState === "open") {
+              if (sb.updating) {
+                await new Promise((r) =>
+                  sb.addEventListener("updateend", () => r(null), { once: true }),
+                );
+              }
+              ms.endOfStream();
+            }
+          } catch (e) {
+            // 首帧前失败 → 让 fetchAudio 返回 null 走回退；首帧后失败 → 尽量收尾让 onended 触发
+            firstReject(e);
+            if (!stopped && ms.readyState === "open") {
+              try {
+                ms.endOfStream();
+              } catch {
+                /* ignore */
+              }
+            }
+          }
+        })();
+
+        try {
+          await firstFrame;
+        } catch {
+          revoke(k);
+          return null;
+        }
         return a;
       } catch {
         return null;
@@ -594,13 +675,18 @@ export function speakChunks(
     return p;
   };
 
+  // MSE 渐进播放期 duration 尚未定（要等 endOfStream），先按字数估总时长兜底高亮；
+  // 收尾后 a.duration 变真实值自动校正。命中缓存(整段)则一开始就是真实 duration。
+  const PER_TOKEN = lang.startsWith("zh") ? 0.2 : 0.32;
   const tick = (a: HTMLAudioElement, base: number, toks: string[]) => {
     if (stopped || a.paused || a.ended) {
       rafId = null;
       return;
     }
-    if (opts.onWord && a.duration && Number.isFinite(a.duration)) {
-      const i = Math.min(toks.length - 1, Math.floor((a.currentTime / a.duration) * toks.length));
+    if (opts.onWord && toks.length) {
+      const dur =
+        Number.isFinite(a.duration) && a.duration > 0 ? a.duration : toks.length * PER_TOKEN;
+      const i = Math.min(toks.length - 1, Math.floor((a.currentTime / dur) * toks.length));
       opts.onWord(base + i, toks[i] ?? "");
     }
     rafId = requestAnimationFrame(() => tick(a, base, toks));
@@ -640,7 +726,9 @@ export function speakChunks(
     idx = k;
     pendingNext = null;
     const ap = fetchAudio(k);
-    if (k + 1 < chunks.length) void fetchAudio(k + 1); // 并发预取下一段
+    // 播当前段时并发预取下一段：流式端点首帧即返回(~0.6–1s)，预取 1 段足以藏住段间，
+    // 同时把下一段在服务端合成并落缓存。深度保持 1 → 首听最多 2 路并发 WS，避开大模型并发限流。
+    if (k + 1 < chunks.length) void fetchAudio(k + 1);
     const a = await ap;
     if (stopped) return;
     if (!a) {
@@ -654,11 +742,13 @@ export function speakChunks(
     const toks = tokensPer[k];
     a.onended = () => {
       stopRaf();
+      revoke(k);
       if (currentAudio === a) currentAudio = null;
       advance(k + 1);
     };
     a.onerror = () => {
       stopRaf();
+      revoke(k);
       if (currentAudio === a) currentAudio = null;
       advance(k + 1);
     };
@@ -722,6 +812,7 @@ export function speakChunks(
         if (currentAudio === curAudio) currentAudio = null;
         curAudio = null;
       }
+      for (let i = 0; i < objUrls.length; i++) revoke(i); // 回收所有段的 objectURL
     },
   };
 }

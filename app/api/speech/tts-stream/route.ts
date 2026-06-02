@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { isSpeechConfigured } from "@/lib/speech/server/client";
-import { synthesizeStream } from "@/lib/speech/server/stream";
+import { synthesizeStream, readTtsStreamCache } from "@/lib/speech/server/stream";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,6 +23,21 @@ export async function GET(req: Request) {
   const voice = Number.isFinite(voiceRaw) && voiceRaw > 0 ? voiceRaw : undefined;
 
   try {
+    // 缓存优先：命中则直接整段下发（带 Content-Length，浏览器即知时长→高亮准、无尾音截断），
+    // 不再开 WS、不再合成、不扣额度。重听 / 其他孩子听同段即走此路。
+    const cached = await readTtsStreamCache(text, { lang, voice });
+    if (cached) {
+      // 拷进独立 Uint8Array<ArrayBuffer>：Node 的 Buffer<ArrayBufferLike> 不满足 BodyInit
+      const body = new Uint8Array(cached);
+      return new Response(body, {
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "Content-Length": String(body.byteLength),
+          "Cache-Control": "no-store",
+        },
+      });
+    }
+    // 未命中：流式合成边收边发，合成完整(final=1)时由 synthesizeStream 落缓存。
     const stream = synthesizeStream(text, { lang, voice });
     return new Response(stream, {
       headers: {

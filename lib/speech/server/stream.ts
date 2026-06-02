@@ -2,6 +2,7 @@ import "server-only";
 import { createHmac, randomUUID } from "crypto";
 import { isSpeechConfigured } from "./client";
 import { isValidVoice, DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN } from "../voices";
+import { ttsCacheKey, readTtsCache, writeTtsCache } from "../cache";
 
 // 流式文本语音合成（边合成边播）：腾讯云 WebSocket stream_wsv2，大模型音色支持。
 // 相比 REST TextToVoice（整段合成，首声 ~4.7s），首块音频 ~1s 即到。密钥只在服务端。
@@ -15,6 +16,23 @@ const SECRET_KEY = process.env.TENCENT_SECRETKEY;
 const APP_ID = process.env.TENCENT_APPID ?? "1307984055";
 const VOICE_ZH = Number(process.env.TTS_VOICE_ZH ?? DEFAULT_VOICE_ZH);
 const VOICE_EN = Number(process.env.TTS_VOICE_EN ?? DEFAULT_VOICE_EN);
+
+// 音色解析（路由查缓存键 与 synthesizeStream 合成/写缓存 必须用同一份 → 同一段文必然同一 key）。
+export function resolveStreamVoice(lang: string, voice?: number): number {
+  const isZh = (lang ?? "zh-CN").startsWith("zh");
+  return voice && isValidVoice(voice) ? voice : isZh ? VOICE_ZH : VOICE_EN;
+}
+
+// 路由「缓存优先」用：命中则返回整段 mp3（带 Content-Length，浏览器即知时长），不必开 WS。
+// 与 REST synthesize 共用同一 ttsCache：谁先合成谁落盘，之后两条路径都命中。
+export async function readTtsStreamCache(
+  text: string,
+  opts: { lang?: string; voice?: number } = {},
+): Promise<Buffer | null> {
+  const lang = opts.lang ?? "zh-CN";
+  const voice = resolveStreamVoice(lang, opts.voice);
+  return readTtsCache(ttsCacheKey(text, String(voice), lang));
+}
 
 function buildSignedUrl(voice: number): { url: string; sessionId: string } {
   const sessionId = randomUUID();
@@ -51,13 +69,15 @@ export function synthesizeStream(
 ): ReadableStream<Uint8Array> {
   if (!isSpeechConfigured()) throw new Error("speech not configured");
   const lang = opts.lang ?? "zh-CN";
-  const isZh = lang.startsWith("zh");
-  const voice =
-    opts.voice && isValidVoice(opts.voice) ? opts.voice : isZh ? VOICE_ZH : VOICE_EN;
+  const voice = resolveStreamVoice(lang, opts.voice);
   const { url, sessionId } = buildSignedUrl(voice);
+  const cacheKey = ttsCacheKey(text, String(voice), lang);
 
   let ws: WebSocket | null = null;
   let closed = false;
+  // 累积所有 mp3 帧：仅在收到 final=1（完整结束）时整段落缓存；
+  // 出错 / ws 异常关闭 / 客户端中断(cancel) 都不写 → 绝不缓存半段。
+  const parts: Uint8Array[] = [];
 
   return new ReadableStream<Uint8Array>({
     start(controller) {
@@ -107,11 +127,19 @@ export function synthesizeStream(
               }),
             );
           }
-          if (msg.final === 1) finish();
+          if (msg.final === 1) {
+            // 完整结束：整段 mp3 落缓存（失败不影响播放），再关闭流
+            writeTtsCache(cacheKey, Buffer.concat(parts)).catch(() => {});
+            finish();
+          }
           return;
         }
-        // 二进制帧：mp3 音频
-        if (!closed) controller.enqueue(new Uint8Array(ev.data as ArrayBuffer));
+        // 二进制帧：mp3 音频（既下发浏览器，也累积以便 final 时落缓存）
+        if (!closed) {
+          const bytes = new Uint8Array(ev.data as ArrayBuffer);
+          parts.push(bytes);
+          controller.enqueue(bytes);
+        }
       });
 
       ws.addEventListener("error", () => finish(new Error("tts ws error")));
