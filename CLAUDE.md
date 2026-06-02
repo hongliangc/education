@@ -90,10 +90,11 @@ sfx.click()   // 点击
 
 ## 自带 Skills（项目本地）
 
-`.claude/skills/mlk-*` 下有 6 个项目本地 skill，按 frontmatter description 自动加载，无需手动 `/skill-name` 调用：
+`.claude/skills/mlk-*` 下有 7 个项目本地 skill，按 frontmatter description 自动加载，无需手动 `/skill-name` 调用：
 
 - **mlk-add-game-module** — 新游戏模块脚手架（含 Game.tsx.tmpl + content.ts.tmpl）
 - **mlk-add-knowledge-pack** — 加内容 / 加知识问答 / 考试模式
+- **mlk-adapt-classic-story** — 改编经典名著为儿童章节（西游记等）的篇幅/人物/社会现实 rubric
 - **mlk-add-api-route** — 新 API 路由（auth + 校验 + Prisma 模板）
 - **mlk-component-conventions** — UI 组件 / 动画 / 颜色约定
 - **mlk-audio-speech-recipes** — useSFX + Web Speech cookbook

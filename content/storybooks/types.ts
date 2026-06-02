@@ -12,7 +12,7 @@ export interface Chapter {
   idx: number; // 0-based；决定顺序解锁与续读
   title: string;
   emoji: string;
-  text: string; // 改编儿童版正文，约 300–600 字；段落用 \n 分隔（StoryReader 逐字渲染）
+  text: string; // 改编儿童版正文；段落用 \n 分隔（StoryReader 逐字渲染）。篇幅/人物/改编风格标准 → skill: mlk-adapt-classic-story（唯一真源）
   questions: StoryQuestion[]; // 每章 2–3 题
   moral?: string; // 章末道理；短篇必填，长篇可逐章给或书末给
 }
