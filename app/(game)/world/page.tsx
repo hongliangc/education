@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { FairyBubble } from "@/components/fairy/FairyBubble";
+import { FairyChat } from "@/components/fairy/FairyChat";
 import { useSFX } from "@/components/audio/useSFX";
 import { MODULES, MODULE_META, type ModuleId } from "@/lib/utils";
 
@@ -14,13 +15,34 @@ interface NodeProgress {
   masteryPct: number;
 }
 
+type WorldNode =
+  | { kind: "module"; id: ModuleId; x: number; y: number }
+  | {
+      kind: "theater";
+      id: "THEATER";
+      x: number;
+      y: number;
+      label: string;
+      emoji: string;
+      color: string;
+    };
+
 // 关卡节点在 SVG viewBox 0..1000 x 0..600 中的位置
-const NODES: { id: ModuleId; x: number; y: number }[] = [
-  { id: "WRITING",  x: 150, y: 460 },
-  { id: "ALPHABET", x: 340, y: 320 },
-  { id: "MATH",     x: 520, y: 460 },
-  { id: "WORDS",    x: 720, y: 280 },
-  { id: "STORY",    x: 880, y: 460 },
+const NODES: WorldNode[] = [
+  { kind: "module", id: "WRITING",  x: 135, y: 460 },
+  { kind: "module", id: "ALPHABET", x: 310, y: 320 },
+  { kind: "module", id: "MATH",     x: 480, y: 460 },
+  { kind: "module", id: "WORDS",    x: 665, y: 285 },
+  { kind: "module", id: "STORY",    x: 835, y: 455 },
+  {
+    kind: "theater",
+    id: "THEATER",
+    x: 905,
+    y: 225,
+    label: "视频影院",
+    emoji: "🎬",
+    color: "#fb7185",
+  },
 ];
 
 export default function WorldMapPage() {
@@ -28,6 +50,7 @@ export default function WorldMapPage() {
   const child = useGameStore((s) => s.activeChild);
   const [progressMap, setProgressMap] = useState<Record<string, NodeProgress>>({});
   const [hello, setHello] = useState<string | null>(null);
+  const [chatOpen, setChatOpen] = useState(false);
   const { sfx } = useSFX();
 
   useEffect(() => {
@@ -53,7 +76,12 @@ export default function WorldMapPage() {
 
   const open = (m: ModuleId) => {
     sfx.click();
-    router.push(`/play/${m.toLowerCase()}`);
+    router.push(m === "STORY" ? "/story" : `/play/${m.toLowerCase()}`);
+  };
+
+  const openTheater = () => {
+    sfx.click();
+    router.push("/theater");
   };
 
   return (
@@ -61,9 +89,49 @@ export default function WorldMapPage() {
       <div className="max-w-5xl mx-auto">
         {hello && (
           <div className="mb-6">
-            <FairyBubble text={hello} mood="excited" />
+            <button
+              onClick={() => setChatOpen(true)}
+              className="block text-left"
+              aria-label="和精灵聊天"
+            >
+              <FairyBubble text={hello} mood="excited" />
+              <div className="mt-1 ml-2 text-xs font-bold text-white/90 drop-shadow animate-bounce">
+                👆 点我问问题
+              </div>
+            </button>
           </div>
         )}
+
+        {/* 模块选择器（顶部） */}
+        <div className="mb-6">
+          <div className="mb-2 px-1 text-sm font-bold text-white/90 drop-shadow">
+            选一个去玩 🎮
+          </div>
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+            {MODULES.map((m) => {
+              const meta = MODULE_META[m];
+              return (
+                <button
+                  key={m}
+                  onClick={() => open(m)}
+                  aria-label={`进入${meta.label}`}
+                  className="rounded-2xl bg-white/80 py-3 shadow ring-1 ring-white backdrop-blur transition hover:scale-105"
+                >
+                  <div className="text-3xl">{meta.emoji}</div>
+                  <div className="text-xs font-bold text-slate-700">{meta.label}</div>
+                </button>
+              );
+            })}
+            <button
+              onClick={openTheater}
+              aria-label="进入视频影院"
+              className="rounded-2xl bg-white/80 py-3 shadow ring-1 ring-white backdrop-blur transition hover:scale-105"
+            >
+              <div className="text-3xl">🎬</div>
+              <div className="text-xs font-bold text-slate-700">视频影院</div>
+            </button>
+          </div>
+        </div>
 
         <div className="relative rounded-[2.5rem] bg-white/30 backdrop-blur ring-1 ring-white/40 shadow-xl overflow-hidden">
           <svg viewBox="0 0 1000 600" className="w-full h-auto block">
@@ -85,15 +153,18 @@ export default function WorldMapPage() {
             })}
 
             {NODES.map((n) => {
-              const meta = MODULE_META[n.id];
-              const prog = progressMap[n.id];
+              const meta =
+                n.kind === "module"
+                  ? MODULE_META[n.id]
+                  : { label: n.label, emoji: n.emoji, color: n.color };
+              const prog = n.kind === "module" ? progressMap[n.id] : undefined;
               const stars = prog?.stars ?? 0;
               return (
                 <g
                   key={n.id}
                   transform={`translate(${n.x} ${n.y})`}
                   className="cursor-pointer"
-                  onClick={() => open(n.id)}
+                  onClick={() => (n.kind === "module" ? open(n.id) : openTheater())}
                 >
                   <circle r="56" fill="white" opacity="0.7" />
                   <circle
@@ -127,9 +198,11 @@ export default function WorldMapPage() {
                     fontSize="18"
                     fill="#fde047"
                   >
-                    {Array.from({ length: 3 })
-                      .map((_, i) => (i < Math.min(3, Math.floor(stars / 3)) ? "★" : "☆"))
-                      .join("")}
+                    {n.kind === "module"
+                      ? Array.from({ length: 3 })
+                          .map((_, i) => (i < Math.min(3, Math.floor(stars / 3)) ? "★" : "☆"))
+                          .join("")
+                      : "看视频"}
                   </text>
                 </g>
               );
@@ -145,24 +218,14 @@ export default function WorldMapPage() {
             <div className="font-bold text-slate-700">完成 3 个关卡赢取额外 ⭐⭐⭐</div>
           </div>
         </div>
-
-        {/* 调试用：所有模块快捷入口 */}
-        <div className="mt-6 grid grid-cols-2 sm:grid-cols-5 gap-2">
-          {MODULES.map((m) => {
-            const meta = MODULE_META[m];
-            return (
-              <button
-                key={m}
-                onClick={() => open(m)}
-                className="rounded-2xl bg-white/80 backdrop-blur py-3 shadow ring-1 ring-white hover:scale-105 transition"
-              >
-                <div className="text-3xl">{meta.emoji}</div>
-                <div className="text-xs font-bold text-slate-700">{meta.label}</div>
-              </button>
-            );
-          })}
-        </div>
       </div>
+
+      {chatOpen && (
+        <FairyChat
+          child={{ name: child.name, totalStars: child.totalStars }}
+          onClose={() => setChatOpen(false)}
+        />
+      )}
     </main>
   );
 }

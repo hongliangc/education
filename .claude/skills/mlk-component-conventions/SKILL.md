@@ -13,6 +13,16 @@ description: Use when modifying UI in the Magic Learning Kingdom (魔法学习�
 - 修改精灵表情/位置/对话框
 - 加载骨架屏、错误提示样式
 
+## UI 框架选型（自研优先，按需可用外部）
+
+**默认走自研**：儿童端 UI 用本项目自研系统（`Btn` / `GameModal` / `FairySprite` / `anim-*` / Web Audio / Web Speech），保住糖果色可爱风格——shadcn 的中性/暗色 SaaS 审美与之错位。**别为"自研而自研"**。
+
+**按需可用外部**：若某个具体需求点有现成外部组件能**快速上线**、又不破坏可爱风格，就务实地用它，不必硬手搓。判断点 = 「这块是否要可爱定制感」——要 → 自研；偏标准/数据/表单且赶工期 → 可上外部库。
+
+- 明确适合外部的场景：**家长后台 / 后台管理**（SaaS 式数据界面）→ `npx shadcn init` + shadcn/ui + Lucide 图标 + 图表（Recharts/Tremor）；Radix 自带 a11y，组件拷进项目可自由改主题（Tailwind 4 + React 19 + Next 16 用新 CLI）。
+- **Framer Motion 暂缓**：现有 CSS `anim-*` 够用；连续状态切换/物理动画/列表 reorder 才上（见下方动画段）。
+- 通用过程习惯：先描述"想要的感受"而非点名组件；每个组件补齐 loading / empty / error / hover 四态。
+
 ## 颜色令牌
 
 `lib/design-tokens.ts` 导出 `T`，与 Tailwind 4 `@theme inline` 同步：
@@ -99,8 +109,8 @@ Size：sm（紧凑）/ md（默认）/ lg（CTA）。
 ## 验证
 
 改完 UI 后：
-1. `npx tsc --noEmit` 不报错
-2. 浏览器打开对应页面，目测动画流畅度
-3. Lighthouse a11y 分数不下降（C 批后会加自动检查）
+1. 类型检查：见 `AGENTS.md` 标准验证。
+2. 浏览器打开对应页面，目测动画流畅度。
+3. Lighthouse a11y 分数不下降（C 批后会加自动检查）。
 
 Last verified against: prisma schema v1 · Next.js 16.2.6 · Tailwind 4 · 2026-05-27

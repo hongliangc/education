@@ -1,0 +1,226 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { Btn } from "@/components/Btn";
+import { VideoPlayer } from "@/components/video/VideoPlayer";
+import { useSFX } from "@/components/audio/useSFX";
+import { useGameStore } from "@/store/gameStore";
+
+interface VideoItem {
+  id: string;
+  title: string;
+  posterUrl?: string;
+  durationSec?: number;
+  resolution?: string;
+  ageBand?: string;
+  subject?: string;
+  summary?: string;
+  order: number;
+}
+
+interface PlayInfo {
+  url: string;
+  quality?: string;
+}
+
+function formatDuration(seconds: number | undefined): string {
+  if (!seconds) return "短片";
+  const minutes = Math.floor(seconds / 60);
+  const rest = seconds % 60;
+  if (minutes <= 0) return `${rest}秒`;
+  return `${minutes}:${String(rest).padStart(2, "0")}`;
+}
+
+export default function TheaterPage() {
+  const router = useRouter();
+  const child = useGameStore((state) => state.activeChild);
+  const { sfx } = useSFX();
+  const [videos, setVideos] = useState<VideoItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [catalogError, setCatalogError] = useState<string | null>(null);
+  const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
+  const [playInfo, setPlayInfo] = useState<PlayInfo | null>(null);
+  const [playLoading, setPlayLoading] = useState(false);
+  const [playError, setPlayError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!child) {
+      router.replace("/child-select");
+    }
+  }, [child, router]);
+
+  useEffect(() => {
+    if (!child) return;
+    let cancelled = false;
+
+    async function loadVideos() {
+      setLoading(true);
+      setCatalogError(null);
+      try {
+        const res = await fetch("/api/videos");
+        if (!res.ok) throw new Error("catalog_failed");
+        const json = (await res.json()) as { videos?: VideoItem[] };
+        if (!cancelled) setVideos(json.videos ?? []);
+      } catch {
+        if (!cancelled) setCatalogError("视频暂时看不了，等一下再试试。");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadVideos();
+    return () => {
+      cancelled = true;
+    };
+  }, [child]);
+
+  const sortedVideos = useMemo(
+    () => videos.toSorted((a, b) => a.order - b.order || a.title.localeCompare(b.title, "zh-CN")),
+    [videos],
+  );
+
+  const openVideo = async (video: VideoItem) => {
+    sfx.click();
+    setActiveVideo(video);
+    setPlayInfo(null);
+    setPlayError(null);
+    setPlayLoading(true);
+
+    try {
+      const res = await fetch(`/api/videos/${video.id}/play`);
+      if (!res.ok) throw new Error("play_failed");
+      const json = (await res.json()) as { play?: PlayInfo };
+      if (!json.play?.url) throw new Error("play_missing");
+      setPlayInfo(json.play);
+    } catch {
+      setPlayError("这个视频暂时打不开。");
+    } finally {
+      setPlayLoading(false);
+    }
+  };
+
+  if (!child) return null;
+
+  return (
+    <main className="min-h-screen px-4 pb-12 pt-20">
+      <div className="mx-auto max-w-6xl">
+        <header className="mb-5 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => router.push("/world")}
+            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/75 text-2xl font-black text-slate-700 shadow ring-1 ring-white"
+            aria-label="返回世界地图"
+          >
+            ‹
+          </button>
+          <div className="min-w-0 flex-1">
+            <h1 className="text-3xl font-black text-white drop-shadow sm:text-4xl">
+              🎬 视频影院
+            </h1>
+            <p className="mt-1 text-sm font-bold text-white/90 drop-shadow">
+              {child.name}，挑一个动画片或知识科普视频吧
+            </p>
+          </div>
+        </header>
+
+        {loading && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                key={index}
+                className="aspect-[3/4] animate-pulse rounded-3xl bg-white/55 shadow ring-1 ring-white/60"
+              />
+            ))}
+          </div>
+        )}
+
+        {!loading && catalogError && (
+          <div className="rounded-3xl bg-white/90 p-6 text-center shadow-xl ring-1 ring-white">
+            <div className="mb-2 text-5xl">☁️</div>
+            <p className="mb-4 text-lg font-bold text-slate-700">{catalogError}</p>
+            <Btn variant="secondary" onClick={() => window.location.reload()}>
+              再试一次
+            </Btn>
+          </div>
+        )}
+
+        {!loading && !catalogError && sortedVideos.length === 0 && (
+          <div className="rounded-3xl bg-white/90 p-6 text-center shadow-xl ring-1 ring-white">
+            <div className="mb-2 text-5xl">📁</div>
+            <p className="text-lg font-bold text-slate-700">视频库还是空的。</p>
+          </div>
+        )}
+
+        {!loading && !catalogError && sortedVideos.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            {sortedVideos.map((video) => (
+              <button
+                key={video.id}
+                type="button"
+                onClick={() => void openVideo(video)}
+                className="group overflow-hidden rounded-3xl bg-white/90 text-left shadow-xl ring-1 ring-white transition hover:-translate-y-1 hover:shadow-2xl"
+              >
+                <div className="relative aspect-[3/4] bg-gradient-to-br from-sky-200 via-emerald-100 to-amber-100">
+                  {video.posterUrl ? (
+                    <img
+                      src={video.posterUrl}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      referrerPolicy="no-referrer"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-6xl">🎞️</div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent p-3">
+                    <span className="rounded-full bg-white/90 px-2 py-1 text-xs font-black text-slate-700">
+                      {formatDuration(video.durationSec)}
+                    </span>
+                    {(video.subject || video.ageBand) && (
+                      <span className="rounded-full bg-emerald-300 px-2 py-1 text-xs font-black text-emerald-950">
+                        {video.subject ?? video.ageBand}
+                      </span>
+                    )}
+                  </div>
+                </div>
+                <div className="p-3">
+                  <h2 className="line-clamp-2 min-h-10 text-base font-black text-slate-700">
+                    {video.title}
+                  </h2>
+                  {video.summary ? (
+                    <p className="mt-1 line-clamp-2 text-xs font-bold text-slate-500">
+                      {video.summary}
+                    </p>
+                  ) : video.resolution ? (
+                    <p className="mt-1 text-xs font-bold text-slate-400">{video.resolution}</p>
+                  ) : null}
+                  {video.subject && video.ageBand && (
+                    <p className="mt-2 inline-flex rounded-full bg-sky-100 px-2 py-1 text-xs font-black text-sky-700">
+                      {video.ageBand}
+                    </p>
+                  )}
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {activeVideo && (
+        <VideoPlayer
+          title={activeVideo.title}
+          posterUrl={activeVideo.posterUrl}
+          src={playInfo?.url}
+          loading={playLoading}
+          error={playError ?? undefined}
+          onBack={() => {
+            setActiveVideo(null);
+            setPlayInfo(null);
+            setPlayError(null);
+            setPlayLoading(false);
+          }}
+        />
+      )}
+    </main>
+  );
+}

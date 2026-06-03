@@ -57,17 +57,7 @@ description: Use when adding a new interactive learning game module to the Magic
 
 ## 验证
 
-```bash
-# 1. 类型检查
-wsl -e bash -ic "cd ~/workspace/education && npx tsc --noEmit"
-# 期望：无错误
-
-# 2. 启动并体验
-wsl -e bash -ic "cd ~/workspace/education && npm run dev"
-# 然后打开 http://localhost:3000，登录 → 选孩子 → 世界地图
-# 期望：新节点出现，点击进入能玩一轮
-```
-
-完成一轮后查看 `/api/progress/[childId]`，应当看到新 module 的 `LearningProgress` 记录。
+- 类型检查：见 `AGENTS.md` 标准验证。
+- 启动并体验（见 `mlk-local-dev`）：新节点出现、点进能玩一轮；完成一轮后 `/api/progress/[childId]` 应有新 module 的 `LearningProgress` 记录。
 
 Last verified against: prisma schema v1 · Next.js 16.2.6 · 2026-05-27

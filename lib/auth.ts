@@ -4,6 +4,8 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // 反向代理（nginx 容器）后面需要信任转发来的 Host
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: {
     signIn: "/login",

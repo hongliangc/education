@@ -1,9 +1,10 @@
 // 魔法学习王国 — Prisma Schema
-// 注：开发环境使用 SQLite。生产环境可切换 PostgreSQL（参考 docs/01）。
-// SQLite 不支持 enum，因此用 String + 应用层校验。
+// 数据库：PostgreSQL（2026-05-30 全栈容器化后由 SQLite 切换）。
+// 容器栈见 docker-compose.yml；本地开发也连容器里的 Postgres（5432 已映射宿主机）。
+// 注：沿用 String + 应用层校验代替 enum（SQLite 时期约定，PG 同样适用）。
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -24,23 +25,24 @@ model User {
 }
 
 model Child {
-  id            String             @id @default(cuid())
-  parentId      String
-  parent        User               @relation(fields: [parentId], references: [id], onDelete: Cascade)
-  name          String
-  age           Int
-  avatar        String             @default("🌸")
-  fairyLevel    Int                @default(1)
-  totalStars    Int                @default(0)
-  hearts        Int                @default(3)
-  streakDays    Int                @default(0)
-  lastLoginDate DateTime?
-  progress      LearningProgress[]
-  sessions      GameSession[]
-  achievements  Achievement[]
-  weeklyReports WeeklyReport[]
-  fairyDialogs  FairyDialogue[]
-  createdAt     DateTime           @default(now())
+  id              String             @id @default(cuid())
+  parentId        String
+  parent          User               @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  name            String
+  age             Int
+  avatar          String             @default("🌸")
+  fairyLevel      Int                @default(1)
+  totalStars      Int                @default(0)
+  hearts          Int                @default(3)
+  streakDays      Int                @default(0)
+  lastLoginDate   DateTime?
+  progress        LearningProgress[]
+  sessions        GameSession[]
+  achievements    Achievement[]
+  weeklyReports   WeeklyReport[]
+  fairyDialogs    FairyDialogue[]
+  readingProgress ReadingProgress[]
+  createdAt       DateTime           @default(now())
 
   @@index([parentId])
 }
@@ -115,5 +117,19 @@ model Achievement {
   badge    String
   earnedAt DateTime @default(now())
 
+  @@index([childId])
+}
+
+model ReadingProgress {
+  id                String   @id @default(cuid())
+  childId           String
+  child             Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  bookId            String // StoryBook.id（内容层常量，非外键）
+  lastChapterIdx    Int      @default(0) // 续读书签：最近阅读到的章节
+  completedChapters Int      @default(0) // 已通关章节数（顺序解锁依据）
+  finished          Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
+
+  @@unique([childId, bookId])
   @@index([childId])
 }

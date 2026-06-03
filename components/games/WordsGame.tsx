@@ -11,7 +11,13 @@ import { GameDone } from "./GameDone";
 
 const ROUND_SIZE = 4;
 
-export function WordsGame({ onComplete }: { onComplete: OnComplete }) {
+export function WordsGame({
+  onComplete,
+  onExit,
+}: {
+  onComplete: OnComplete;
+  onExit: () => void;
+}) {
   const [round, setRound] = useState<WordPair[]>(() => shuffle(WORDS).slice(0, ROUND_SIZE));
   const [matched, setMatched] = useState<Set<string>>(new Set());
   const [selectedZh, setSelectedZh] = useState<string | null>(null);
@@ -39,7 +45,7 @@ export function WordsGame({ onComplete }: { onComplete: OnComplete }) {
           setDone(false);
           startedAt.current = Date.now();
         }}
-        onClose={() => undefined}
+        onClose={onExit}
       />
     );
   }

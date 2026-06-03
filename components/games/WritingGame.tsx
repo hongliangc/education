@@ -10,7 +10,13 @@ import { GameDone } from "./GameDone";
 
 const ROUND_CHARS = 4;
 
-export function WritingGame({ onComplete }: { onComplete: OnComplete }) {
+export function WritingGame({
+  onComplete,
+  onExit,
+}: {
+  onComplete: OnComplete;
+  onExit: () => void;
+}) {
   const [round] = useState(() => CHARS.slice(0, ROUND_CHARS));
   const [idx, setIdx] = useState(0);
   const [doneInRound, setDoneInRound] = useState(0);
@@ -43,7 +49,7 @@ export function WritingGame({ onComplete }: { onComplete: OnComplete }) {
           startedAt.current = Date.now();
           drawGuide(canvasRef.current, round[0].char);
         }}
-        onClose={() => undefined}
+        onClose={onExit}
       />
     );
   }

@@ -8,7 +8,6 @@ import { WritingGame } from "@/components/games/WritingGame";
 import { AlphabetGame } from "@/components/games/AlphabetGame";
 import { WordsGame } from "@/components/games/WordsGame";
 import { MathGame } from "@/components/games/MathGame";
-import { StoryGame } from "@/components/games/StoryGame";
 import { useGameStore } from "@/store/gameStore";
 import { useEffect } from "react";
 
@@ -38,8 +37,14 @@ export default function PlayPage({
     if (!child) router.replace("/child-select");
   }, [child, router]);
 
+  // 故事模块已迁移到全屏 /story（B1）；/play/story 重定向过去
+  useEffect(() => {
+    if (slug === "story") router.replace("/story");
+  }, [slug, router]);
+
   if (!moduleId) return notFound();
   if (!child) return null;
+  if (slug === "story") return null; // 已重定向到 /story
 
   const meta = MODULE_META[moduleId];
   const back = () => router.push("/world");
@@ -69,11 +74,10 @@ export default function PlayPage({
 
   return (
     <GameModal title={meta.label} emoji={meta.emoji} color={meta.color} onClose={back}>
-      {slug === "writing" && <WritingGame onComplete={onSessionComplete} />}
-      {slug === "alphabet" && <AlphabetGame onComplete={onSessionComplete} />}
-      {slug === "words" && <WordsGame onComplete={onSessionComplete} />}
-      {slug === "math" && <MathGame onComplete={onSessionComplete} />}
-      {slug === "story" && <StoryGame onComplete={onSessionComplete} />}
+      {slug === "writing" && <WritingGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "alphabet" && <AlphabetGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "words" && <WordsGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "math" && <MathGame onComplete={onSessionComplete} onExit={back} />}
     </GameModal>
   );
 }

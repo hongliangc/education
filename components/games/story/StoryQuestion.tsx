@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
 import { speakText } from "@/lib/speech";
-import type { StoryQuestion as StoryQuestionData } from "@/content/stories";
+import type { StoryQuestion as StoryQuestionData } from "@/content/storybooks/types";
 
 export function StoryQuestion({
   question,
