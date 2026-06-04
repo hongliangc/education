@@ -67,7 +67,7 @@ export default function WorldMapPage() {
         setProgressMap(map);
       }
       setHello(
-        `今天好呀，${child.name}！\n你已经获得 ${child.totalStars} 颗星啦 ⭐\n选一个关卡开始冒险吧！`,
+        `今天好呀，${child.name}！\n你现在有 ${child.totalStars} 颗星啦 ⭐\n选一个关卡开始冒险吧！`,
       );
     })();
   }, [child, router]);

@@ -42,6 +42,7 @@ model Child {
   weeklyReports   WeeklyReport[]
   fairyDialogs    FairyDialogue[]
   readingProgress ReadingProgress[]
+  videoUnlocks    VideoUnlock[]
   createdAt       DateTime           @default(now())
 
   @@index([parentId])
@@ -131,5 +132,17 @@ model ReadingProgress {
   updatedAt         DateTime @updatedAt
 
   @@unique([childId, bookId])
+  @@index([childId])
+}
+
+model VideoUnlock {
+  id         String   @id @default(cuid())
+  childId    String
+  child      Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  videoId    String
+  starsCost  Int
+  unlockedAt DateTime @default(now())
+
+  @@unique([childId, videoId])
   @@index([childId])
 }

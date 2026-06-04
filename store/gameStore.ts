@@ -18,6 +18,7 @@ interface GameState {
   activeChild: ChildSummary | null;
   setActiveChild: (c: ChildSummary | null) => void;
   bumpStars: (n: number) => void;
+  setStars: (total: number) => void;
 }
 
 export const useGameStore = create<GameState>()(
@@ -29,6 +30,12 @@ export const useGameStore = create<GameState>()(
         set((s) =>
           s.activeChild
             ? { activeChild: { ...s.activeChild, totalStars: s.activeChild.totalStars + n } }
+            : s,
+        ),
+      setStars: (total) =>
+        set((s) =>
+          s.activeChild
+            ? { activeChild: { ...s.activeChild, totalStars: Math.max(0, Math.floor(total)) } }
             : s,
         ),
     }),

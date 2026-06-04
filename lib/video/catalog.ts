@@ -6,6 +6,7 @@ import {
   listAliyunFiles,
   type AliyunOpenFile,
 } from "@/lib/aliyun/client";
+import { resolveVideoCost } from "@/lib/video/unlock";
 
 const CATALOG_TTL_MS = 10 * 60 * 1000;
 const VIDEO_EXTENSIONS = new Set(["mp4", "mkv", "mov", "m4v", "webm", "avi", "ts"]);
@@ -21,6 +22,7 @@ export interface VideoItem {
   subject?: string;
   summary?: string;
   order: number;
+  cost: number;
 }
 
 interface CatalogOverride {
@@ -34,6 +36,7 @@ interface CatalogOverride {
   subject?: string;
   summary?: string;
   poster?: string;
+  cost?: unknown;
 }
 
 interface CachedCatalog {
@@ -164,6 +167,7 @@ export async function getVideoCatalog(forceRefresh = false): Promise<VideoItem[]
         subject: override?.subject,
         summary: override?.summary,
         order: override?.order ?? index + 1,
+        cost: resolveVideoCost(override?.cost),
       };
     }),
   );
@@ -175,11 +179,4 @@ export async function getVideoCatalog(forceRefresh = false): Promise<VideoItem[]
   };
 
   return sortedItems;
-}
-
-export async function assertVideoInCatalog(id: string): Promise<void> {
-  const items = await getVideoCatalog();
-  if (!items.some((item) => item.id === id)) {
-    throw new AliyunApiError("Video file is not in catalog", 404);
-  }
 }

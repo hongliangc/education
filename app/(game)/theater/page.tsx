@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/Btn";
+import { GameModal } from "@/components/GameModal";
 import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { useSFX } from "@/components/audio/useSFX";
 import { useGameStore } from "@/store/gameStore";
@@ -17,6 +18,8 @@ interface VideoItem {
   subject?: string;
   summary?: string;
   order: number;
+  cost: number;
+  unlocked: boolean;
 }
 
 interface PlayInfo {
@@ -35,11 +38,15 @@ function formatDuration(seconds: number | undefined): string {
 export default function TheaterPage() {
   const router = useRouter();
   const child = useGameStore((state) => state.activeChild);
+  const setStars = useGameStore((state) => state.setStars);
   const { sfx } = useSFX();
   const [videos, setVideos] = useState<VideoItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
+  const [pendingUnlock, setPendingUnlock] = useState<VideoItem | null>(null);
+  const [unlockLoading, setUnlockLoading] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
   const [playInfo, setPlayInfo] = useState<PlayInfo | null>(null);
   const [playLoading, setPlayLoading] = useState(false);
   const [playError, setPlayError] = useState<string | null>(null);
@@ -52,13 +59,14 @@ export default function TheaterPage() {
 
   useEffect(() => {
     if (!child) return;
+    const activeChild = child;
     let cancelled = false;
 
     async function loadVideos() {
       setLoading(true);
       setCatalogError(null);
       try {
-        const res = await fetch("/api/videos");
+        const res = await fetch(`/api/videos?childId=${encodeURIComponent(activeChild.id)}`);
         if (!res.ok) throw new Error("catalog_failed");
         const json = (await res.json()) as { videos?: VideoItem[] };
         if (!cancelled) setVideos(json.videos ?? []);
@@ -80,23 +88,81 @@ export default function TheaterPage() {
     [videos],
   );
 
-  const openVideo = async (video: VideoItem) => {
-    sfx.click();
+  const startPlayback = async (video: VideoItem) => {
+    if (!child) return;
+    const activeChild = child;
     setActiveVideo(video);
     setPlayInfo(null);
     setPlayError(null);
     setPlayLoading(true);
 
     try {
-      const res = await fetch(`/api/videos/${video.id}/play`);
+      const res = await fetch(
+        `/api/videos/${encodeURIComponent(video.id)}/play?childId=${encodeURIComponent(activeChild.id)}`,
+      );
+      if (res.status === 403) throw new Error("locked");
       if (!res.ok) throw new Error("play_failed");
       const json = (await res.json()) as { play?: PlayInfo };
       if (!json.play?.url) throw new Error("play_missing");
       setPlayInfo(json.play);
-    } catch {
-      setPlayError("这个视频暂时打不开。");
+    } catch (error) {
+      setPlayError(
+        error instanceof Error && error.message === "locked"
+          ? "先用小星星解锁吧。"
+          : "这个视频暂时打不开。",
+      );
     } finally {
       setPlayLoading(false);
+    }
+  };
+
+  const openVideo = (video: VideoItem) => {
+    sfx.click();
+    setUnlockError(null);
+    if (!video.unlocked) {
+      setPendingUnlock(video);
+      return;
+    }
+    void startPlayback(video);
+  };
+
+  const confirmUnlock = async () => {
+    if (!pendingUnlock || !child) return;
+    const activeChild = child;
+    setUnlockLoading(true);
+    setUnlockError(null);
+
+    try {
+      const res = await fetch(`/api/videos/${encodeURIComponent(pendingUnlock.id)}/unlock`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ childId: activeChild.id }),
+      });
+      const json = (await res.json().catch(() => ({}))) as {
+        balance?: number;
+        needed?: number;
+      };
+
+      if (res.status === 402) {
+        setUnlockError(`还差 ${json.needed ?? pendingUnlock.cost} 颗星，去闯关赚一赚吧！`);
+        return;
+      }
+      if (!res.ok || typeof json.balance !== "number") {
+        throw new Error("unlock_failed");
+      }
+
+      setStars(json.balance);
+      const unlockedVideo = { ...pendingUnlock, unlocked: true };
+      setVideos((items) =>
+        items.map((item) => (item.id === pendingUnlock.id ? unlockedVideo : item)),
+      );
+      setPendingUnlock(null);
+      sfx.coin();
+      void startPlayback(unlockedVideo);
+    } catch {
+      setUnlockError("解锁失败了，再试一次。");
+    } finally {
+      setUnlockLoading(false);
     }
   };
 
@@ -158,7 +224,7 @@ export default function TheaterPage() {
               <button
                 key={video.id}
                 type="button"
-                onClick={() => void openVideo(video)}
+                onClick={() => openVideo(video)}
                 className="group overflow-hidden rounded-3xl bg-white/90 text-left shadow-xl ring-1 ring-white transition hover:-translate-y-1 hover:shadow-2xl"
               >
                 <div className="relative aspect-[3/4] bg-gradient-to-br from-sky-200 via-emerald-100 to-amber-100">
@@ -182,6 +248,12 @@ export default function TheaterPage() {
                       </span>
                     )}
                   </div>
+                  {!video.unlocked && (
+                    <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-slate-950/75 px-3 py-1 text-sm font-black text-white shadow">
+                      <span aria-hidden="true">🔒</span>
+                      <span>⭐×{video.cost}</span>
+                    </div>
+                  )}
                 </div>
                 <div className="p-3">
                   <h2 className="line-clamp-2 min-h-10 text-base font-black text-slate-700">
@@ -220,6 +292,51 @@ export default function TheaterPage() {
             setPlayLoading(false);
           }}
         />
+      )}
+
+      {pendingUnlock && (
+        <GameModal
+          title="解锁动画片"
+          emoji="⭐"
+          color="#f59e0b"
+          onClose={() => {
+            if (!unlockLoading) {
+              setPendingUnlock(null);
+              setUnlockError(null);
+            }
+          }}
+        >
+          <div className="space-y-5 text-center">
+            <div>
+              <p className="text-lg font-black text-slate-700">
+                用 {pendingUnlock.cost}⭐ 解锁《{pendingUnlock.title}》吗？
+              </p>
+              <p className="mt-2 text-sm font-bold text-slate-500">
+                你现在有 {child.totalStars}⭐，解锁后可以一直重看。
+              </p>
+            </div>
+            {unlockError && (
+              <div className="rounded-2xl bg-amber-100 px-4 py-3 text-sm font-black text-amber-800">
+                {unlockError}
+              </div>
+            )}
+            <div className="flex flex-wrap justify-center gap-3">
+              <Btn
+                variant="ghost"
+                disabled={unlockLoading}
+                onClick={() => {
+                  setPendingUnlock(null);
+                  setUnlockError(null);
+                }}
+              >
+                返回
+              </Btn>
+              <Btn disabled={unlockLoading} onClick={() => void confirmUnlock()}>
+                {unlockLoading ? "解锁中..." : "确认解锁"}
+              </Btn>
+            </div>
+          </div>
+        </GameModal>
       )}
     </main>
   );
