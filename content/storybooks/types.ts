@@ -12,7 +12,7 @@ export interface Chapter {
   idx: number; // 0-based；决定顺序解锁与续读
   title: string;
   emoji: string;
-  text: string; // 改编儿童版正文；段落用 \n 分隔（StoryReader 逐字渲染）。篇幅/人物/改编风格标准 → skill: mlk-adapt-classic-story（唯一真源）
+  text: string; // 改编儿童版正文；段落用 \n 分隔（StoryPlayer 逐行字幕高亮）。篇幅/人物/改编风格标准 → skill: mlk-adapt-classic-story（唯一真源）
   questions: StoryQuestion[]; // 每章 2–3 题
   moral?: string; // 章末道理；短篇必填，长篇可逐章给或书末给
   images?: string[]; // 有序插画 public 相对路径（如 "/illustrations/<book>/x.webp"）；StoryPlayer 按朗读进度轮播；缺省回退 emoji
