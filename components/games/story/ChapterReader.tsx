@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { stopSpeaking } from "@/lib/speech";
 import type { Chapter } from "@/content/storybooks/types";
 import type { SessionResult } from "@/components/games/types";
-import { StoryReader } from "./StoryReader";
+import { StoryPlayer } from "./StoryPlayer";
 import { StoryQuestion } from "./StoryQuestion";
 import { StoryMoral } from "./StoryMoral";
 
@@ -44,9 +44,11 @@ export function ChapterReader({
       </h3>
 
       {phase === "reading" && (
-        <StoryReader
+        <StoryPlayer
           key={chapter.idx}
           text={chapter.text}
+          images={chapter.images ?? []}
+          fallbackEmoji={chapter.emoji}
           onFinish={() => setPhase("question")}
         />
       )}

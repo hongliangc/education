@@ -1,5 +1,5 @@
 // 语音封装：朗读优先走腾讯云大模型 TTS（真实童声），失败优雅回退 Web Speech；
-// STT 走云端「一句话识别」。对外导出签名保持稳定，games / StoryReader 仅需用新的 controller。
+// STT 走云端「一句话识别」。对外导出签名保持稳定，games / StoryPlayer 仅需用新的 controller。
 "use client";
 
 import { DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN } from "./speech/voices";

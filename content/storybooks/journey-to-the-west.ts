@@ -8,6 +8,7 @@ export const JOURNEY_TO_THE_WEST: StoryBook = {
   author: "根据公有领域《西游记》改编",
   kind: "novel",
   ageBand: "8-10",
+  cover: "/illustrations/journey-to-the-west/cover.webp",
   chapters: [
     {
       idx: 0,
@@ -28,6 +29,7 @@ export const JOURNEY_TO_THE_WEST: StoryBook = {
         { q: "下面哪一点最能看出美猴王的性格？", choices: ["胆子小，遇事爱往后躲", "爱记仇，谁先前对它不好就报复谁", "又勇敢又好奇，讲信用，还不记前嫌"], answer: 2, explain: "它敢闯瀑布、爱问源头、提醒猴子守诺，被冷落过也不记恨，是个又可爱又大方的猴王。" },
       ],
       moral: "勇敢和好奇能带你发现新天地，答应的事要记得算数；有人见你有本事才来捧你，不必太当真，也不必记恨。",
+      images: ["/illustrations/journey-to-the-west/shi-hou-chu-shi.webp"],
     },
     {
       idx: 1,
@@ -67,6 +69,10 @@ export const JOURNEY_TO_THE_WEST: StoryBook = {
         { q: "这一回里，悟空闯下大祸的根子是什么？", choices: ["一受委屈就由着性子乱来、管不住自己", "本领不够大", "运气太差"], answer: 0, explain: "天宫待他确实不公；可他一受委屈就由着脾气偷桃、搅宴，结果把事情越闹越大。" },
       ],
       moral: "天宫待他不公，悟空的委屈是真；可由着性子乱来，只会把事情越闹越糟。",
+      images: [
+        "/illustrations/journey-to-the-west/da-nao-tiangong-1.webp",
+        "/illustrations/journey-to-the-west/da-nao-tiangong-2.webp",
+      ],
     },
     {
       idx: 3,
@@ -86,6 +92,11 @@ export const JOURNEY_TO_THE_WEST: StoryBook = {
         { q: "被压在五行山下，悟空最后慢慢想明白了什么？", choices: ["本领再大，也要讲道理、守规矩，不能太骄傲", "要练更厉害的本领冲出去", "都怪如来不讲理"], answer: 0, explain: "山下的悟空火气消了，终于懂得：光有本事还不够，不讲规矩、太骄傲一样会栽大跟头。" },
       ],
       moral: "天宫待他确有不公，可本领越大，越要讲道理、守规矩；太骄傲、由着性子乱来，迟早要吃大亏。",
+      images: [
+        "/illustrations/journey-to-the-west/da-nao-tiangong.webp",
+        "/illustrations/journey-to-the-west/da-nao-tiangong-3.webp",
+        "/illustrations/journey-to-the-west/da-nao-tiangong-4.webp",
+      ],
     },
     {
       idx: 4,
@@ -107,6 +118,7 @@ export const JOURNEY_TO_THE_WEST: StoryBook = {
         { q: "唐僧为什么会错怪悟空、把他赶走？", choices: ["悟空真的打了好人", "悟空不肯听话", "他被妖怪的样子骗了，又信了八戒的坏话"], answer: 2, explain: "唐僧只看外表，又听信了八戒的挑拨，才误会了一直护着他的悟空。" },
       ],
       moral: "坏人常会装成好人，要用心分辨；也别轻信旁人的坏话，错怪了真心待你好的人。",
+      images: ["/illustrations/journey-to-the-west/san-da-bai-gu-jing.webp"],
     },
     {
       idx: 5,
