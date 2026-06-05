@@ -90,6 +90,13 @@ wsl -e bash -ic "curl -sI -X POST http://localhost:3000/api/<path> -o /dev/null 
 ## 脚本（scripts/）
 可复用脚本（dev 运维、数据校验等）放 `scripts/`、随仓库提交，`bash scripts/<name>.sh` 运行；一次性/临时操作写 `/tmp` 跑完即弃。清单与约定见 `scripts/README.md`。
 
+## Bugfix 主动触发流程
+- 用户报告缺陷、异常、回归或要求“修复”时，**开始诊断前**先将任务归类为 bugfix，并创建 `bugfix/YYYY-MM-DD-<slug>.md`；格式见 `bugfix/README.md`。
+- bugfix 记录是本次修复的轻量状态源：先写现象/复现，定位后补根因，改代码后补修复/测试/验证；不为局部 bugfix 创建 spec、plan 或 `.workflow` 工作项。
+- 创建记录后立即执行 `git status --short --branch` 和 `git log --oneline origin/main..HEAD`，确认当前分支、用户未提交改动和本地提交边界；不得把其他需求的改动纳入本次提交。
+- 同一 bug 从记录、代码、测试到文档只形成 **一个最终 commit**。开发期间默认不提交；若已产生中间提交，收尾时必须 amend/squash 后再汇报完成。
+- 最终提交信息包含记录 id：`fix(<scope>): <summary> [bugfix:YYYY-MM-DD-<slug>]`；完成时记录中的 `commit` 写 `this commit`（提交 SHA 用 `git log -- bugfix/<file>` 反查，避免自引用导致 SHA 改变）。
+
 ## 协作工作流（复杂任务才用）
 - 常规小改 / 文案 / 局部 bugfix / UI 小改 / 配置脚本:直接改并跑标准验证,不创建 `.workflow` 工作项。
 - 架构 / 跨模块 / schema / 安全 / 不可逆 / 多步跨会话的需求:才走 `.workflow/`。
