@@ -12,10 +12,74 @@ export function chunkCap(k: number, maxLen: number): number {
   return maxLen;
 }
 
+const SENTENCE_ENDS = new Set(["。", "！", "？", "!", "?", "；", ";", "\n"]);
+const CLOSING_QUOTES = new Set(["」", "』", "”", "’", "）", ")"]);
+const CLAUSE_ENDS = new Set(["，", ",", "、", "：", ":", "—"]);
+const WORD_SEGMENTER =
+  typeof Intl.Segmenter === "function"
+    ? new Intl.Segmenter("zh-CN", { granularity: "word" })
+    : null;
+
+function splitSentences(text: string): string[] {
+  const chars = Array.from(text);
+  const sentences: string[] = [];
+  let start = 0;
+
+  for (let i = 0; i < chars.length; i++) {
+    if (!SENTENCE_ENDS.has(chars[i] ?? "")) continue;
+
+    let end = i + 1;
+    while (end < chars.length && CLOSING_QUOTES.has(chars[end] ?? "")) end++;
+    sentences.push(chars.slice(start, end).join(""));
+    start = end;
+    i = end - 1;
+  }
+
+  if (start < chars.length) sentences.push(chars.slice(start).join(""));
+  return sentences;
+}
+
+function lastBoundary(chars: string[], cap: number, boundaries: Set<string>): number {
+  let cut = 0;
+  const limit = Math.min(chars.length, cap);
+  for (let i = 0; i < limit; i++) {
+    if (boundaries.has(chars[i] ?? "")) cut = i + 1;
+  }
+  return cut;
+}
+
+function lastWordBoundary(chars: string[], cap: number): number {
+  if (!WORD_SEGMENTER) return 0;
+
+  let cut = 0;
+  let position = 0;
+  for (const part of WORD_SEGMENTER.segment(chars.join(""))) {
+    position += Array.from(part.segment).length;
+    if (position > cap) break;
+    cut = position;
+  }
+  return cut;
+}
+
+function naturalCut(chars: string[], cap: number): number {
+  if (chars.length <= cap) return chars.length;
+
+  const sentenceCut = lastBoundary(chars, cap, SENTENCE_ENDS);
+  if (sentenceCut > 0) {
+    let cut = sentenceCut;
+    while (cut < cap && CLOSING_QUOTES.has(chars[cut] ?? "")) cut++;
+    return cut;
+  }
+
+  const clauseCut = lastBoundary(chars, cap, CLAUSE_ENDS);
+  if (clauseCut > 0) return clauseCut;
+
+  return lastWordBoundary(chars, cap) || cap;
+}
+
 export function splitForTts(text: string, maxLen: number = TTS_MAX_CHARS): string[] {
-  // 按句末标点/换行切句并保留分隔符；空段过滤后拼接仍等于原文
-  const sentences =
-    text.match(/[^。！？!?；;\n]*[。！？!?；;\n]?/g)?.filter((s) => s.length) ?? [text];
+  // 先保留完整句子；超长句再按自然停顿/词边界切，最后才退回精确字符上限。
+  const sentences = splitSentences(text);
   const chunks: string[] = [];
   let buf = "";
   for (const s of sentences) {
@@ -24,13 +88,13 @@ export function splitForTts(text: string, maxLen: number = TTS_MAX_CHARS): strin
       buf = "";
     }
     if (Array.from(s).length > chunkCap(chunks.length, maxLen)) {
-      // 单句仍超长（少见）：按当前段上限硬切
       const cs = Array.from(s);
       let i = 0;
       while (i < cs.length) {
         const c = chunkCap(chunks.length, maxLen);
-        chunks.push(cs.slice(i, i + c).join(""));
-        i += c;
+        const cut = naturalCut(cs.slice(i), c);
+        chunks.push(cs.slice(i, i + cut).join(""));
+        i += cut;
       }
     } else {
       buf += s;
