@@ -89,3 +89,9 @@ wsl -e bash -ic "curl -sI -X POST http://localhost:3000/api/<path> -o /dev/null 
 
 ## 脚本（scripts/）
 可复用脚本（dev 运维、数据校验等）放 `scripts/`、随仓库提交，`bash scripts/<name>.sh` 运行；一次性/临时操作写 `/tmp` 跑完即弃。清单与约定见 `scripts/README.md`。
+
+## 协作工作流（复杂任务才用）
+- 常规小改 / 文案 / 局部 bugfix / UI 小改 / 配置脚本:直接改并跑标准验证,不创建 `.workflow` 工作项。
+- 架构 / 跨模块 / schema / 安全 / 不可逆 / 多步跨会话的需求:才走 `.workflow/`。
+- 任一工具接手前先读 `.workflow/active.md`,只打开 `current` 指向的工作项目录,执行读其 `PLAN.md`/`EXEC-LOG.md`。
+- 完整流程与门禁见 `WORKFLOW.md`。

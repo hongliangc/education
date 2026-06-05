@@ -20,6 +20,8 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
 - **`smoke-health.sh`** — 起 dev server → 轮询 `/api/health` → 打印 health + 日志尾 → 关掉 dev。改完功能做一次性冒烟用。
 - **`dev-status.sh`** — 只读现状：dev 日志尾 + `:3000` 端口占用 + curl 可用性。dev 起不来/异常时先跑它看现场。
 - **`docker-recreate.sh`** — `docker compose up -d` 后轮询 `education-web-1` 健康状态直到 healthy（约 30s 超时）。容器模式重启栈用。
+- **`init-workflow.sh`** — 双工具协作工作流（`WORKFLOW.md`）的一键脚手架：在目标仓库铺 `.workflow/` 工作项结构、`PROJECT.md`、`skills/README.md`、`AGENTS.md` / `CLAUDE.md` 路由片段。幂等（`--force` 才覆盖）。**例外**：本脚本作用于「目标仓库」（默认 CWD / 可传目录参数），刻意**不** `cd` 回本项目根——它就是要拷到别的工程里跑。
+- **`check-routing-sync.sh`** — 校验 `WORKFLOW.md` §3 路由块与 `scripts/init-workflow.sh` 的 `emit_routing()` 输出保持同步。
 
 ## 待补（下次需要时直接写成本目录脚本，别再写 `/tmp`）
 

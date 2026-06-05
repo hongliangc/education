@@ -25,6 +25,9 @@
 - **直接改**（Codex 写 + Claude review，不写 spec）：接口/调用调整、局部代码改动、bugfix、加题/加内容、UI 小改、配置/脚本、文案。
 - **先 brainstorm → spec（wiki）→ 实现**：架构 / 跨子系统 / 数据模型（schema）变更 / 新子系统或新模块范式 / 安全·权限 / 不可逆或大范围影响。
 - 拿不准 = 一句话问用户，别默认走重流程。
+- **启用 `.workflow/items/`**:仅用于架构 / 跨模块 / schema / 安全权限 / 不可逆 / 多步骤且需要跨会话交接的需求。常规小改继续走上面的“直接改”路径。
+- `.workflow` 是状态层,不是强制所有任务的流程门禁;没有进入 `.workflow` 的小改不需要创建 DESIGN/PLAN/EXEC-LOG/REVIEW。
+- 完整双工具流程与门禁见 `WORKFLOW.md`(仅复杂 item 适用,小改不走)。
 
 ### 委派 Codex
 
@@ -36,7 +39,11 @@ wsl -e bash -ic "cd ~/workspace/education && codex exec '<任务描述 + 规则>
 
 - Codex 自己跑 `AGENTS.md` 标准验证并修编译/测试错误。
 - 回来后 Claude review diff（`codegraph_impact` 查影响面、查 bug/遗漏），通过再 commit。
-- **不**委派：单行小改、纯探索/读代码——Claude 直接做更快。
+- **不**委派：与任何 Codex 批次无关的孤立单行小改、纯探索/读代码——Claude 直接做更快。
+- **批次内聚**：一旦进入 Codex 委派 / CR 循环，同一批次内的小改、资源落位、说明补充也归 Codex；Claude 不从批次里摘小块自己改，除非用户明确要求或 Codex 不可用。
+- 上网研究、选源、版权判断、下载策略默认归 Claude；Codex 只在来源和规则明确后执行落地。
+- 若任务已进入 `.workflow/` 复杂 item：`codex exec` 的 prompt 前附接手口令（先读 `.workflow/active.md` → 打开 `current` 目录的 `PLAN.md` / `EXEC-LOG.md` → 按步骤执行并回写状态，见 `WORKFLOW.md` §5.5）；常规小改仍走上面的一行 `codex exec`。
+- **提交收敛**：单个需求（尤其进入 `.workflow/` 的工作项）收尾时把多次本地提交 squash 成一次（提交信息带 work-id），分支合并主干保持「一需求一 commit」。详见 `WORKFLOW.md` §5.6。
 
 ## 自带 Skills（项目本地）
 
