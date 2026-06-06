@@ -8,11 +8,13 @@ export function SubtitleLine({
   lines,
   charIndex,
   onCharClick,
+  interactive,
 }: {
   text: string;
   lines: SubLine[];
   charIndex: number;
   onCharClick: (globalIndex: number) => void;
+  interactive: boolean;
 }) {
   const allChars = useMemo(() => Array.from(text), [text]);
 
@@ -40,9 +42,11 @@ export function SubtitleLine({
           return (
             <span
               key={index}
-              onClick={() => onCharClick(line.start + index)}
-              className={`cursor-pointer rounded px-0.5 transition ${
-                active ? "bg-amber-300 text-amber-900" : "hover:bg-amber-100/60"
+              onClick={interactive ? () => onCharClick(line.start + index) : undefined}
+              className={`rounded px-0.5 transition ${
+                interactive ? "cursor-pointer hover:bg-amber-100/60" : "cursor-default"
+              } ${
+                active ? "bg-amber-300 text-amber-900" : ""
               }`}
             >
               {char}

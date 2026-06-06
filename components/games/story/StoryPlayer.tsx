@@ -86,9 +86,9 @@ export function StoryPlayer({
   };
 
   const speakChar = (globalIndex: number) => {
+    if (status !== "idle") return;
     ctrlRef.current?.stop();
     ctrlRef.current = null;
-    setStatus("idle");
     setCharIndex(globalIndex);
     speakText(chars[globalIndex] ?? "", { lang: "zh-CN", rate });
   };
@@ -103,7 +103,13 @@ export function StoryPlayer({
       />
 
       <div className="mt-3 rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-100">
-        <SubtitleLine text={text} lines={lines} charIndex={charIndex} onCharClick={speakChar} />
+        <SubtitleLine
+          text={text}
+          lines={lines}
+          charIndex={charIndex}
+          onCharClick={speakChar}
+          interactive={status === "idle"}
+        />
       </div>
 
       <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
@@ -154,7 +160,9 @@ export function StoryPlayer({
       </div>
 
       <p className="mt-2 text-center text-xs text-slate-400">
-        小提示：点字幕里的字可以单独听它的读音
+        {status === "idle"
+          ? "小提示：点字幕里的字可以单独听它的读音"
+          : "朗读时字幕会自动跟随，暂停后可继续播放"}
       </p>
     </div>
   );
