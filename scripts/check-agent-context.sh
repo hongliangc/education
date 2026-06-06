@@ -40,7 +40,7 @@ if ! grep -q '/mnt/e/workspace/knowledge-wiki/' CLAUDE.md; then
 fi
 
 obsolete_refs="$(
-  rg -n '\.workflow|WORKFLOW\.md|init-workflow|check-routing-sync' \
+  grep -nE '\.workflow|WORKFLOW\.md|init-workflow|check-routing-sync' \
     AGENTS.md CLAUDE.md skills/README.md scripts/README.md || true
 )"
 if [[ -n "$obsolete_refs" ]]; then
