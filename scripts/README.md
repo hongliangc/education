@@ -20,7 +20,7 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
 - **`smoke-health.sh`** — 起 dev server → 轮询 `/api/health` → 打印 health + 日志尾 → 关掉 dev。改完功能做一次性冒烟用。
 - **`dev-status.sh`** — 只读现状：dev 日志尾 + `:3000` 端口占用 + curl 可用性。dev 起不来/异常时先跑它看现场。
 - **`docker-recreate.sh`** — `docker compose up -d` 后轮询 `education-web-1` 健康状态直到 healthy（约 30s 超时）。容器模式重启栈用。
-- **`check-agent-context.sh`** — 检查 Agent 入口文件大小、外部 wiki 路径和旧工作流文件是否残留。修改 `AGENTS.md`、`CLAUDE.md` 或 Skills 后运行。
+- **`check-agent-context.sh`** — 检查 Agent 入口文件大小、外部 wiki 路径及废弃的工作流/二级索引是否残留。修改 `AGENTS.md`、`CLAUDE.md` 或 Skills 后运行。
 
 ## 待补（下次需要时直接写成本目录脚本，别再写 `/tmp`）
 

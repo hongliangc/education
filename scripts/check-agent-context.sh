@@ -30,6 +30,7 @@ check_max_lines AGENTS.md 80
 check_max_lines CLAUDE.md 50
 
 check_absent .workflow
+check_absent docs/agent
 check_absent WORKFLOW.md
 check_absent scripts/init-workflow.sh
 check_absent scripts/check-routing-sync.sh

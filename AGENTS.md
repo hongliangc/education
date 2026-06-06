@@ -28,14 +28,14 @@ This version has breaking changes. Before changing Next.js code, read the releva
 - Claude/Codex handoff 只传 wiki 路径与执行范围，或使用不超过 20 行的短 prompt。
 - 普通协作任务最多一轮整改；高风险任务最多两轮，仍有 BLOCKING 时交用户裁决。
 
-## 按需索引
+## 按需读取
 
-- 项目架构、环境、路由：`docs/agent/architecture/project.md`
-- Next.js 16 开发入口：`docs/agent/framework/nextjs.md`
-- 领域与项目 Skills：`docs/agent/domains/INDEX.md`
+- Next.js 代码：按文件类型读取 `node_modules/next/dist/docs/` 的相关指南。
+- 领域规则：按任务触发 `.claude/skills/mlk-*/SKILL.md`，不要批量加载。
+- 项目设计和计划：读取外部 wiki 的具体页面，不扫描整个知识库。
 - Bugfix 流程：`bugfix/README.md`
 - 脚本清单：`scripts/README.md`
-- 不要预读全部索引；只打开当前任务命中的文件。
+- 当前仓库或对话已有答案时，不额外查 wiki。
 
 ## 开发命令
 

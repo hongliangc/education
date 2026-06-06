@@ -12,7 +12,6 @@
 - 新增跨工具 Skill 优先放 `skills/<skill-name>/SKILL.md`。
 - Codex handoff 只提供需要读取的 Skill 路径，不复制 Skill 正文。
 - 每个任务默认只加载一个主 Skill，明确跨领域时再追加。
-- 详细触发索引见 `docs/agent/domains/INDEX.md`。
 
 ## 新增 SKILL.md 最小格式
 
