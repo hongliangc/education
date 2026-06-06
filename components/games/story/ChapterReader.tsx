@@ -2,12 +2,14 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { stopSpeaking } from "@/lib/speech";
+import { speakChunks, stopSpeaking, type SpeechController } from "@/lib/speech";
 import type { Chapter } from "@/content/storybooks/types";
 import type { SessionResult } from "@/components/games/types";
 import { StoryPlayer } from "./StoryPlayer";
 import { StoryQuestion } from "./StoryQuestion";
 import { StoryMoral } from "./StoryMoral";
+import { startQuestionNarration } from "./questionNarration";
+import { questionSpeechText } from "./questionSpeech";
 
 type Phase = "reading" | "question" | "moral";
 
@@ -22,6 +24,7 @@ export function ChapterReader({
   const [qi, setQi] = useState(0);
   const [correctQ, setCorrectQ] = useState(0);
   const startedAt = useRef(Date.now());
+  const questionSpeechRef = useRef<SpeechController | null>(null);
 
   // 切章时重置（父组件也会用 key 强制重挂，双保险）
   useEffect(() => {
@@ -31,7 +34,22 @@ export function ChapterReader({
     startedAt.current = Date.now();
   }, [chapter.idx]);
 
-  useEffect(() => () => stopSpeaking(), []);
+  useEffect(
+    () => () => {
+      questionSpeechRef.current?.stop();
+      questionSpeechRef.current = null;
+      stopSpeaking();
+    },
+    [],
+  );
+
+  const narrateQuestion = (index: number) => {
+    questionSpeechRef.current?.stop();
+    questionSpeechRef.current = startQuestionNarration(
+      speakChunks,
+      questionSpeechText(chapter.questions[index]),
+    );
+  };
 
   const total = chapter.questions.length;
   const stars = (correct: number) =>
@@ -49,7 +67,10 @@ export function ChapterReader({
           text={chapter.text}
           images={chapter.images ?? []}
           fallbackEmoji={chapter.emoji}
-          onFinish={() => setPhase("question")}
+          onFinish={() => {
+            narrateQuestion(0);
+            setPhase("question");
+          }}
         />
       )}
 
@@ -58,10 +79,14 @@ export function ChapterReader({
           question={chapter.questions[qi]}
           index={qi}
           total={total}
+          onReplay={() => narrateQuestion(qi)}
           onAnswered={(ok) => {
             if (ok) setCorrectQ((c) => c + 1);
             if (qi + 1 >= total) setPhase("moral");
-            else setQi((i) => i + 1);
+            else {
+              narrateQuestion(qi + 1);
+              setQi((i) => i + 1);
+            }
           }}
         />
       )}

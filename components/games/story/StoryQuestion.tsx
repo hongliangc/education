@@ -1,24 +1,39 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
-import { speakText } from "@/lib/speech";
+import { speakChunks, stopSpeaking, type SpeechController } from "@/lib/speech";
 import type { StoryQuestion as StoryQuestionData } from "@/content/storybooks/types";
+import {
+  QUESTION_REPLAY_LABEL,
+  startQuestionNarration,
+} from "./questionNarration";
 
 export function StoryQuestion({
   question,
   index,
   total,
+  onReplay,
   onAnswered,
 }: {
   question: StoryQuestionData;
   index: number;
   total: number;
+  onReplay: () => void;
   onAnswered: (correct: boolean) => void;
 }) {
   const [chosen, setChosen] = useState<number | null>(null);
+  const speechRef = useRef<SpeechController | null>(null);
   const { sfx } = useSFX();
+
+  useEffect(
+    () => () => {
+      speechRef.current?.stop();
+      speechRef.current = null;
+    },
+    [],
+  );
 
   const choose = (i: number) => {
     if (chosen !== null) return;
@@ -26,12 +41,15 @@ export function StoryQuestion({
     setChosen(i);
     if (ok) sfx.correct();
     else sfx.wrong();
-    speakText(question.explain, { lang: "zh-CN", rate: 0.95 });
+    stopSpeaking();
+    speechRef.current = startQuestionNarration(speakChunks, question.explain);
   };
 
   const next = () => {
     if (chosen === null) return;
     const ok = chosen === question.answer;
+    speechRef.current?.stop();
+    speechRef.current = null;
     setChosen(null);
     onAnswered(ok);
   };
@@ -42,7 +60,21 @@ export function StoryQuestion({
         第 {index + 1} 题 / 共 {total} 题
       </div>
       <div className="rounded-2xl bg-purple-50 ring-1 ring-purple-100 p-4">
-        <p className="font-bold text-slate-700">{question.q}</p>
+        <div className="flex items-start gap-3">
+          <p className="flex-1 font-bold text-slate-700">{question.q}</p>
+          <button
+            type="button"
+            onClick={() => {
+              speechRef.current?.stop();
+              speechRef.current = null;
+              onReplay();
+            }}
+            aria-label={QUESTION_REPLAY_LABEL}
+            className="shrink-0 rounded-xl bg-white px-3 py-2 text-sm font-bold text-purple-600 ring-1 ring-purple-200 transition hover:bg-purple-100"
+          >
+            🔊 再听一次
+          </button>
+        </div>
       </div>
       <div className="mt-4 space-y-3">
         {question.choices.map((c, i) => {

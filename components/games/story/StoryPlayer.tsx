@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useBgm } from "@/components/audio/useBgm";
 import { useSFX } from "@/components/audio/useSFX";
-import { speakChunks, speakText, stopSpeaking, type SpeechController } from "@/lib/speech";
+import { speakChunks, speakText, type SpeechController } from "@/lib/speech";
 import { subtitleLines } from "@/lib/speech/subtitle";
 import { IllustrationStage } from "./IllustrationStage";
 import { SubtitleLine } from "./SubtitleLine";
@@ -48,7 +48,6 @@ export function StoryPlayer({
     return () => {
       ctrlRef.current?.stop();
       ctrlRef.current = null;
-      stopSpeaking();
     };
   }, []);
 
@@ -90,7 +89,7 @@ export function StoryPlayer({
     ctrlRef.current?.stop();
     ctrlRef.current = null;
     setCharIndex(globalIndex);
-    speakText(chars[globalIndex] ?? "", { lang: "zh-CN", rate });
+    ctrlRef.current = speakText(chars[globalIndex] ?? "", { lang: "zh-CN", rate });
   };
 
   return (
