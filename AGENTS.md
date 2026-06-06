@@ -1,104 +1,73 @@
 <!-- BEGIN:nextjs-agent-rules -->
 # This is NOT the Next.js you know
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
+This version has breaking changes. Before changing Next.js code, read the relevant guide in `node_modules/next/dist/docs/` and follow its deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
-# AGENTS.md — 魔法学习王国 (Magic Learning Kingdom)
+# AGENTS.md - 魔法学习王国
 
-> 项目事实的**单一真源**：Claude Code 经 CLAUDE.md 的 `@AGENTS.md` 读取，Codex（`codex exec`）从工作目录向上原生读取本文件。改动约定先改这里。
+3-10 岁儿童游戏化学习平台。技术栈：Next.js 16 App Router、TypeScript、Tailwind 4、Prisma、NextAuth v5。
 
-## 项目概述
-3–10 岁儿童游戏化学习平台。Next.js 16 App Router + TypeScript + Tailwind 4 + Prisma + NextAuth v5 + Anthropic Claude SDK。
+## 硬规则
 
-## 开发环境
-- 操作系统: WSL2 Ubuntu（项目位于 `~/workspace/education/`）
-- Node.js: v24 (nvm 管理)
-- 包管理器: **npm**（本地开发未用 pnpm/Docker）
-- 数据库: **SQLite**（开发用，文件 `prisma/dev.db`），生产可切回 PostgreSQL
-- AI 精灵: 缺 `ANTHROPIC_API_KEY` 时 mock 回复，填入后自动切真实 Claude API
+- TypeScript strict，不使用 `any`。
+- 样式使用 Tailwind CSS；复用已有组件和 `globals.css` 动画。
+- 数据库操作通过 Prisma，不直接写 SQL。
+- AI/API 密钥只在服务端使用。
+- 组件超过 250 行时按职责拆分。
+- 路由组：`(auth)` 无 HUD；`(game)` 有 HUD 和精灵。
+- 不覆盖、回滚或提交其他需求的未提交改动。
 
-## 启动顺序
+## 任务路由
+
+- 默认单 Agent 完成；不要为形式化分工启动第二个 Agent。
+- 目标和文件明确的实现、补测试、批量修改可直接交给 Codex。
+- 根因不明、需要研究或架构判断时，由当前 Agent 先完成定位与决策。
+- 只有跨模块、schema、安全、大型功能、多 Agent 并行或主工作区冲突时才使用 worktree。
+- 正式设计和计划写入外部 wiki；小改不创建 spec、plan 或状态文档。
+- Claude/Codex handoff 只传 wiki 路径与执行范围，或使用不超过 20 行的短 prompt。
+- 普通协作任务最多一轮整改；高风险任务最多两轮，仍有 BLOCKING 时交用户裁决。
+
+## 按需索引
+
+- 项目架构、环境、路由：`docs/agent/architecture/project.md`
+- Next.js 16 开发入口：`docs/agent/framework/nextjs.md`
+- 领域与项目 Skills：`docs/agent/domains/INDEX.md`
+- Bugfix 流程：`bugfix/README.md`
+- 脚本清单：`scripts/README.md`
+- 不要预读全部索引；只打开当前任务命中的文件。
+
+## 开发命令
+
 ```bash
-npm run db:push     # 首次或 schema 改动后
-npm run dev         # Next.js dev server → http://localhost:3000
+npm run db:push
+npm run dev
+npm run build
+npm run db:studio
 ```
 
-## 端口
-- 3000  Next.js dev server
-- 5555  Prisma Studio (`npm run db:studio`)
-
-## 命令
-- `npm run dev` / `npm run build` / `npm run start`
-- `npm run db:push`   推送 schema 到 SQLite
-- `npm run db:studio` Prisma Studio 可视化
-- `npm run db:seed`   预填初始数据（如有）
-
-## 开发规则
-- 所有组件用 TypeScript strict，不用 `any`
-- 样式用 Tailwind CSS（globals.css 里有自定义关键帧动画）
-- 数据库操作通过 Prisma，不直接写 SQL
-- Claude API 调用只在服务端（API Routes / Server Actions），密钥不暴露
-- 组件文件超过 250 行时拆分
-- 路由组：`(auth)` 登录注册无 HUD；`(game)` 游戏区有 HUD + 精灵
-
-## 路由总览
-```
-/                         → 跳转到 /login 或 /child-select
-/login, /register         认证
-/child-select             孩子档案选择
-/world                    世界大地图（5 关卡）
-/play/[module]            游戏页（writing/alphabet/words/math/story）
-/dashboard                家长后台（v1 简版）
-/api/auth/...             NextAuth + 注册
-/api/children             获取/创建孩子
-/api/sessions             提交游戏结果
-/api/fairy/chat           精灵对话（当前 mock）
-```
-
-## 环境变量
-- `DATABASE_URL`         SQLite 文件路径
-- `AUTH_SECRET`          NextAuth 签名
-- `NEXTAUTH_URL`         http://localhost:3000
-- `ANTHROPIC_API_KEY`    可选；缺失则 mock
-
-## 音效系统
-`components/audio/useSFX.ts`：纯 Web Audio API 合成，无外部音频文件。
-```ts
-const { sfx } = useSFX()
-sfx.correct() // 答对    sfx.wrong() // 答错    sfx.coin() // 拿到星星
-sfx.fanfare() // 通关    sfx.click() // 点击
-```
-（共 11 个具名音效，完整清单见 skill `mlk-audio-speech-recipes`。）
-
-## 有声阅读
-`lib/speech.ts`：Web Speech API 封装。中文 `zh-CN`，英文 `en-US`，优先 Tingting/Xiaoxiao 音色。逐字高亮通过定时器节奏化模拟（rate 自适应）。
+开发数据库为 SQLite：`prisma/dev.db`。缺少 `ANTHROPIC_API_KEY` 时使用 mock 回复。
 
 ## 标准验证
-所有改动后跑类型检查；改 API 路由再跑鉴权冒烟。
+
+所有代码改动必须运行：
 
 ```bash
-# 类型检查（必跑）—— 无输出 = 通过
-wsl -e bash -ic "cd ~/workspace/education && npx tsc --noEmit"
-
-# 鉴权冒烟（改 API 路由后）：未登录应返 401，把 <path> 换成本路由
-wsl -e bash -ic "curl -sI -X POST http://localhost:3000/api/<path> -o /dev/null -w '%{http_code}\n'"
+npx tsc --noEmit
 ```
 
-> 已在 WSL Bash 内时可省去 `wsl -e bash -ic` 包装，直接 `cd ~/workspace/education && npx tsc --noEmit`。
+修改 API 路由时，额外验证未登录请求返回 401：
 
-## 脚本（scripts/）
-可复用脚本（dev 运维、数据校验等）放 `scripts/`、随仓库提交，`bash scripts/<name>.sh` 运行；一次性/临时操作写 `/tmp` 跑完即弃。清单与约定见 `scripts/README.md`。
+```bash
+curl -sI -X POST http://localhost:3000/api/<path> -o /dev/null -w '%{http_code}\n'
+```
 
-## Bugfix 主动触发流程
-- 用户报告缺陷、异常、回归或要求“修复”时，**开始诊断前**先将任务归类为 bugfix，并创建 `bugfix/YYYY-MM-DD-<slug>.md`；格式见 `bugfix/README.md`。
-- bugfix 记录是本次修复的轻量状态源：先写现象/复现，定位后补根因，改代码后补修复/测试/验证；不为局部 bugfix 创建 spec、plan 或 `.workflow` 工作项。
-- 创建记录后立即执行 `git status --short --branch` 和 `git log --oneline origin/main..HEAD`，确认当前分支、用户未提交改动和本地提交边界；不得把其他需求的改动纳入本次提交。
-- 同一 bug 从记录、代码、测试到文档只形成 **一个最终 commit**。开发期间默认不提交；若已产生中间提交，收尾时必须 amend/squash 后再汇报完成。
-- 最终提交信息包含记录 id：`fix(<scope>): <summary> [bugfix:YYYY-MM-DD-<slug>]`；完成时记录中的 `commit` 写 `this commit`（提交 SHA 用 `git log -- bugfix/<file>` 反查，避免自引用导致 SHA 改变）。
+修改 Agent 入口、Skills 或协作规则时，额外运行：
 
-## 协作工作流（复杂任务才用）
-- 常规小改 / 文案 / 局部 bugfix / UI 小改 / 配置脚本:直接改并跑标准验证,不创建 `.workflow` 工作项。
-- 架构 / 跨模块 / schema / 安全 / 不可逆 / 多步跨会话的需求:才走 `.workflow/`。
-- 任一工具接手前先读 `.workflow/active.md`,只打开 `current` 指向的工作项目录,执行读其 `PLAN.md`/`EXEC-LOG.md`。
-- 完整流程与门禁见 `WORKFLOW.md`。
+```bash
+bash scripts/check-agent-context.sh
+```
+
+## Bugfix
+
+用户报告缺陷、异常、回归或要求修复时，先按 `bugfix/README.md` 创建记录，再诊断和修改。同一 bug 最终只形成一个 commit，且不得混入其他需求。

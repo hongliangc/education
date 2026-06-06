@@ -1,6 +1,6 @@
 # skills/
 
-项目级跨工具 skills 放这里。当前 MLK 项目已有 Claude Code 专属 skills:
+项目级、Claude 与 Codex 共用的 Skills 放这里。当前 MLK 的领域 Skills 仍位于：
 
 ```text
 .claude/skills/mlk-*/SKILL.md
@@ -8,10 +8,11 @@
 
 ## 当前规则
 
-- 现有 `.claude/skills/mlk-*` 先保留,不强迁移。
-- 委派 Codex 时,如果 Codex 不能自动读取这些 skill,规划者必须把关键规则摘到 `.workflow/items/<work-id>/PLAN.md` 或 Codex handoff prompt。
-- 新增跨工具 skill 时,优先放 `skills/<skill-name>/SKILL.md`。
-- 工作项需要 skill 时,在 `PLAN.md` frontmatter 的 `required_skills` 声明。
+- 现有 `.claude/skills/mlk-*` 暂时保留，先验证新工作流再迁移。
+- 新增跨工具 Skill 优先放 `skills/<skill-name>/SKILL.md`。
+- Codex handoff 只提供需要读取的 Skill 路径，不复制 Skill 正文。
+- 每个任务默认只加载一个主 Skill，明确跨领域时再追加。
+- 详细触发索引见 `docs/agent/domains/INDEX.md`。
 
 ## 新增 SKILL.md 最小格式
 
