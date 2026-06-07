@@ -13,15 +13,17 @@ generator client {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  phone        String?       @unique
-  email        String?       @unique
-  passwordHash String?
-  role         String        @default("PARENT") // PARENT | CHILD | ADMIN
-  children     Child[]
-  subscription Subscription?
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  id                   String             @id @default(cuid())
+  phone                String?            @unique
+  email                String?            @unique
+  passwordHash         String?
+  role                 String             @default("PARENT") // PARENT | CHILD | ADMIN
+  children             Child[]
+  subscription         Subscription?
+  rewardResources      RewardResource[]   @relation("RewardResourceOwner")
+  fulfilledRedemptions RewardRedemption[] @relation("RewardRedemptionFulfiller")
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 }
 
 model Child {
@@ -43,6 +45,8 @@ model Child {
   fairyDialogs    FairyDialogue[]
   readingProgress ReadingProgress[]
   videoUnlocks    VideoUnlock[]
+  redemptions     RewardRedemption[]
+  starLedger      StarLedger[]
   createdAt       DateTime           @default(now())
 
   @@index([parentId])
@@ -145,4 +149,65 @@ model VideoUnlock {
 
   @@unique([childId, videoId])
   @@index([childId])
+}
+
+model RewardResource {
+  id           String             @id @default(cuid())
+  ownerType    String // PLATFORM | FAMILY
+  ownerId      String? // FAMILY 时为 User.id；PLATFORM 时为 null
+  owner        User?              @relation("RewardResourceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  scopeKey     String // 必须通过 makeResourceScopeKey 生成；PLATFORM 或 FAMILY:<parentId>
+  resourceType String // STORY_CHAPTER | STORY_TALE | VIDEO | REWARD
+  resourceKey  String // bookId:chapterIdx / bookId / stable videoId / reward key
+  title        String
+  description  String?
+  imageUrl     String?
+  starsCost    Int                @default(0)
+  stock        Int? // null=不限库存
+  isActive     Boolean            @default(true)
+  sortOrder    Int                @default(0)
+  redemptions  RewardRedemption[]
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  // 保留批准模型形状；PG 允许 NULL 重复，不能用此约束保证平台资源唯一。
+  @@unique([ownerType, ownerId, resourceType, resourceKey])
+  // RewardResource 创建和 upsert 必须使用 makeResourceScopeKey 生成 scopeKey，并使用此唯一键。
+  @@unique([scopeKey, resourceType, resourceKey])
+  @@index([ownerType, ownerId, resourceType, isActive])
+}
+
+model RewardRedemption {
+  id            String         @id @default(cuid())
+  childId       String
+  child         Child          @relation(fields: [childId], references: [id], onDelete: Cascade)
+  resourceId    String
+  resource      RewardResource @relation(fields: [resourceId], references: [id])
+  quantity      Int            @default(1)
+  starsSpent    Int
+  status        String // COMPLETED | PENDING_FULFILLMENT | FULFILLED | REJECTED_REFUNDED
+  unlockKey     String?        @unique
+  fulfilledAt   DateTime?
+  fulfilledById String?
+  fulfilledBy   User?          @relation("RewardRedemptionFulfiller", fields: [fulfilledById], references: [id])
+  note          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@index([childId, createdAt])
+  @@index([status, createdAt])
+}
+
+model StarLedger {
+  id           String   @id @default(cuid())
+  childId      String
+  child        Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
+  delta        Int
+  balanceAfter Int
+  reason       String // SESSION_EARN | REDEMPTION | REFUND | OPENING_BALANCE | ADMIN_ADJUST
+  referenceId  String?
+  dedupeKey    String?  @unique
+  createdAt    DateTime @default(now())
+
+  @@index([childId, createdAt])
 }
