@@ -17,6 +17,9 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
 ## 现有脚本
 
 - **`docker-rebuild-web.sh`** — 重建并重启 `web` 容器。改了 `app/` `components/` `content/` `lib/` 等代码后用：生产构建无热更，必须重建镜像；完成后浏览器要硬刷新（bundle 带 hash 缓存）。
+- **`docker-start.sh`** — 启动完整 Docker 栈，轮询到 `web` 健康后打印容器状态。
+- **`docker-stop.sh`** — 停止完整 Docker 栈，但保留容器和数据卷。
+- **`docker-restart.sh`** — 重启完整 Docker 栈，轮询到 `web` 恢复健康后打印容器状态。
 - **`smoke-health.sh`** — 起 dev server → 轮询 `/api/health` → 打印 health + 日志尾 → 关掉 dev。改完功能做一次性冒烟用。
 - **`dev-status.sh`** — 只读现状：dev 日志尾 + `:3000` 端口占用 + curl 可用性。dev 起不来/异常时先跑它看现场。
 - **`docker-recreate.sh`** — `docker compose up -d` 后轮询 `education-web-1` 健康状态直到 healthy（约 30s 超时）。容器模式重启栈用。
