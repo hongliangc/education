@@ -7,6 +7,18 @@ import {
   generateFairyReply,
   resolveFairyProvider,
 } from "@/lib/ai/gateway";
+import {
+  fetchCurrentWeather,
+  formatWeatherReply,
+  parseWeatherQuestion,
+  WeatherLocationNotFoundError,
+} from "@/lib/weather/fairy-weather";
+import {
+  formatSearchReply,
+  parseRealtimeQuestion,
+  searchRealtimeInfo,
+  SearchNotConfiguredError,
+} from "@/lib/search/fairy-search";
 
 // 精灵对话：模型网关按可用 Key 选 provider（DeepSeek / Claude / mock），
 // 调用前先做两段式内容安全检查。零配置时全程走 mock，开发体验不变。
@@ -47,6 +59,55 @@ export async function POST(req: Request) {
       reply: "这个问题很有意思，我们和爸爸妈妈一起探索吧～ 🌟",
       source: "safety-blocked",
     });
+  }
+
+  const weatherQuestion = parseWeatherQuestion(userMessage);
+  if (weatherQuestion.isWeatherQuestion) {
+    if (!weatherQuestion.city) {
+      return NextResponse.json({
+        reply: "你想查哪个城市的天气呢？可以说“北京今天天气怎么样”哦！🌤️",
+        source: "weather-city-required",
+      });
+    }
+
+    try {
+      const weather = await fetchCurrentWeather(weatherQuestion.city);
+      return NextResponse.json({
+        reply: formatWeatherReply(weather),
+        source: "open-meteo",
+      });
+    } catch (error) {
+      const reply =
+        error instanceof WeatherLocationNotFoundError
+          ? `我还没找到“${weatherQuestion.city}”这个城市。你可以换成城市名再问一次哦！🌍`
+          : "天气服务暂时开小差了，请过一会儿再问我吧！🌦️";
+      return NextResponse.json({ reply, source: "weather-unavailable" });
+    }
+  }
+
+  const realtimeQuestion = parseRealtimeQuestion(userMessage);
+  if (realtimeQuestion.isRealtimeQuestion) {
+    if (realtimeQuestion.locationRequired && !realtimeQuestion.hasLocation) {
+      return NextResponse.json({
+        reply:
+          "请告诉我城市、区或附近的地标哦！比如“北京朝阳区附近有什么游乐园？”📍",
+        source: "search-location-required",
+      });
+    }
+
+    try {
+      const results = await searchRealtimeInfo(userMessage);
+      return NextResponse.json({
+        reply: formatSearchReply(userMessage, results),
+        source: "tavily",
+      });
+    } catch (error) {
+      const reply =
+        error instanceof SearchNotConfiguredError
+          ? "联网搜索还没有配置好，请让爸爸妈妈先设置搜索服务哦！🔎"
+          : "联网搜索暂时开小差了，请过一会儿再问我吧！🔎";
+      return NextResponse.json({ reply, source: "search-unavailable" });
+    }
   }
 
   const system = buildFairyPrompt({ childName, age, recentModule, stars });
