@@ -77,11 +77,23 @@ export default function StoryLibraryPage() {
   return (
     <main className="min-h-screen pt-20 px-4 pb-10">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-white drop-shadow mb-4">📚 故事书架</h1>
+        <header className="mb-4 flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              sfx.click();
+              router.push("/world");
+            }}
+            className="rounded-full bg-white/75 px-4 py-2 font-bold text-slate-700 shadow ring-1 ring-white transition hover:scale-105"
+          >
+            ← 返回世界
+          </button>
+          <h1 className="text-2xl font-bold text-white drop-shadow">📚 故事书架</h1>
+        </header>
 
         {novels.length > 0 && (
           <>
-            <div className="mb-2 px-1 text-sm font-bold text-white/90 drop-shadow">长篇故事</div>
+            <h2 className="mb-2 px-1 text-xl font-bold text-white/90 drop-shadow">长篇故事</h2>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
               {novels.map((b) => (
                 <Card key={b.id} id={b.id} emoji={b.emoji} title={b.title} total={b.chapters.length} />
@@ -90,7 +102,7 @@ export default function StoryLibraryPage() {
           </>
         )}
 
-        <div className="mb-2 px-1 text-sm font-bold text-white/90 drop-shadow">短篇绘本</div>
+        <h2 className="mb-2 px-1 text-xl font-bold text-white/90 drop-shadow">短篇绘本</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {tales.map((b) => (
             <Card key={b.id} id={b.id} emoji={b.emoji} title={b.title} total={b.chapters.length} />
