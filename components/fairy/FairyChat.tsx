@@ -5,8 +5,7 @@ import { GameModal } from "@/components/GameModal";
 import { Btn } from "@/components/Btn";
 import { FairySprite, type FairyMood } from "@/components/fairy/FairySprite";
 import {
-  speakText,
-  speakTextStream,
+  speakChunks,
   stopSpeaking,
   createRecorder,
   recognizeBlob,
@@ -92,8 +91,8 @@ export function FairyChat({
       const text = String(reply ?? "").trim() || "我想想哦，等下再问我一次好吗？✨";
       setMessages((m) => [...m, { role: "fairy", content: text }]);
       setStatus("speaking");
-      // 流式朗读：首声 ~1s（整段约 4.7s）；失败自动回退整段/Web Speech
-      speakRef.current = speakTextStream(text, {
+      // 分段流式朗读：短回复仍快速出声，长回复会逐段续播到完整结束。
+      speakRef.current = speakChunks(text, {
         lang: "zh-CN",
         onEnd: () => setStatus("idle"),
       });
@@ -190,7 +189,7 @@ export function FairyChat({
                 <button
                   onClick={() => {
                     speakRef.current?.stop();
-                    speakRef.current = speakText(m.content, { lang: "zh-CN" });
+                    speakRef.current = speakChunks(m.content, { lang: "zh-CN" });
                   }}
                   className="ml-1 text-pink-400 hover:text-pink-600"
                   aria-label="重听"
