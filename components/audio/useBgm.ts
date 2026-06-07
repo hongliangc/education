@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { interruptAudio } from "./bgmControl";
 
 const BGM_SRC = "/bgm/story-loop.mp3";
 const LS_KEY = "mlk.bgm.enabled";
@@ -17,6 +18,10 @@ function getAudio(): HTMLAudioElement | null {
     bgmAudio.preload = "auto";
   }
   return bgmAudio;
+}
+
+export function interruptBgm(): () => void {
+  return interruptAudio(getAudio());
 }
 
 export function useBgm(): { enabled: boolean; toggle: () => void } {

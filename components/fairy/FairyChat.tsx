@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from "react";
 import { GameModal } from "@/components/GameModal";
 import { Btn } from "@/components/Btn";
 import { FairySprite, type FairyMood } from "@/components/fairy/FairySprite";
-import { useSFX } from "@/components/audio/useSFX";
 import {
   speakText,
   speakTextStream,
@@ -13,6 +12,8 @@ import {
   recognizeBlob,
   type SpeechController,
 } from "@/lib/speech";
+import { createHoldToTalkSession } from "./holdToTalk";
+import { useRecordingAudioGuard } from "./useRecordingAudioGuard";
 
 type Status = "idle" | "listening" | "thinking" | "speaking";
 type Turn = { role: "user" | "fairy"; content: string };
@@ -43,10 +44,11 @@ export function FairyChat({
   const [messages, setMessages] = useState<Turn[]>([]);
   const [typing, setTyping] = useState(false);
   const [draft, setDraft] = useState("");
-  const { sfx } = useSFX();
-  const recorderRef = useRef<ReturnType<typeof createRecorder> | null>(null);
+  const holdSessionRef = useRef<ReturnType<typeof createHoldToTalkSession> | null>(null);
   const speakRef = useRef<SpeechController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const recordingAudio = useRecordingAudioGuard();
+  holdSessionRef.current ??= createHoldToTalkSession(createRecorder);
 
   // 新消息 / 状态变化时滚到底
   useEffect(() => {
@@ -59,7 +61,7 @@ export function FairyChat({
   // 关闭即清场（停录音 + 停朗读）
   useEffect(() => {
     return () => {
-      recorderRef.current?.cancel();
+      holdSessionRef.current?.cancel();
       speakRef.current?.stop();
       stopSpeaking();
     };
@@ -110,13 +112,13 @@ export function FairyChat({
     if (status === "listening" || status === "thinking") return;
     speakRef.current?.stop();
     stopSpeaking();
+    recordingAudio.interrupt();
     try {
-      const rec = createRecorder();
-      recorderRef.current = rec;
-      await rec.start();
+      const listening = await holdSessionRef.current!.begin();
+      if (!listening) return;
       setStatus("listening");
-      sfx.click();
     } catch {
+      recordingAudio.restore();
       // 无麦克风权限 → 自动切打字
       setTyping(true);
       setStatus("idle");
@@ -125,13 +127,12 @@ export function FairyChat({
 
   // 按住说话：松手
   const endTalk = async () => {
-    const rec = recorderRef.current;
-    if (!rec || status !== "listening") return;
-    recorderRef.current = null;
-    setStatus("thinking");
     try {
-      const blob = await rec.stop();
+      const blob = await holdSessionRef.current!.end();
+      if (!blob) return;
+      setStatus("thinking");
       const text = await recognizeBlob(blob, { lang: "zh-CN" });
+      recordingAudio.restore();
       if (!text.trim()) {
         setMessages((m) => [
           ...m,
@@ -143,6 +144,8 @@ export function FairyChat({
       await ask(text);
     } catch {
       setStatus("idle");
+    } finally {
+      recordingAudio.restore();
     }
   };
 
