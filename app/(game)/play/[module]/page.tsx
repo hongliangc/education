@@ -77,7 +77,9 @@ export default function PlayPage({
       {slug === "writing" && <WritingGame onComplete={onSessionComplete} onExit={back} />}
       {slug === "alphabet" && <AlphabetGame onComplete={onSessionComplete} onExit={back} />}
       {slug === "words" && <WordsGame onComplete={onSessionComplete} onExit={back} />}
-      {slug === "math" && <MathGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "math" && (
+        <MathGame childId={child.id} onComplete={onSessionComplete} onExit={back} />
+      )}
     </GameModal>
   );
 }

@@ -10,12 +10,16 @@ export function GameDone({
   totalQ,
   onAgain,
   onClose,
+  onChangeMode,
+  changeModeLabel = "换个模式",
 }: {
   starsEarned: number;
   correctQ: number;
   totalQ: number;
   onAgain: () => void;
   onClose: () => void;
+  onChangeMode?: () => void;
+  changeModeLabel?: string;
 }) {
   const { sfx } = useSFX();
   useEffect(() => {
@@ -33,10 +37,15 @@ export function GameDone({
         {"⭐".repeat(Math.max(1, starsEarned))}
       </div>
       <p className="text-amber-600 mt-1 font-bold">获得 {starsEarned} 颗星 🌟</p>
-      <div className="mt-6 flex gap-3 justify-center">
+      <div className="mt-6 flex flex-wrap gap-3 justify-center">
         <Btn variant="ghost" onClick={onClose}>
           回到地图
         </Btn>
+        {onChangeMode ? (
+          <Btn variant="secondary" onClick={onChangeMode}>
+            {changeModeLabel}
+          </Btn>
+        ) : null}
         <Btn variant="primary" onClick={onAgain}>
           再来一次 🔁
         </Btn>

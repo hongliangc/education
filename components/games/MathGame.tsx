@@ -1,118 +1,136 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
-import { useSFX } from "@/components/audio/useSFX";
-import { generateChoices, generateMathRound, type MathProblem } from "@/content/math";
+import { generateRound, type MathProblem, type MathTier } from "@/content/math";
+import { getMistakes, mistakeToProblem } from "@/lib/math/mistakes";
 import type { OnComplete } from "./types";
 import { GameDone } from "./GameDone";
+import { MathRound } from "./math/MathRound";
+import { MathTierPicker } from "./math/MathTierPicker";
+
+type Screen = "picker" | "round" | "done" | "review" | "review-done";
 
 export function MathGame({
+  childId,
   onComplete,
   onExit,
 }: {
+  childId: string;
   onComplete: OnComplete;
   onExit: () => void;
 }) {
-  const [round, setRound] = useState<MathProblem[]>(() => generateMathRound(5));
-  const [qi, setQi] = useState(0);
+  const [screen, setScreen] = useState<Screen>("picker");
+  const [tier, setTier] = useState<MathTier | null>(null);
+  const [round, setRound] = useState<MathProblem[]>([]);
+  const [mistakeCount, setMistakeCount] = useState(0);
   const [correctQ, setCorrectQ] = useState(0);
-  const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
-  const [done, setDone] = useState(false);
-  const { sfx } = useSFX();
   const startedAt = useRef(Date.now());
 
-  const p = round[qi];
-  const choices = useMemo(() => generateChoices(p.answer), [p]);
+  const refreshMistakes = () => setMistakeCount(getMistakes(childId).length);
 
-  if (done) {
-    const stars = Math.max(1, Math.round((correctQ / round.length) * 3));
+  useEffect(() => {
+    refreshMistakes();
+  }, [childId]);
+
+  const startTier = (nextTier: MathTier) => {
+    setTier(nextTier);
+    setRound(generateRound(nextTier));
+    setCorrectQ(0);
+    startedAt.current = Date.now();
+    setScreen("round");
+  };
+
+  const startReview = () => {
+    const problems = getMistakes(childId).map(mistakeToProblem);
+    if (problems.length === 0) return;
+    setRound(problems);
+    setCorrectQ(0);
+    setScreen("review");
+  };
+
+  const finishRound = (correct: number) => {
+    setCorrectQ(correct);
+    const stars = Math.max(1, Math.round((correct / round.length) * 3));
+    onComplete({
+      score: correct * 10,
+      totalQ: round.length,
+      correctQ: correct,
+      durationSec: Math.round((Date.now() - startedAt.current) / 1000),
+      starsEarned: stars,
+    });
+    setScreen("done");
+  };
+
+  if (screen === "picker") {
     return (
-      <GameDone
-        starsEarned={stars}
-        correctQ={correctQ}
-        totalQ={round.length}
-        onAgain={() => {
-          setRound(generateMathRound(5));
-          setQi(0);
-          setCorrectQ(0);
-          setDone(false);
-          startedAt.current = Date.now();
-        }}
-        onClose={onExit}
+      <MathTierPicker
+        mistakeCount={mistakeCount}
+        onSelect={startTier}
+        onReview={startReview}
       />
     );
   }
 
-  const choose = (n: number) => {
-    if (feedback) return;
-    const ok = n === p.answer;
-    setFeedback(ok ? "correct" : "wrong");
-    if (ok) {
-      sfx.correct();
-      setCorrectQ((c) => c + 1);
-    } else sfx.wrong();
-    setTimeout(() => {
-      setFeedback(null);
-      if (qi + 1 >= round.length) {
-        const correct = ok ? correctQ + 1 : correctQ;
-        const stars = Math.max(1, Math.round((correct / round.length) * 3));
-        onComplete({
-          score: correct * 10,
-          totalQ: round.length,
-          correctQ: correct,
-          durationSec: Math.round((Date.now() - startedAt.current) / 1000),
-          starsEarned: stars,
-        });
-        setDone(true);
-      } else {
-        setQi((i) => i + 1);
-      }
-    }, 700);
-  };
+  if (screen === "round") {
+    return (
+      <MathRound
+        childId={childId}
+        problems={round}
+        review={false}
+        onMistakesChanged={refreshMistakes}
+        onFinish={finishRound}
+      />
+    );
+  }
 
+  if (screen === "review") {
+    return (
+      <MathRound
+        childId={childId}
+        problems={round}
+        review
+        onMistakesChanged={refreshMistakes}
+        onFinish={(correct) => {
+          setCorrectQ(correct);
+          setScreen("review-done");
+        }}
+      />
+    );
+  }
+
+  if (screen === "review-done") {
+    return (
+      <div className="py-8 text-center">
+        <div className="text-7xl anim-pop-in">📕</div>
+        <h3 className="mt-3 text-2xl font-bold text-slate-700">复习完成！</h3>
+        <p className="mt-2 text-slate-500">
+          答对 {correctQ} / {round.length} 题，答对的题已经移出错题本。
+        </p>
+        <Btn
+          variant="primary"
+          className="mt-6"
+          onClick={() => {
+            refreshMistakes();
+            setScreen("picker");
+          }}
+        >
+          返回难度选择
+        </Btn>
+      </div>
+    );
+  }
+
+  const stars = Math.max(1, Math.round((correctQ / round.length) * 3));
   return (
-    <div>
-      <div className="w-full h-3 rounded-full bg-slate-100 overflow-hidden">
-        <div
-          className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all"
-          style={{ width: `${(qi / round.length) * 100}%` }}
-        />
-      </div>
-
-      <div
-        className={`mt-5 rounded-3xl bg-gradient-to-br from-amber-50 to-yellow-100 p-6 text-center anim-pop-in ${
-          feedback === "correct" ? "anim-correct" : feedback === "wrong" ? "anim-shake" : ""
-        }`}
-      >
-        <div className="text-5xl font-bold text-amber-700">{p.question} = ?</div>
-        {p.visual && (
-          <div className="mt-4 space-y-1 text-3xl">
-            {p.visual.map((row, i) => (
-              <div key={i}>{row}</div>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {choices.map((c) => (
-          <Btn
-            key={c}
-            size="lg"
-            variant="primary"
-            onClick={() => choose(c)}
-            disabled={!!feedback}
-            className="text-3xl py-6"
-          >
-            {c}
-          </Btn>
-        ))}
-      </div>
-
-      <p className="mt-3 text-center text-sm text-slate-400">
-        第 {qi + 1} 题 / 共 {round.length} 题
-      </p>
-    </div>
+    <GameDone
+      starsEarned={stars}
+      correctQ={correctQ}
+      totalQ={round.length}
+      onAgain={() => tier && startTier(tier)}
+      onChangeMode={() => setScreen("picker")}
+      changeModeLabel="换难度"
+      onClose={onExit}
+    />
   );
 }
