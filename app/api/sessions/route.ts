@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { createPrismaRewardsAdapter } from "@/lib/rewards/adapter";
+import { recordSessionStars } from "@/lib/rewards/service";
 
 const VALID_MODULES = ["WRITING", "ALPHABET", "WORDS", "MATH", "STORY", "LIFE"] as const;
 
@@ -31,57 +33,63 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Child not found" }, { status: 404 });
   }
 
-  // 写入 session
-  const created = await prisma.gameSession.create({
-    data: {
+  const { created, masteryPct } = await prisma.$transaction(async (tx) => {
+    const createdSession = await tx.gameSession.create({
+      data: {
+        childId,
+        module,
+        score,
+        totalQ,
+        correctQ,
+        durationSec,
+        starsEarned,
+      },
+    });
+
+    await recordSessionStars({
       childId,
-      module,
-      score,
-      totalQ,
-      correctQ,
-      durationSec,
+      sessionId: createdSession.id,
       starsEarned,
-    },
-  });
+      ownerId: session.user.id,
+      adapter: createPrismaRewardsAdapter(tx),
+    });
+    await tx.child.update({
+      where: { id: childId },
+      data: { lastLoginDate: new Date() },
+    });
 
-  // 增加 child 总星数
-  await prisma.child.update({
-    where: { id: childId },
-    data: {
-      totalStars: { increment: starsEarned },
-      lastLoginDate: new Date(),
-    },
-  });
+    // mastery 取最近 5 次答题正确率平均值。
+    const recent = await tx.gameSession.findMany({
+      where: { childId, module },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    });
+    const accuracy =
+      recent.reduce(
+        (sum, item) => sum + (item.totalQ > 0 ? item.correctQ / item.totalQ : 0),
+        0,
+      ) / Math.max(1, recent.length);
+    const nextMasteryPct = Math.round(accuracy * 100);
+    const totalStarsOnModule = await tx.gameSession.aggregate({
+      where: { childId, module },
+      _sum: { starsEarned: true },
+    });
 
-  // 更新进度（mastery 取最近 5 次 correctRate 平均）
-  const recent = await prisma.gameSession.findMany({
-    where: { childId, module },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
-  const acc =
-    recent.reduce(
-      (sum, s) => sum + (s.totalQ > 0 ? s.correctQ / s.totalQ : 0),
-      0,
-    ) / Math.max(1, recent.length);
-  const masteryPct = Math.round(acc * 100);
-  const totalStarsOnModule = await prisma.gameSession.aggregate({
-    where: { childId, module },
-    _sum: { starsEarned: true },
-  });
+    await tx.learningProgress.upsert({
+      where: { childId_module: { childId, module } },
+      create: {
+        childId,
+        module,
+        stars: totalStarsOnModule._sum.starsEarned ?? 0,
+        masteryPct: nextMasteryPct,
+      },
+      update: {
+        stars: totalStarsOnModule._sum.starsEarned ?? 0,
+        masteryPct: nextMasteryPct,
+      },
+    });
 
-  await prisma.learningProgress.upsert({
-    where: { childId_module: { childId, module } },
-    create: {
-      childId,
-      module,
-      stars: totalStarsOnModule._sum.starsEarned ?? 0,
-      masteryPct,
-    },
-    update: {
-      stars: totalStarsOnModule._sum.starsEarned ?? 0,
-      masteryPct,
-    },
+    return { created: createdSession, masteryPct: nextMasteryPct };
   });
 
   return NextResponse.json({ id: created.id, masteryPct });
