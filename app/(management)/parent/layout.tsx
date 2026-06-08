@@ -11,8 +11,9 @@ import {
 
 const parentMenuItems: ManagementMenuItem[] = [
   { key: "parent-overview", label: "家庭总览", href: "/parent" },
-  { key: "parent-rewards", label: "奖励与兑换", href: "/parent/rewards" },
-  { key: "parent-pricing", label: "内容价格", href: "/parent/pricing" },
+  { key: "parent-rewards", label: "奖励商店", href: "/parent/rewards" },
+  { key: "parent-prices", label: "故事价格", href: "/parent/story-prices" },
+  { key: "parent-redemptions", label: "兑换审批", href: "/parent/redemptions" },
 ];
 
 const adminParentMenuItem: ManagementMenuItem = {
