@@ -321,10 +321,9 @@ export async function rejectAndRefundRedemption(
     const redemption = await tx.findRedemptionById(input.redemptionId, input.ownerId);
     if (!redemption) throw new RedemptionNotFoundError();
     if (redemption.status === "REJECTED_REFUNDED") {
-      const ledger = await tx.findLedgerByDedupeKey(`refund:${redemption.id}`);
       return {
         redemption,
-        balance: ledger?.balanceAfter ?? (await currentBalance(tx, redemption.childId)),
+        balance: await currentBalance(tx, redemption.childId),
       };
     }
     if (redemption.status !== "PENDING_FULFILLMENT") {
@@ -342,7 +341,14 @@ export async function rejectAndRefundRedemption(
       },
     );
     if (!updated) {
-      throw new InvalidRedemptionStateError("concurrent_transition");
+      const latest = await tx.findRedemptionById(redemption.id, input.ownerId);
+      if (latest?.status === "REJECTED_REFUNDED") {
+        return {
+          redemption: latest,
+          balance: await currentBalance(tx, redemption.childId),
+        };
+      }
+      throw new InvalidRedemptionStateError(latest?.status ?? "missing");
     }
 
     const balance = await tx.incrementChildStars(redemption.childId, redemption.starsSpent);

@@ -12,6 +12,7 @@ interface FakeState {
   ledgers: Map<string, StarLedgerRecord>;
   operations: string[];
   failNextDebit: boolean;
+  concurrentRejectOnNextTransition: boolean;
 }
 
 function cloneState(state: FakeState): FakeState {
@@ -127,6 +128,17 @@ class FakeTransaction implements RewardsTransaction {
     this.state.operations.push(`redemption:transition:${fromStatus}->${input.status}`);
     const redemption = this.state.redemptions.get(redemptionId);
     if (!redemption || redemption.status !== fromStatus) return null;
+    if (
+      this.state.concurrentRejectOnNextTransition &&
+      input.status === "REJECTED_REFUNDED"
+    ) {
+      this.state.concurrentRejectOnNextTransition = false;
+      redemption.status = "REJECTED_REFUNDED";
+      redemption.fulfilledAt = new Date();
+      redemption.fulfilledById = "concurrent-fulfiller";
+      redemption.note = "concurrent rejection";
+      return null;
+    }
     Object.assign(redemption, input);
     return redemption;
   }
@@ -176,6 +188,7 @@ class FakeAdapter implements RewardsAdapter {
       ledgers: new Map(),
       operations: [],
       failNextDebit: false,
+      concurrentRejectOnNextTransition: false,
     };
   }
 
@@ -190,6 +203,8 @@ class FakeAdapter implements RewardsAdapter {
       this.state.ledgers = snapshot.ledgers;
       this.state.operations = snapshot.operations;
       this.state.failNextDebit = snapshot.failNextDebit;
+      this.state.concurrentRejectOnNextTransition =
+        snapshot.concurrentRejectOnNextTransition;
       throw error;
     }
   }
@@ -391,6 +406,74 @@ test("rejection refunds stars and finite stock exactly once", async () => {
     [...adapter.state.ledgers.values()].filter((ledger) => ledger.reason === "REFUND")
       .length,
     1,
+  );
+});
+
+test("duplicate rejection returns the current balance after later star earnings", async () => {
+  const adapter = new FakeAdapter([
+    resource({ resourceType: "REWARD", starsCost: 4, stock: 2 }),
+  ]);
+  const { redemption } = await redeemResource({
+    childId: "child-1",
+    resourceId: "platform-resource",
+    adapter,
+  });
+  await rejectAndRefundRedemption({
+    redemptionId: redemption.id,
+    fulfillerId: "parent-1",
+    adapter,
+  });
+  await recordSessionStars({
+    childId: "child-1",
+    sessionId: "session-after-refund",
+    starsEarned: 3,
+    adapter,
+  });
+
+  const repeated = await rejectAndRefundRedemption({
+    redemptionId: redemption.id,
+    fulfillerId: "parent-1",
+    adapter,
+  });
+
+  assert.equal(repeated.balance, 23);
+  assert.equal(adapter.state.resources.get("platform-resource")?.stock, 2);
+  assert.equal(
+    [...adapter.state.ledgers.values()].filter((ledger) => ledger.reason === "REFUND")
+      .length,
+    1,
+  );
+});
+
+test("a concurrent rejection winner is returned without duplicate refund side effects", async () => {
+  const adapter = new FakeAdapter([
+    resource({ resourceType: "REWARD", starsCost: 4, stock: 2 }),
+  ]);
+  const { redemption } = await redeemResource({
+    childId: "child-1",
+    resourceId: "platform-resource",
+    adapter,
+  });
+  adapter.state.concurrentRejectOnNextTransition = true;
+  const operationsBeforeReject = adapter.state.operations.length;
+
+  const result = await rejectAndRefundRedemption({
+    redemptionId: redemption.id,
+    fulfillerId: "parent-1",
+    adapter,
+  });
+
+  assert.equal(result.redemption.status, "REJECTED_REFUNDED");
+  assert.equal(result.redemption.fulfilledById, "concurrent-fulfiller");
+  assert.equal(result.balance, 16);
+  assert.equal(adapter.state.resources.get("platform-resource")?.stock, 1);
+  assert.deepEqual(
+    adapter.state.operations
+      .slice(operationsBeforeReject)
+      .filter((operation) =>
+        /child:increment|stock:increment|ledger:create/.test(operation),
+      ),
+    [],
   );
 });
 
