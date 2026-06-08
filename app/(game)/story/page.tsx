@@ -6,18 +6,21 @@ import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useSFX } from "@/components/audio/useSFX";
 import { getAllBooks } from "@/lib/content/storybooks";
+import { fetchRewardCatalog } from "@/lib/rewards/client";
 
-interface ProgressRow {
-  bookId: string;
-  completedChapters: number;
-  finished: boolean;
+interface BookInfo {
+  kind: "novel" | "tale";
+  total: number;
+  unlocked: number;
+  taleCost: number;
+  taleUnlocked: boolean;
 }
 
 export default function StoryLibraryPage() {
   const router = useRouter();
   const child = useGameStore((s) => s.activeChild);
   const { sfx } = useSFX();
-  const [progress, setProgress] = useState<Record<string, ProgressRow>>({});
+  const [info, setInfo] = useState<Record<string, BookInfo>>({});
   const books = getAllBooks();
 
   useEffect(() => {
@@ -26,12 +29,21 @@ export default function StoryLibraryPage() {
       return;
     }
     (async () => {
-      const res = await fetch(`/api/reading/${child.id}`);
-      if (res.ok) {
-        const j = await res.json();
-        const map: Record<string, ProgressRow> = {};
-        for (const p of j.progress ?? []) map[p.bookId] = p;
-        setProgress(map);
+      try {
+        const catalog = await fetchRewardCatalog(child.id);
+        const map: Record<string, BookInfo> = {};
+        for (const story of catalog.stories) {
+          map[story.bookId] = {
+            kind: story.kind,
+            total: story.chapters.length,
+            unlocked: story.chapters.filter((c) => c.unlocked).length,
+            taleCost: story.chapters[0]?.starsCost ?? 0,
+            taleUnlocked: story.chapters[0]?.unlocked ?? false,
+          };
+        }
+        setInfo(map);
+      } catch {
+        // Catalog unavailable: cards fall back to a neutral label.
       }
     })();
   }, [child, router]);
@@ -46,19 +58,14 @@ export default function StoryLibraryPage() {
     router.push(`/story/${id}`);
   };
 
-  const Card = ({
-    id,
-    emoji,
-    title,
-    total,
-  }: {
-    id: string;
-    emoji: string;
-    title: string;
-    total: number;
-  }) => {
-    const p = progress[id];
-    const done = p?.completedChapters ?? 0;
+  const Card = ({ id, emoji, title, total }: { id: string; emoji: string; title: string; total: number }) => {
+    const meta = info[id];
+    let subtitle = "开始阅读";
+    if (meta?.kind === "tale") {
+      subtitle = meta.taleUnlocked ? "已解锁 ✓" : `⭐ ${meta.taleCost}`;
+    } else if (total > 1) {
+      subtitle = `${meta?.unlocked ?? 0} / ${total} 章解锁`;
+    }
     return (
       <button
         onClick={() => openBook(id)}
@@ -67,9 +74,7 @@ export default function StoryLibraryPage() {
       >
         <div className="text-5xl text-center">{emoji}</div>
         <div className="mt-2 font-bold text-slate-700 text-center">{title}</div>
-        <div className="mt-1 text-xs text-center text-slate-500">
-          {total > 1 ? `${done} / ${total} 章` : p?.finished ? "已读完 ✓" : "开始阅读"}
-        </div>
+        <div className="mt-1 text-xs text-center text-slate-500">{subtitle}</div>
       </button>
     );
   };
