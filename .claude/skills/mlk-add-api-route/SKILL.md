@@ -1,6 +1,6 @@
 ---
 name: mlk-add-api-route
-description: Use when creating a new Next.js App Router API route (route.ts) in the Magic Learning Kingdom project — POST/GET/PUT/DELETE endpoints with auth, input validation, Prisma persistence. Triggers on "新 API / 新接口 / 新端点 / 加路由 / 服务端 / 后台接口 / new API / new route / new endpoint / server action". NOT for editing existing routes (use Edit tool directly). NOT for client-side fetching patterns (those live in components).
+description: Use when creating a new Next.js App Router API route (route.ts) in MLK — endpoints needing auth, input validation, Prisma persistence (新 API / 新接口 / 新端点 / 加路由). NOT for editing existing routes or client-side fetching.
 ---
 
 # 新增 API 路由

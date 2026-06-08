@@ -1,6 +1,6 @@
 ---
 name: mlk-component-conventions
-description: Use when modifying UI in the Magic Learning Kingdom (魔法学习王国) project — adding buttons, modals, animations, color changes, the fairy sprite, or the HUD. Triggers on "改 UI / 加按钮 / 加弹窗 / 加动画 / 改颜色 / 加精灵 / 加 HUD / UI patterns / animation / button / modal / fairy / styling / kid style". NOT for game-module-specific scaffolding (use mlk-add-game-module). NOT for production deployment styling (use batch D when it exists).
+description: Use when modifying MLK UI — buttons, modals, animations, colors, the fairy sprite, or the HUD (改 UI / 加按钮 / 加弹窗 / 加动画 / 改颜色 / 加精灵 / 加 HUD). NOT for game-module scaffolding (→ mlk-add-game-module).
 ---
 
 # MLK 组件约定
@@ -111,6 +111,6 @@ Size：sm（紧凑）/ md（默认）/ lg（CTA）。
 改完 UI 后：
 1. 类型检查：见 `AGENTS.md` 标准验证。
 2. 浏览器打开对应页面，目测动画流畅度。
-3. Lighthouse a11y 分数不下降（C 批后会加自动检查）。
+3. Lighthouse a11y 分数不下降。
 
 Last verified against: prisma schema v1 · Next.js 16.2.6 · Tailwind 4 · 2026-05-27

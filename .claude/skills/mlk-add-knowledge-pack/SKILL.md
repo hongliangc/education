@@ -1,6 +1,6 @@
 ---
 name: mlk-add-knowledge-pack
-description: Use when expanding learning content in the Magic Learning Kingdom project — adding items to existing pools (汉字/字母/单词/算术/故事), creating a new knowledge quiz module (生活常识/科普/安全), or building an exam mode that mixes multiple modules with timing. Triggers on "加题 / 加内容 / 加知识点 / 加生活常识 / 加科普 / 加安全题 / 考试 / 测验 / 出卷 / 加题库 / 加汉字 / 加单词 / add content / add quiz / new knowledge / exam / test". For UI shell of the quiz, also load mlk-component-conventions. NOT for new game mechanics — that's mlk-add-game-module.
+description: Use when expanding MLK learning content — adding items to existing pools (汉字/字母/单词/算术/故事), a new knowledge-quiz module (生活常识/科普/安全), or a multi-module exam mode (加题 / 加内容 / 加知识点 / 考试). NOT for new game mechanics (→ mlk-add-game-module).
 ---
 
 # 加内容 / 加知识点 / 考试模式
@@ -26,12 +26,11 @@ description: Use when expanding learning content in the Magic Learning Kingdom p
 
 ### 场景 2：新建知识问答模块
 
+知识问答模块 = 一种游戏模块。**模块注册步骤（MODULES / MODULE_META / SLUGS / schema 注释 / world NODES）完整版见 `mlk-add-game-module` 必做清单**，此处只列知识模块特有部分：
+
 1. [ ] 复制 `templates/knowledge-content.ts.tmpl` → `content/<topic>.ts`，至少 10 题
-2. [ ] 复制 `templates/KnowledgeGame.tsx.tmpl` → `components/games/<Topic>Game.tsx`
-3. [ ] 在 `lib/utils.ts#MODULES` 加 ID（如 `"LIFE"`）+ `MODULE_META`
-4. [ ] 在 `app/(game)/play/[module]/page.tsx#SLUGS` 注册 slug
-5. [ ] 在 `prisma/schema.prisma` 中 `module String // ...` 的注释列表追加新值
-6. [ ] 在 `app/(game)/world/page.tsx#NODES` 添加节点坐标
+2. [ ] 复制 `templates/KnowledgeGame.tsx.tmpl` → `components/games/<Topic>Game.tsx`（通用 4 选 1 壳）
+3. [ ] 按 `mlk-add-game-module` 完成模块注册（MODULES / MODULE_META / SLUGS / schema / NODES）
 
 占位符替换：
 - `__TOPIC__` → PascalCase（如 `Life`）

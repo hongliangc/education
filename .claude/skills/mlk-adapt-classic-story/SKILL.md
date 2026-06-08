@@ -1,6 +1,6 @@
 ---
 name: mlk-adapt-classic-story
-description: Use when adapting or rewriting a classic story into MLK child-reader chapters — 西游记/名著/经典童话 retellings, expanding or rewriting a chapter's narrative text, or adding a new multi-chapter StoryBook. Triggers on "改编 / 改写 / 扩写 / 重写章节 / 西游记 / 名著 / 经典故事 / 加故事书 / 加章节 / 故事太短 / 人物太单薄 / adapt classic story / rewrite chapter / retell". NOT for adding quiz items to non-narrative pools (汉字/字母/单词/算术 → mlk-add-knowledge-pack). NOT for editing the StoryReader/TTS playback (that's the speech subsystem).
+description: Use when adapting/rewriting a public-domain classic into MLK StoryBook chapters, or expanding/rewriting a chapter's narrative text (改编 / 改写 / 扩写 / 西游记 / 名著 / 经典故事). NOT for quiz pools (→ mlk-add-knowledge-pack) or StoryReader/TTS playback.
 ---
 
 # 改编经典故事 → 儿童章节

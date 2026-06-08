@@ -1,6 +1,6 @@
 ---
 name: mlk-add-game-module
-description: Use when adding a new interactive learning game module to the Magic Learning Kingdom (魔法学习王国) project. Triggers on "新游戏 / 新关卡 / 多一个学习模块 / 加玩法 / 新交互 / 加一种游戏 / new game / new module / interactive game". Covers file split, Btn+GameModal shell, useSFX integration, Web Speech for TTS games, content data shape, onComplete→/api/sessions wiring, MODULE_META registration, and the play route slug map. When the game uses sounds or TTS, also load mlk-audio-speech-recipes. For UI styling details, load mlk-component-conventions. NOT for adding more questions/items to existing modules (use mlk-add-knowledge-pack).
+description: Use when adding a new interactive learning game module to MLK (新游戏 / 新关卡 / 新玩法 / 加一种游戏 / new game / new module). NOT for adding items to existing modules (→ mlk-add-knowledge-pack).
 ---
 
 # 新增游戏模块

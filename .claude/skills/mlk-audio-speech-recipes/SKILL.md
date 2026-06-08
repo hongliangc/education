@@ -1,6 +1,6 @@
 ---
 name: mlk-audio-speech-recipes
-description: Use when adding or modifying sound effects (Web Audio synthesized), text-to-speech (Web Speech API), or word-by-word highlighting in the Magic Learning Kingdom project. Triggers on "加音效 / 加朗读 / 加发音 / 加 TTS / 加点击声 / 答对音 / 听一下 / sound effect / TTS / Web Speech / play sound / read aloud". NOT for adding background music or external audio files — out of project scope.
+description: Use when adding or modifying sound effects (Web Audio synthesized), text-to-speech (Web Speech API), or word-by-word highlighting in MLK (加音效 / 加朗读 / 加发音 / TTS). NOT for background music or external audio files.
 ---
 
 # 音效与语音 Cookbook

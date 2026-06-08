@@ -1,6 +1,6 @@
 ---
 name: mlk-local-dev
-description: Use when the user wants to run, launch, smoke-test, or experience the Magic Learning Kingdom app locally on WSL2 with browser access from Windows. Triggers on "跑起来 / 跑一下 / 本地跑 / 体验一下 / 打开看看 / 启动 / 看看效果 / 试一下 / start dev / open in browser / smoke test / launch". Covers starting the dev server, ensuring DB schema synced, WSL2 ↔ Windows localhost networking, opening default Windows browser, and a guided clickthrough script. NOT for production deployment — that's batch D.
+description: Use when running, launching, or smoke-testing the MLK app locally on WSL2 with Windows browser access (跑起来 / 本地跑 / 体验一下 / 打开看看 / start dev / open in browser). NOT for production deployment.
 ---
 
 # 本地启动 + Windows 浏览器体验
@@ -53,26 +53,7 @@ Start-Process "http://localhost:3000"
 wsl -e bash -ic "cmd.exe /c start http://localhost:3000"
 ```
 
-## Clickthrough 体验脚本（首次完整流程）
-
-1. [ ] 落地 `/` → 自动重定向到 `/login`
-2. [ ] 点 "去注册" → 填 `parent@test.com` / `password123` → 创建账号
-3. [ ] 自动跳到 `/child-select` → 点 "添加小冒险家"：
-   - 名字：随意
-   - 年龄：6 岁
-   - 头像：🦊
-4. [ ] 进入 `/world`：
-   - 看到 5 个关卡节点
-   - 精灵气泡问候出现
-5. [ ] 依次玩 5 个关卡，每个至少一轮：
-   - ✏️ 写字（描红 → 自评 → 通关）
-   - 🔤 字母（emoji → 选字母）
-   - 📖 单词（中文 → 配 emoji）
-   - 🔢 算术（4 选 1）
-   - 📜 故事（朗读 → 逐字高亮 → 3 题理解 → 道理）
-6. [ ] 回 `/world` 检查 HUD 右上：⭐❤️🔥 数字与游戏一致
-
-## 验证清单（每次 clickthrough 必查）
+## 冒烟检查清单
 
 - [ ] 控制台无红色错误
 - [ ] sfx 答对/答错有声
@@ -87,8 +68,7 @@ wsl -e bash -ic "cmd.exe /c start http://localhost:3000"
 | 页面空白 + 控制台 CSS @import 报错 | globals.css 里 Google Font @import 在 tailwind 之后 | 改用 `next/font/google` |
 | localhost:3000 在 Windows 打不开 | WSL2 NAT 模式 | `wsl hostname -I` 拿 IP，用 `http://<wsl-ip>:3000`；或升级 WSL 启用 mirrored |
 | TTS 不出声 | Chrome 需用户首次点击页面才解锁 SpeechSynthesis | 先点击任意按钮再触发朗读 |
-| 答错没扣血 | C 批未实施 | 已知 issue，待 C 批修 |
-| Middleware 警告 | Next.js 16 推荐改 proxy.ts | 已知 warning，不影响功能；待 C 批迁移 |
+| 答错没扣血 | 尚未实现扣血机制 | 已知限制 |
 
 ## 停止 dev server
 
@@ -97,6 +77,6 @@ wsl -e bash -ic "cmd.exe /c start http://localhost:3000"
 
 ## 验证（跑这条 skill 自己时）
 
-完成上述 clickthrough 全 6 步 + 无控制台红色错误 = 通过。
+跑通上面「冒烟检查清单」全部项 + 无控制台红色错误 = 通过。
 
 Last verified against: Next.js 16.2.6 dev server · 2026-05-27
