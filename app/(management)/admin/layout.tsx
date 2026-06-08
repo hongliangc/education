@@ -11,8 +11,9 @@ import {
 
 const adminMenuItems: ManagementMenuItem[] = [
   { key: "admin-overview", label: "平台总览", href: "/admin" },
-  { key: "admin-rewards", label: "奖励资源", href: "/admin/rewards" },
-  { key: "admin-pricing", label: "默认价格", href: "/admin/pricing" },
+  { key: "admin-resources", label: "资源与价格", href: "/admin/resources" },
+  { key: "admin-redemptions", label: "兑换记录", href: "/admin/redemptions" },
+  { key: "admin-families", label: "家庭", href: "/admin/families" },
   { key: "parent-home", label: "家长视图", href: "/parent" },
 ];
 
