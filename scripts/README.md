@@ -24,6 +24,10 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
 - **`dev-status.sh`** — 只读现状：dev 日志尾 + `:3000` 端口占用 + curl 可用性。dev 起不来/异常时先跑它看现场。
 - **`docker-recreate.sh`** — `docker compose up -d` 后轮询 `education-web-1` 健康状态直到 healthy（约 30s 超时）。容器模式重启栈用。
 - **`check-agent-context.sh`** — 检查 Agent 入口文件大小、外部 wiki 路径及废弃的工作流/二级索引是否残留。修改 `AGENTS.md`、`CLAUDE.md` 或 Skills 后运行。
+- **`sync-reward-resources.mjs`** — 幂等迁移：把历史 `ReadingProgress` / `VideoUnlock` 导入统一奖励系统，并按内容生成平台 `RewardResource` 目录与每个孩子的开账余额（`OPENING_BALANCE`）。可重复运行（资源/开账/永久解锁均按唯一键去重）。`--dry-run` 只打印计划不写库。需要 `DATABASE_URL`；通过 `ts-resolve-hooks.mjs` 加载 `content/storybooks` 的无扩展名 TS 导入。
+  - 预演：`node scripts/sync-reward-resources.mjs --dry-run`
+  - 应用：`node scripts/sync-reward-resources.mjs`
+- **`ts-resolve-hooks.mjs`** — ESM resolve 钩子：把无扩展名的相对导入重试为 `.ts`，让离线 node 脚本能 import 走 Turbopack 打包的内容模块（被 `sync-reward-resources.mjs` 用）。
 
 ## 待补（下次需要时直接写成本目录脚本，别再写 `/tmp`）
 
