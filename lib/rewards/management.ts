@@ -3,7 +3,7 @@ import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/db";
 import { STORY_BOOKS } from "@/content/storybooks";
 import { DEFAULT_CHAPTER_COST, DEFAULT_TALE_COST } from "@/lib/rewards/migration";
-import { makeResourceScopeKey } from "@/lib/rewards/pricing";
+import { makeResourceScopeKey, makeUnlockKey } from "@/lib/rewards/pricing";
 import {
   canManageResource,
   redemptionScopeOwnerId,
@@ -223,6 +223,65 @@ export async function listManagedRedemptions(actor: RewardActor, status?: string
       resource: { select: { resourceType: true, resourceKey: true, title: true } },
     },
   });
+}
+
+// Videos come from the external Aliyun catalog, so their platform resource is
+// created/refreshed on demand from the catalog's current cost before redeeming.
+export async function upsertVideoResource(
+  videoId: string,
+  title: string,
+  cost: number,
+): Promise<string> {
+  const scopeKey = makeResourceScopeKey("PLATFORM");
+  const resourceTitle = toOptionalText(title, 60) ?? videoId;
+  const resource = await prisma.rewardResource.upsert({
+    where: {
+      scopeKey_resourceType_resourceKey: { scopeKey, resourceType: "VIDEO", resourceKey: videoId },
+    },
+    create: {
+      scopeKey,
+      ownerType: "PLATFORM",
+      ownerId: null,
+      resourceType: "VIDEO",
+      resourceKey: videoId,
+      title: resourceTitle,
+      starsCost: normalizeCost(cost),
+      stock: null,
+      isActive: true,
+    },
+    update: { starsCost: normalizeCost(cost), title: resourceTitle, isActive: true },
+    select: { id: true },
+  });
+  return resource.id;
+}
+
+// Unified video unlocks, with a fallback to legacy VideoUnlock rows for pre-migration data.
+export async function getUnlockedVideoIds(childId: string): Promise<Set<string>> {
+  const [redemptions, legacy] = await Promise.all([
+    prisma.rewardRedemption.findMany({
+      where: { childId, resource: { resourceType: "VIDEO" } },
+      select: { resource: { select: { resourceKey: true } } },
+    }),
+    prisma.videoUnlock.findMany({ where: { childId }, select: { videoId: true } }),
+  ]);
+  const ids = new Set<string>();
+  for (const row of redemptions) ids.add(row.resource.resourceKey);
+  for (const row of legacy) ids.add(row.videoId);
+  return ids;
+}
+
+export async function isVideoUnlocked(childId: string, videoId: string): Promise<boolean> {
+  const [redemption, legacy] = await Promise.all([
+    prisma.rewardRedemption.findUnique({
+      where: { unlockKey: makeUnlockKey(childId, "VIDEO", videoId) },
+      select: { id: true },
+    }),
+    prisma.videoUnlock.findUnique({
+      where: { childId_videoId: { childId, videoId } },
+      select: { id: true },
+    }),
+  ]);
+  return redemption !== null || legacy !== null;
 }
 
 export async function fulfillManagedRedemption(actor: RewardActor, redemptionId: string, note?: string) {

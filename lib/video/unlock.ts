@@ -38,6 +38,11 @@ export function mergeVideoUnlockState<T extends PricedVideoItem>(
   }));
 }
 
+// A video plays when it is free or the child holds an unlock (unified or legacy).
+export function canPlayVideo(cost: number, hasUnlock: boolean): boolean {
+  return cost === 0 || hasUnlock;
+}
+
 export function calculateUnlockQuote(cost: number, balance: number): UnlockQuote {
   const safeCost = Math.max(0, Math.floor(cost));
   const safeBalance = Math.max(0, Math.floor(balance));

@@ -4,6 +4,7 @@ import { AliyunApiError, AliyunConfigError } from "@/lib/aliyun/client";
 import { getVideoCatalog } from "@/lib/video/catalog";
 import { prisma } from "@/lib/db";
 import { mergeVideoUnlockState } from "@/lib/video/unlock";
+import { getUnlockedVideoIds } from "@/lib/rewards/management";
 
 function videoErrorResponse(error: unknown) {
   if (error instanceof AliyunConfigError) {
@@ -39,11 +40,7 @@ export async function GET(request: Request) {
 
     const forceRefresh = url.searchParams.get("refresh") === "1";
     const videos = await getVideoCatalog(forceRefresh);
-    const unlocks = await prisma.videoUnlock.findMany({
-      where: { childId },
-      select: { videoId: true },
-    });
-    const unlockedIds = new Set(unlocks.map((unlock) => unlock.videoId));
+    const unlockedIds = await getUnlockedVideoIds(childId);
     return NextResponse.json({ videos: mergeVideoUnlockState(videos, unlockedIds) });
   } catch (error) {
     return videoErrorResponse(error);

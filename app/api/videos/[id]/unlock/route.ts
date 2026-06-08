@@ -1,16 +1,11 @@
-import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { AliyunApiError, AliyunConfigError } from "@/lib/aliyun/client";
 import { prisma } from "@/lib/db";
 import { getVideoCatalog } from "@/lib/video/catalog";
-import { calculateUnlockQuote } from "@/lib/video/unlock";
-
-class InsufficientStarsError extends Error {
-  constructor(readonly needed: number) {
-    super("insufficient_stars");
-  }
-}
+import { InsufficientStarsError } from "@/lib/rewards/errors";
+import { upsertVideoResource } from "@/lib/rewards/management";
+import { redeemResource } from "@/lib/rewards/service";
 
 function unlockErrorResponse(error: unknown) {
   if (error instanceof AliyunConfigError) {
@@ -23,14 +18,7 @@ function unlockErrorResponse(error: unknown) {
   return NextResponse.json({ error: "unlock_failed" }, { status: 500 });
 }
 
-function isUniqueConflict(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
-}
-
-export async function POST(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
+export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -62,52 +50,12 @@ export async function POST(
       return NextResponse.json({ unlocked: true, balance: child.totalStars });
     }
 
-    const existing = await prisma.videoUnlock.findUnique({
-      where: { childId_videoId: { childId, videoId: id } },
-      select: { id: true },
-    });
-    if (existing) {
-      return NextResponse.json({ unlocked: true, balance: child.totalStars });
-    }
-
-    const quote = calculateUnlockQuote(video.cost, child.totalStars);
-    if (!quote.canUnlock) {
-      return NextResponse.json(
-        { error: "insufficient_stars", needed: quote.needed },
-        { status: 402 },
-      );
-    }
-
+    // Sync the platform VIDEO resource to the catalog's current cost, then redeem
+    // through the unified service (idempotent: a repeat unlock never double-charges).
+    const resourceId = await upsertVideoResource(id, video.title, video.cost);
     try {
-      const balance = await prisma.$transaction(async (tx) => {
-        const paid = await tx.child.updateMany({
-          where: {
-            id: childId,
-            parentId: session.user.id,
-            totalStars: { gte: video.cost },
-          },
-          data: { totalStars: { decrement: video.cost } },
-        });
-        if (paid.count !== 1) {
-          const latest = await tx.child.findFirst({
-            where: { id: childId, parentId: session.user.id },
-            select: { totalStars: true },
-          });
-          throw new InsufficientStarsError(Math.max(0, video.cost - (latest?.totalStars ?? 0)));
-        }
-
-        await tx.videoUnlock.create({
-          data: { childId, videoId: id, starsCost: video.cost },
-        });
-
-        const updated = await tx.child.findUniqueOrThrow({
-          where: { id: childId },
-          select: { totalStars: true },
-        });
-        return updated.totalStars;
-      });
-
-      return NextResponse.json({ unlocked: true, balance });
+      const result = await redeemResource({ childId, resourceId, ownerId: session.user.id });
+      return NextResponse.json({ unlocked: true, balance: result.balance });
     } catch (error) {
       if (error instanceof InsufficientStarsError) {
         return NextResponse.json(
@@ -115,13 +63,7 @@ export async function POST(
           { status: 402 },
         );
       }
-      if (!isUniqueConflict(error)) throw error;
-
-      const latest = await prisma.child.findFirst({
-        where: { id: childId, parentId: session.user.id },
-        select: { totalStars: true },
-      });
-      return NextResponse.json({ unlocked: true, balance: latest?.totalStars ?? child.totalStars });
+      throw error;
     }
   } catch (error) {
     return unlockErrorResponse(error);

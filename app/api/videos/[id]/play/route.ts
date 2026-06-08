@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { AliyunApiError, AliyunConfigError, getAliyunVideoPlayInfo } from "@/lib/aliyun/client";
 import { prisma } from "@/lib/db";
 import { getVideoCatalog } from "@/lib/video/catalog";
+import { isVideoUnlocked } from "@/lib/rewards/management";
 
 function playErrorResponse(error: unknown) {
   if (error instanceof AliyunConfigError) {
@@ -49,14 +50,8 @@ export async function GET(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    if (video.cost > 0) {
-      const unlock = await prisma.videoUnlock.findUnique({
-        where: { childId_videoId: { childId, videoId: id } },
-        select: { id: true },
-      });
-      if (!unlock) {
-        return NextResponse.json({ error: "locked" }, { status: 403 });
-      }
+    if (video.cost > 0 && !(await isVideoUnlocked(childId, id))) {
+      return NextResponse.json({ error: "locked" }, { status: 403 });
     }
 
     const play = await getAliyunVideoPlayInfo(id);
