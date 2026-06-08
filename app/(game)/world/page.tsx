@@ -84,6 +84,11 @@ export default function WorldMapPage() {
     router.push("/theater");
   };
 
+  const openShop = () => {
+    sfx.click();
+    router.push("/shop");
+  };
+
   return (
     <main className="min-h-screen pt-20 px-4 pb-10">
       <div className="max-w-5xl mx-auto">
@@ -129,6 +134,14 @@ export default function WorldMapPage() {
             >
               <div className="text-3xl">🎬</div>
               <div className="text-xs font-bold text-slate-700">视频影院</div>
+            </button>
+            <button
+              onClick={openShop}
+              aria-label="进入星星商店"
+              className="rounded-2xl bg-white/80 py-3 shadow ring-1 ring-white backdrop-blur transition hover:scale-105"
+            >
+              <div className="text-3xl">🏪</div>
+              <div className="text-xs font-bold text-slate-700">星星商店</div>
             </button>
           </div>
         </div>
