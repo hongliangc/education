@@ -7,18 +7,9 @@ import { CloudBG } from "@/components/CloudBG";
 import { Btn } from "@/components/Btn";
 import { CardSkeleton } from "@/components/skeleton/CardSkeleton";
 import { useGameStore, type ChildSummary } from "@/store/gameStore";
-import { GRADES, inferGradeFromAge, isGrade, type Grade } from "@/lib/grades";
+import { GRADE_LABELS, GRADES, inferGradeFromAge, isGrade, type Grade } from "@/lib/grades";
 
 const AVATARS = ["🌸", "🐯", "🦄", "🐰", "🦊", "🐼", "🐧", "🦁", "🐸", "🐢"];
-
-const GRADE_LABELS: Record<Grade, string> = {
-  K1: "幼儿园小班",
-  K2: "幼儿园中班",
-  K3: "幼儿园大班",
-  G1: "一年级",
-  G2: "二年级",
-  G3: "三年级",
-};
 
 export default function ChildSelectPage() {
   const router = useRouter();

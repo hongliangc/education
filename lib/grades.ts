@@ -6,6 +6,16 @@ export type Grade = "K1" | "K2" | "K3" | "G1" | "G2" | "G3";
 // Ordered from easiest to hardest; array index is the grade's difficulty rank.
 export const GRADES: readonly Grade[] = ["K1", "K2", "K3", "G1", "G2", "G3"];
 
+// Child-facing Chinese labels, shared by every grade selector.
+export const GRADE_LABELS: Record<Grade, string> = {
+  K1: "幼儿园小班",
+  K2: "幼儿园中班",
+  K3: "幼儿园大班",
+  G1: "一年级",
+  G2: "二年级",
+  G3: "三年级",
+};
+
 export function isGrade(value: unknown): value is Grade {
   return typeof value === "string" && (GRADES as readonly string[]).includes(value);
 }
@@ -36,6 +46,18 @@ export function getFoundationGrades(grade: Grade): Grade[] {
   return GRADES.filter(
     (candidate) => candidate.startsWith("K") && gradeIndex(candidate) < index,
   );
+}
+
+// The grade picker's two groups: the primary recommended window, plus every grade below
+// that window (kindergarten and earlier primary grades) collapsed into a foundation list.
+export function buildGradeSelection(grade: Grade): {
+  primary: Grade[];
+  foundation: Grade[];
+} {
+  const primary = getRecommendedGrades(grade);
+  const lowest = gradeIndex(primary[0]);
+  const foundation = GRADES.filter((candidate) => gradeIndex(candidate) < lowest);
+  return { primary, foundation };
 }
 
 // A child may play any valid grade at or below one step above their own.

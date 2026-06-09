@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useState } from "react";
 import { notFound, useRouter } from "next/navigation";
 import { GameModal } from "@/components/GameModal";
 import { MODULE_META, type ModuleId } from "@/lib/utils";
@@ -8,8 +8,12 @@ import { WritingGame } from "@/components/games/WritingGame";
 import { AlphabetGame } from "@/components/games/AlphabetGame";
 import { WordsGame } from "@/components/games/WordsGame";
 import { MathGame } from "@/components/games/MathGame";
+import { GradeSwitcher } from "@/components/games/grades/GradeSwitcher";
 import { useGameStore } from "@/store/gameStore";
-import { useEffect } from "react";
+import { inferGradeFromAge, isGrade, type Grade } from "@/lib/grades";
+
+// Math, alphabet and word matching generate grade-appropriate content; other modules don't.
+const GRADE_AWARE = new Set<Slug>(["math", "alphabet", "words"]);
 
 const SLUGS = {
   writing: "WRITING",
@@ -32,6 +36,19 @@ export default function PlayPage({
   const moduleId = SLUGS[slug];
   const child = useGameStore((s) => s.activeChild);
   const bumpStars = useGameStore((s) => s.bumpStars);
+
+  // Default the practice grade to the child's confirmed grade (inferred before confirmation).
+  const childGrade: Grade =
+    child && isGrade(child.gradeLevel)
+      ? child.gradeLevel
+      : child
+        ? inferGradeFromAge(child.age)
+        : "K1";
+  const [grade, setGrade] = useState<Grade>(childGrade);
+  useEffect(() => {
+    setGrade(childGrade);
+  }, [childGrade]);
+  const gradeAware = GRADE_AWARE.has(slug);
 
   useEffect(() => {
     if (!child) router.replace("/child-select");
@@ -65,6 +82,7 @@ export default function PlayPage({
           childId: child.id,
           module: moduleId,
           ...info,
+          ...(gradeAware ? { gradeLevel: grade } : {}),
         }),
       });
     } catch {
@@ -74,6 +92,11 @@ export default function PlayPage({
 
   return (
     <GameModal title={meta.label} emoji={meta.emoji} color={meta.color} onClose={back}>
+      {gradeAware && (
+        <div className="mb-2 flex justify-end">
+          <GradeSwitcher childGrade={childGrade} value={grade} onChange={setGrade} />
+        </div>
+      )}
       {slug === "writing" && <WritingGame onComplete={onSessionComplete} onExit={back} />}
       {slug === "alphabet" && <AlphabetGame onComplete={onSessionComplete} onExit={back} />}
       {slug === "words" && <WordsGame onComplete={onSessionComplete} onExit={back} />}
