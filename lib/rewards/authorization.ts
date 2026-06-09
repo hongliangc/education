@@ -47,6 +47,18 @@ export function canAccessChild(actor: RewardActor, childParentId: string): boole
   return actor.role === "ADMIN" || childParentId === actor.id;
 }
 
+// Whether the actor may fulfill or reject a child's redemption of the given resource.
+// Parents act on their own children's redemptions (any resource scope); admins act only
+// on platform-owned redemptions, never on a family's private rewards.
+export function canManageRedemption(
+  actor: RewardActor,
+  resourceOwner: ResourceOwner,
+  childParentId: string,
+): boolean {
+  if (actor.role === "ADMIN") return resourceOwner.ownerType === "PLATFORM";
+  return childParentId === actor.id;
+}
+
 // ownerId handed to the redemption service for scoping; undefined = platform-wide (admin).
 export function redemptionScopeOwnerId(actor: RewardActor): string | undefined {
   return actor.role === "ADMIN" ? undefined : actor.id;

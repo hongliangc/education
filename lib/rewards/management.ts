@@ -5,13 +5,14 @@ import { STORY_BOOKS } from "@/content/storybooks";
 import { DEFAULT_CHAPTER_COST, DEFAULT_TALE_COST } from "@/lib/rewards/migration";
 import { makeResourceScopeKey, makeUnlockKey } from "@/lib/rewards/pricing";
 import {
+  canManageRedemption,
   canManageResource,
   redemptionScopeOwnerId,
   type ResourceOwner,
   type RewardActor,
 } from "@/lib/rewards/authorization";
 import { fulfillRedemption, rejectAndRefundRedemption } from "@/lib/rewards/service";
-import { RewardAccessDeniedError } from "@/lib/rewards/errors";
+import { RedemptionNotFoundError, RewardAccessDeniedError } from "@/lib/rewards/errors";
 
 type StoryPriceType = "STORY_CHAPTER" | "STORY_TALE";
 
@@ -214,7 +215,11 @@ export async function deactivateReward(actor: RewardActor, id: string) {
 export async function listManagedRedemptions(actor: RewardActor, status?: string) {
   return prisma.rewardRedemption.findMany({
     where: {
-      ...(actor.role === "ADMIN" ? {} : { child: { parentId: actor.id } }),
+      // Admins oversee only platform-owned redemptions; a family's private rewards stay
+      // with the owning parent. Parents see only their own children's redemptions.
+      ...(actor.role === "ADMIN"
+        ? { resource: { ownerType: "PLATFORM" } }
+        : { child: { parentId: actor.id } }),
       ...(status ? { status } : {}),
     },
     orderBy: { createdAt: "desc" },
@@ -284,7 +289,34 @@ export async function isVideoUnlocked(childId: string, videoId: string): Promise
   return redemption !== null || legacy !== null;
 }
 
+// Confirm the actor may act on this redemption before invoking the domain service.
+// The service's ownerId guard isolates parents; this also stops an admin from reaching
+// a family's private (FAMILY-owned) redemption, which the ownerId scope cannot express.
+async function assertManagedRedemption(actor: RewardActor, redemptionId: string): Promise<void> {
+  const redemption = await prisma.rewardRedemption.findUnique({
+    where: { id: redemptionId },
+    select: {
+      resource: { select: { ownerType: true, ownerId: true } },
+      child: { select: { parentId: true } },
+    },
+  });
+  if (
+    !redemption ||
+    !canManageRedemption(
+      actor,
+      {
+        ownerType: redemption.resource.ownerType === "FAMILY" ? "FAMILY" : "PLATFORM",
+        ownerId: redemption.resource.ownerId,
+      },
+      redemption.child.parentId,
+    )
+  ) {
+    throw new RedemptionNotFoundError();
+  }
+}
+
 export async function fulfillManagedRedemption(actor: RewardActor, redemptionId: string, note?: string) {
+  await assertManagedRedemption(actor, redemptionId);
   await fulfillRedemption({
     redemptionId,
     fulfillerId: actor.id,
@@ -294,6 +326,7 @@ export async function fulfillManagedRedemption(actor: RewardActor, redemptionId:
 }
 
 export async function rejectManagedRedemption(actor: RewardActor, redemptionId: string, note?: string) {
+  await assertManagedRedemption(actor, redemptionId);
   return rejectAndRefundRedemption({
     redemptionId,
     fulfillerId: actor.id,

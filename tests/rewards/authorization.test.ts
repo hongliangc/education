@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
-import { canAccessChild, canManageResource, manageScopeFor, redemptionScopeOwnerId, resolveRewardActor } from "../../lib/rewards/authorization.ts";
+import { canAccessChild, canManageRedemption, canManageResource, manageScopeFor, redemptionScopeOwnerId, resolveRewardActor } from "../../lib/rewards/authorization.ts";
 
 test("resolveRewardActor accepts only PARENT and ADMIN with an id", () => {
   assert.equal(resolveRewardActor(null), null);
@@ -35,4 +35,19 @@ test("child-scoped access: parents reach only their children, admins reach any",
 
   assert.equal(redemptionScopeOwnerId(parent), "p1");
   assert.equal(redemptionScopeOwnerId(admin), undefined);
+});
+
+test("redemption management: parents act on their own children; admins only on platform-owned", () => {
+  const parent = { id: "p1", role: "PARENT" } as const;
+  const admin = { id: "a1", role: "ADMIN" } as const;
+
+  // A parent may fulfill/reject any redemption by their own child, whatever the resource scope.
+  assert.equal(canManageRedemption(parent, { ownerType: "FAMILY", ownerId: "p1" }, "p1"), true);
+  assert.equal(canManageRedemption(parent, { ownerType: "PLATFORM", ownerId: null }, "p1"), true);
+  // ...but never another family's child redemption.
+  assert.equal(canManageRedemption(parent, { ownerType: "FAMILY", ownerId: "p2" }, "p2"), false);
+
+  // An admin acts only on platform-owned redemptions, never on a family's private reward.
+  assert.equal(canManageRedemption(admin, { ownerType: "PLATFORM", ownerId: null }, "p1"), true);
+  assert.equal(canManageRedemption(admin, { ownerType: "FAMILY", ownerId: "p2" }, "p2"), false);
 });
