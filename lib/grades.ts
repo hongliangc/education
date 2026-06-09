@@ -43,3 +43,49 @@ export function canAccessGrade(childGrade: Grade, targetGrade: string): boolean 
   if (!isGrade(targetGrade)) return false;
   return gradeIndex(targetGrade) <= gradeIndex(childGrade) + 1;
 }
+
+// Pre-grade progress is bucketed under LEGACY so it never blends into a confirmed grade.
+export const LEGACY_GRADE = "LEGACY";
+
+// Resolve the grade a session should be recorded under, or `null` to reject the request.
+// A missing grade falls back to LEGACY (backwards compatible with pre-grade clients); a
+// supplied grade must be valid and within reach of the child's confirmed grade — or, before
+// confirmation, the grade inferred from their age.
+export function resolveSessionGrade(
+  child: { gradeLevel: string | null; age: number },
+  requested: unknown,
+): Grade | typeof LEGACY_GRADE | null {
+  if (requested === undefined || requested === null || requested === "") {
+    return LEGACY_GRADE;
+  }
+  if (!isGrade(requested)) return null;
+  const ceiling = isGrade(child.gradeLevel)
+    ? child.gradeLevel
+    : inferGradeFromAge(child.age);
+  return canAccessGrade(ceiling, requested) ? requested : null;
+}
+
+export interface ModuleSessionRecord {
+  gradeLevel: string;
+  totalQ: number;
+  correctQ: number;
+  starsEarned: number;
+}
+
+// Summarize one module's progress for a single grade. Sessions must arrive newest-first.
+// Mastery averages accuracy over the five most recent in-grade sessions; stars sum the
+// whole grade. Other grades (including LEGACY) are filtered out so they stay isolated.
+export function summarizeModuleGrade(
+  sessions: ModuleSessionRecord[],
+  grade: string,
+): { masteryPct: number; stars: number } {
+  const scoped = sessions.filter((s) => s.gradeLevel === grade);
+  const recent = scoped.slice(0, 5);
+  const accuracy =
+    recent.reduce(
+      (sum, s) => sum + (s.totalQ > 0 ? s.correctQ / s.totalQ : 0),
+      0,
+    ) / Math.max(1, recent.length);
+  const stars = scoped.reduce((sum, s) => sum + s.starsEarned, 0);
+  return { masteryPct: Math.round(accuracy * 100), stars };
+}

@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { createPrismaRewardsAdapter } from "@/lib/rewards/adapter";
 import { recordSessionStars } from "@/lib/rewards/service";
+import { resolveSessionGrade, summarizeModuleGrade } from "@/lib/grades";
 
 const VALID_MODULES = ["WRITING", "ALPHABET", "WORDS", "MATH", "STORY", "LIFE"] as const;
 
@@ -33,11 +34,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Child not found" }, { status: 404 });
   }
 
+  // 解析并校验本次会话年级：缺省回落 LEGACY，超出孩子年级一级则拒绝。
+  const gradeLevel = resolveSessionGrade(child, body.gradeLevel);
+  if (gradeLevel === null) {
+    return NextResponse.json({ error: "无效的年级" }, { status: 400 });
+  }
+
   const { created, masteryPct } = await prisma.$transaction(async (tx) => {
     const createdSession = await tx.gameSession.create({
       data: {
         childId,
         module,
+        gradeLevel,
         score,
         totalQ,
         correctQ,
@@ -58,35 +66,20 @@ export async function POST(req: Request) {
       data: { lastLoginDate: new Date() },
     });
 
-    // mastery 取最近 5 次答题正确率平均值。
-    const recent = await tx.gameSession.findMany({
+    // 按「模块 + 年级」统计：最近五次掌握度与该年级累计星星，LEGACY 与各年级互不混入。
+    const moduleSessions = await tx.gameSession.findMany({
       where: { childId, module },
       orderBy: { createdAt: "desc" },
-      take: 5,
     });
-    const accuracy =
-      recent.reduce(
-        (sum, item) => sum + (item.totalQ > 0 ? item.correctQ / item.totalQ : 0),
-        0,
-      ) / Math.max(1, recent.length);
-    const nextMasteryPct = Math.round(accuracy * 100);
-    const totalStarsOnModule = await tx.gameSession.aggregate({
-      where: { childId, module },
-      _sum: { starsEarned: true },
-    });
+    const { masteryPct: nextMasteryPct, stars } = summarizeModuleGrade(
+      moduleSessions,
+      gradeLevel,
+    );
 
     await tx.learningProgress.upsert({
-      where: { childId_module: { childId, module } },
-      create: {
-        childId,
-        module,
-        stars: totalStarsOnModule._sum.starsEarned ?? 0,
-        masteryPct: nextMasteryPct,
-      },
-      update: {
-        stars: totalStarsOnModule._sum.starsEarned ?? 0,
-        masteryPct: nextMasteryPct,
-      },
+      where: { childId_module_gradeLevel: { childId, module, gradeLevel } },
+      create: { childId, module, gradeLevel, stars, masteryPct: nextMasteryPct },
+      update: { stars, masteryPct: nextMasteryPct },
     });
 
     return { created: createdSession, masteryPct: nextMasteryPct };

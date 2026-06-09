@@ -58,13 +58,14 @@ model LearningProgress {
   childId     String
   child       Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
   module      String // WRITING | ALPHABET | WORDS | MATH | STORY | LIFE
+  gradeLevel  String    @default("LEGACY") // K1-G3；LEGACY 为分级前的汇总记录
   level       Int       @default(1)
   stars       Int       @default(0)
   masteryPct  Int       @default(0)
   completedAt DateTime?
   updatedAt   DateTime  @updatedAt
 
-  @@unique([childId, module])
+  @@unique([childId, module, gradeLevel])
 }
 
 model GameSession {
@@ -72,6 +73,7 @@ model GameSession {
   childId     String
   child       Child    @relation(fields: [childId], references: [id], onDelete: Cascade)
   module      String
+  gradeLevel  String   @default("LEGACY") // K1-G3；LEGACY 为分级前的会话
   score       Int
   totalQ      Int
   correctQ    Int

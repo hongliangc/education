@@ -17,8 +17,10 @@ export async function GET(
   });
   if (!child) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
+  // 每个模块按年级分别返回（含 LEGACY 汇总记录），由客户端按模块+年级分组展示。
   const progress = await prisma.learningProgress.findMany({
     where: { childId },
+    orderBy: [{ module: "asc" }, { gradeLevel: "asc" }],
   });
 
   return NextResponse.json({ child, progress });
