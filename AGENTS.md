@@ -24,7 +24,7 @@ This version has breaking changes. Before changing Next.js code, read the releva
 - 目标和文件明确的实现、补测试、批量修改可直接交给 Codex。
 - 根因不明、需要研究或架构判断时，由当前 Agent 先完成定位与决策。
 - 只有跨模块、schema、安全、大型功能、多 Agent 并行或主工作区冲突时才使用 worktree。
-- 正式设计和计划写入外部 wiki；小改不创建 spec、plan 或状态文档。
+- 需求默认只写 spec（外部 wiki）并据此直接开发；plan / writing-plans 默认不写。开发中若 Agent 判断确有必要写 plan（步骤多、依赖乱、需分阶段检查点），主动向用户提出、经确认后再写——不擅自写，也不闷头跳过这层判断。小改连 spec 都不建，也不创建状态文档。
 - Claude/Codex handoff 只传 wiki 路径与执行范围，或使用不超过 20 行的短 prompt。
 - 普通协作任务最多一轮整改；高风险任务最多两轮，仍有 BLOCKING 时交用户裁决。
 
@@ -32,7 +32,7 @@ This version has breaking changes. Before changing Next.js code, read the releva
 
 - Next.js 代码：按文件类型读取 `node_modules/next/dist/docs/` 的相关指南。
 - 领域规则：按任务触发 `.claude/skills/mlk-*/SKILL.md`，不要批量加载。
-- 项目设计和计划：读取外部 wiki 的具体页面，不扫描整个知识库。
+- 项目 spec（及按需才有的 plan）：读取外部 wiki 的具体页面，不扫描整个知识库。
 - Bugfix 流程：`bugfix/README.md`
 - 脚本清单：`scripts/README.md`
 - 当前仓库或对话已有答案时，不额外查 wiki。
