@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { Grade } from "@/lib/grades";
 
 export interface ChildSummary {
   id: string;
@@ -12,11 +13,14 @@ export interface ChildSummary {
   totalStars: number;
   hearts: number;
   streakDays: number;
+  // null until the parent confirms the child's grade in child-select.
+  gradeLevel: Grade | null;
 }
 
 interface GameState {
   activeChild: ChildSummary | null;
   setActiveChild: (c: ChildSummary | null) => void;
+  setActiveChildGrade: (grade: Grade) => void;
   bumpStars: (n: number) => void;
   setStars: (total: number) => void;
 }
@@ -26,6 +30,10 @@ export const useGameStore = create<GameState>()(
     (set) => ({
       activeChild: null,
       setActiveChild: (c) => set({ activeChild: c }),
+      setActiveChildGrade: (grade) =>
+        set((s) =>
+          s.activeChild ? { activeChild: { ...s.activeChild, gradeLevel: grade } } : s,
+        ),
       bumpStars: (n) =>
         set((s) =>
           s.activeChild

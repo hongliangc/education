@@ -7,14 +7,25 @@ import { CloudBG } from "@/components/CloudBG";
 import { Btn } from "@/components/Btn";
 import { CardSkeleton } from "@/components/skeleton/CardSkeleton";
 import { useGameStore, type ChildSummary } from "@/store/gameStore";
+import { GRADES, inferGradeFromAge, isGrade, type Grade } from "@/lib/grades";
 
 const AVATARS = ["🌸", "🐯", "🦄", "🐰", "🦊", "🐼", "🐧", "🦁", "🐸", "🐢"];
+
+const GRADE_LABELS: Record<Grade, string> = {
+  K1: "幼儿园小班",
+  K2: "幼儿园中班",
+  K3: "幼儿园大班",
+  G1: "一年级",
+  G2: "二年级",
+  G3: "三年级",
+};
 
 export default function ChildSelectPage() {
   const router = useRouter();
   const [children, setChildren] = useState<ChildSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
+  const [confirmChild, setConfirmChild] = useState<ChildSummary | null>(null);
   const setActiveChild = useGameStore((s) => s.setActiveChild);
 
   useEffect(() => {
@@ -29,9 +40,18 @@ export default function ChildSelectPage() {
     })();
   }, []);
 
-  const pick = (c: ChildSummary) => {
+  const enterWorld = (c: ChildSummary) => {
     setActiveChild(c);
     router.push("/world");
+  };
+
+  const pick = (c: ChildSummary) => {
+    // Confirm the grade once before the first adventure; afterwards go straight in.
+    if (isGrade(c.gradeLevel)) {
+      enterWorld(c);
+    } else {
+      setConfirmChild(c);
+    }
   };
 
   return (
@@ -91,8 +111,93 @@ export default function ChildSelectPage() {
             }}
           />
         )}
+
+        {confirmChild && (
+          <GradeConfirmModal
+            child={confirmChild}
+            onClose={() => setConfirmChild(null)}
+            onConfirmed={(c) => {
+              setChildren((arr) => arr.map((x) => (x.id === c.id ? c : x)));
+              setConfirmChild(null);
+              enterWorld(c);
+            }}
+          />
+        )}
       </main>
     </>
+  );
+}
+
+function GradeConfirmModal({
+  child,
+  onClose,
+  onConfirmed,
+}: {
+  child: ChildSummary;
+  onClose: () => void;
+  onConfirmed: (c: ChildSummary) => void;
+}) {
+  const [grade, setGrade] = useState<Grade>(inferGradeFromAge(child.age));
+  const [error, setError] = useState<string | null>(null);
+  const [pending, start] = useTransition();
+
+  const confirm = () => {
+    start(async () => {
+      const res = await fetch(`/api/children/${child.id}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ gradeLevel: grade }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        setError(j.error ?? "保存失败");
+        return;
+      }
+      const j = await res.json();
+      onConfirmed(j.child as ChildSummary);
+    });
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center px-4">
+      <div className="anim-pop-in w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl">
+        <h2 className="text-2xl font-bold text-slate-700 mb-1">
+          {child.name} 上几年级啦？
+        </h2>
+        <p className="text-sm text-slate-500 mb-4">
+          我们会按年级准备合适的内容，之后可以随时调整。
+        </p>
+
+        <div className="grid grid-cols-3 gap-2 mb-4">
+          {GRADES.map((g) => (
+            <button
+              key={g}
+              type="button"
+              onClick={() => setGrade(g)}
+              className={`rounded-2xl px-2 py-3 text-center ring-2 transition ${
+                grade === g
+                  ? "ring-pink-400 bg-pink-50 scale-105"
+                  : "ring-slate-200 hover:bg-slate-50"
+              }`}
+            >
+              <div className="font-bold text-slate-700">{g}</div>
+              <div className="text-xs text-slate-500">{GRADE_LABELS[g]}</div>
+            </button>
+          ))}
+        </div>
+
+        {error && <p className="text-rose-500 text-sm mb-2">⚠ {error}</p>}
+
+        <div className="flex gap-3">
+          <Btn variant="ghost" onClick={onClose} className="flex-1">
+            取消
+          </Btn>
+          <Btn variant="primary" onClick={confirm} disabled={pending} className="flex-1">
+            {pending ? "保存中…" : "开始冒险 ✨"}
+          </Btn>
+        </div>
+      </div>
+    </div>
   );
 }
 

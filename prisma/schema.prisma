@@ -32,6 +32,7 @@ model Child {
   parent          User               @relation(fields: [parentId], references: [id], onDelete: Cascade)
   name            String
   age             Int
+  gradeLevel      String?
   avatar          String             @default("🌸")
   fairyLevel      Int                @default(1)
   totalStars      Int                @default(0)
