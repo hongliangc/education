@@ -1,13 +1,8 @@
-import type { MathOperator, MathProblem, MathTier } from "../../content/math";
+import type { MathProblem } from "../../content/math";
 
-export interface MathMistake {
-  id: string;
-  tier: MathTier;
-  op: MathOperator;
-  question: string;
-  answer: number;
-  addedAt: string;
-}
+// A mistake is simply the missed problem plus when it was recorded. The problem's `id`
+// already embeds its grade, so mistakes are deduped and reviewed per grade automatically.
+export type MathMistake = MathProblem & { addedAt: string };
 
 export interface MathMistakeStorage {
   getItem(key: string): string | null;
@@ -68,24 +63,14 @@ export function removeMistake(
   return next;
 }
 
-export function toMistake(problem: MathProblem, addedAt = new Date().toISOString()): MathMistake {
-  return {
-    id: `${problem.tier}:${problem.question}`,
-    tier: problem.tier,
-    op: problem.op,
-    question: problem.question,
-    answer: problem.answer,
-    addedAt,
-  };
+export function toMistake(
+  problem: MathProblem,
+  addedAt = new Date().toISOString(),
+): MathMistake {
+  return { ...problem, addedAt };
 }
 
 export function mistakeToProblem(mistake: MathMistake): MathProblem {
-  const [left, right] = mistake.question.split(` ${mistake.op} `).map(Number);
-  return {
-    question: mistake.question,
-    answer: mistake.answer,
-    op: mistake.op,
-    operands: [left, right],
-    tier: mistake.tier,
-  };
+  const { addedAt: _addedAt, ...problem } = mistake;
+  return problem;
 }

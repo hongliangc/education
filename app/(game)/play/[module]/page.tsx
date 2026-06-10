@@ -101,7 +101,12 @@ export default function PlayPage({
       {slug === "alphabet" && <AlphabetGame onComplete={onSessionComplete} onExit={back} />}
       {slug === "words" && <WordsGame onComplete={onSessionComplete} onExit={back} />}
       {slug === "math" && (
-        <MathGame childId={child.id} onComplete={onSessionComplete} onExit={back} />
+        <MathGame
+          childId={child.id}
+          grade={grade}
+          onComplete={onSessionComplete}
+          onExit={back}
+        />
       )}
     </GameModal>
   );

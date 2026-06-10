@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
-import { generateChoices, type MathProblem } from "@/content/math";
+import type { MathProblem } from "@/content/math";
 import { addMistake, removeMistake, toMistake } from "@/lib/math/mistakes";
 import { MathGuide } from "./MathGuide";
 import { MathVisual } from "./MathVisual";
@@ -28,10 +28,7 @@ export function MathRound({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { sfx } = useSFX();
   const current = problems[questionIndex];
-  const choices = useMemo(
-    () => (current ? generateChoices(current.answer, current.tier) : []),
-    [current],
-  );
+  const choices = current?.choices ?? [];
 
   useEffect(
     () => () => {
@@ -57,7 +54,7 @@ export function MathRound({
 
   if (!current) return null;
 
-  const choose = (choice: number) => {
+  const choose = (choice: string) => {
     if (feedback) return;
     const correct = choice === current.answer;
     setFeedback(correct ? "correct" : "wrong");
@@ -65,7 +62,7 @@ export function MathRound({
     if (correct) {
       sfx.correct();
       if (review) {
-        removeMistake(childId, `${current.tier}:${current.question}`);
+        removeMistake(childId, current.id);
         onMistakesChanged();
       }
       timerRef.current = setTimeout(() => advance(true), 700);
@@ -98,8 +95,9 @@ export function MathRound({
           feedback === "correct" ? "anim-correct" : feedback === "wrong" ? "anim-shake" : ""
         }`}
       >
-        <div className="text-4xl font-bold text-amber-700 sm:text-5xl">
-          {current.question} = ?
+        <div className="text-3xl font-bold text-amber-700 sm:text-4xl">
+          {current.prompt}
+          {current.kind === "arithmetic" ? " = ?" : ""}
         </div>
         <div className="mt-5 min-h-24">
           <MathVisual problem={current} />

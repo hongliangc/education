@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
-import { addMistake, getMistakes, removeMistake, type MathMistake, type MathMistakeStorage } from "../../lib/math/mistakes.ts";
+import { addMistake, getMistakes, removeMistake, toMistake, type MathMistake, type MathMistakeStorage } from "../../lib/math/mistakes.ts";
+import type { ArithmeticProblem } from "../../content/math.ts";
 
 class MemoryStorage implements MathMistakeStorage {
   private readonly values = new Map<string, string>();
@@ -15,15 +16,21 @@ class MemoryStorage implements MathMistakeStorage {
   }
 }
 
-function mistake(question: string, addedAt: string): MathMistake {
+function problem(question: string): ArithmeticProblem {
   return {
-    id: `BASIC:${question}`,
-    tier: "BASIC",
+    kind: "arithmetic",
+    id: `K1:arithmetic:${question}`,
+    grade: "K1",
     op: "+",
-    question,
-    answer: 3,
-    addedAt,
+    operands: [1, 2],
+    prompt: question,
+    answer: "3",
+    choices: ["3", "4", "5", "6"],
   };
+}
+
+function mistake(question: string, addedAt: string): MathMistake {
+  return toMistake(problem(question), addedAt);
 }
 
 test("mistakes are isolated by child id", () => {
@@ -34,7 +41,13 @@ test("mistakes are isolated by child id", () => {
   assert.deepEqual(getMistakes("child-b", storage), []);
 });
 
-test("adding the same tier and question replaces the existing record", () => {
+test("the mistake id and record both carry the grade", () => {
+  const record = mistake("1 + 2", "2026-06-06T00:00:00.000Z");
+  assert.ok(record.id.startsWith("K1:"));
+  assert.equal(record.grade, "K1");
+});
+
+test("adding the same question replaces the existing record", () => {
   const storage = new MemoryStorage();
   addMistake("child-a", mistake("1 + 2", "2026-06-06T00:00:00.000Z"), storage);
   addMistake("child-a", mistake("1 + 2", "2026-06-06T01:00:00.000Z"), storage);
@@ -56,8 +69,8 @@ test("mistake storage keeps the newest fifty records", () => {
 
   const records = getMistakes("child-a", storage);
   assert.equal(records.length, 50);
-  assert.equal(records[0]?.question, "5 + 2");
-  assert.equal(records.at(-1)?.question, "54 + 2");
+  assert.equal(records[0]?.prompt, "5 + 2");
+  assert.equal(records.at(-1)?.prompt, "54 + 2");
 });
 
 test("removing a mastered mistake leaves other records intact", () => {
@@ -65,10 +78,10 @@ test("removing a mastered mistake leaves other records intact", () => {
   addMistake("child-a", mistake("1 + 2", "2026-06-06T00:00:00.000Z"), storage);
   addMistake("child-a", mistake("2 + 2", "2026-06-06T00:01:00.000Z"), storage);
 
-  removeMistake("child-a", "BASIC:1 + 2", storage);
+  removeMistake("child-a", "K1:arithmetic:1 + 2", storage);
 
   assert.deepEqual(
     getMistakes("child-a", storage).map(({ id }) => id),
-    ["BASIC:2 + 2"],
+    ["K1:arithmetic:2 + 2"],
   );
 });

@@ -1,10 +1,20 @@
-import type { MathProblem } from "@/content/math";
+import type {
+  ArithmeticProblem,
+  ComparisonProblem,
+  FractionProblem,
+  MathProblem,
+  MeasurementProblem,
+  ShapeProblem,
+  TimeProblem,
+  WordProblem,
+} from "@/content/math";
 
 const ITEMS = ["🍎", "⭐", "🌸", "🍬"];
 
-function BasicVisual({ problem, guideStep }: { problem: MathProblem; guideStep: number }) {
+function CountVisual({ problem, guideStep }: { problem: ArithmeticProblem; guideStep: number }) {
   const [left, right] = problem.operands;
-  const emoji = ITEMS[(left + right) % ITEMS.length];
+  const answer = Number(problem.answer);
+  const emoji = ITEMS[(left + right) % ITEMS.length]!;
 
   if (problem.op === "+") {
     return (
@@ -14,11 +24,8 @@ function BasicVisual({ problem, guideStep }: { problem: MathProblem; guideStep: 
         <div className="rounded-2xl bg-white/70 p-3">{emoji.repeat(right)}</div>
         {guideStep > 0 ? (
           <div className="flex w-full justify-center gap-1 font-bold text-emerald-600 anim-pop-in">
-            {Array.from({ length: problem.answer }, (_, index) => (
-              <span
-                key={index}
-                className={index < guideStep ? "scale-110 opacity-100" : "opacity-25"}
-              >
+            {Array.from({ length: answer }, (_, index) => (
+              <span key={index} className={index < guideStep ? "scale-110 opacity-100" : "opacity-25"}>
                 {emoji}
               </span>
             ))}
@@ -47,21 +54,19 @@ function BasicVisual({ problem, guideStep }: { problem: MathProblem; guideStep: 
         );
       })}
       {guideStep > 0 && guideStep >= right ? (
-        <div className="w-full text-base font-bold text-emerald-700">
-          还剩 {problem.answer} 个
-        </div>
+        <div className="w-full text-base font-bold text-emerald-700">还剩 {problem.answer} 个</div>
       ) : null}
     </div>
   );
 }
 
-function MidVisual({ problem, guideStep }: { problem: MathProblem; guideStep: number }) {
+function ColumnVisual({ problem, guideStep }: { problem: ArithmeticProblem; guideStep: number }) {
   const [left, right] = problem.operands;
-  const carry = problem.op === "+" && left % 10 + (right % 10) >= 10;
+  const carry = problem.op === "+" && (left % 10) + (right % 10) >= 10;
   const borrow = problem.op === "-" && left % 10 < right % 10;
 
   return (
-    <div className="mx-auto w-36 text-right font-mono text-3xl font-bold text-slate-700">
+    <div className="mx-auto w-40 text-right font-mono text-3xl font-bold text-slate-700">
       <div className="mb-1 flex h-6 justify-end text-sm text-rose-500">
         {guideStep >= 2 && carry ? "进 1 ↑" : guideStep >= 2 && borrow ? "借 1 ↓" : ""}
       </div>
@@ -73,49 +78,164 @@ function MidVisual({ problem, guideStep }: { problem: MathProblem; guideStep: nu
       <div className="mt-1 border-t-4 border-slate-600 pt-1">
         {guideStep >= 3 ? problem.answer : "?"}
       </div>
-      <div className="mt-2 grid grid-cols-2 text-xs font-sans font-medium text-slate-500">
-        <span>十位</span>
-        <span>个位</span>
-      </div>
     </div>
   );
 }
 
-function AdvancedVisual({ problem, guideStep }: { problem: MathProblem; guideStep: number }) {
+function ArrayVisual({ problem, guideStep }: { problem: ArithmeticProblem; guideStep: number }) {
   const [left, right] = problem.operands;
 
   if (problem.op === "×") {
+    if (left <= 10 && right <= 10) {
+      return (
+        <div className="space-y-1">
+          {Array.from({ length: left }, (_, row) => (
+            <div
+              key={row}
+              className={`flex justify-center gap-1 text-xl transition ${
+                guideStep > 0 && row < guideStep ? "scale-110 text-amber-500" : "text-sky-500"
+              }`}
+            >
+              {Array.from({ length: right }, (_, column) => (
+                <span key={column}>●</span>
+              ))}
+            </div>
+          ))}
+        </div>
+      );
+    }
+    // Multi-digit: show repeated addition with the smaller factor as the group count.
+    const groups = Math.min(left, right);
+    const each = Math.max(left, right);
     return (
-      <div className="space-y-1">
-        {Array.from({ length: left }, (_, row) => (
-          <div
-            key={row}
-            className={`flex justify-center gap-1 text-xl transition ${
-              guideStep > 0 && row < guideStep ? "scale-110 text-amber-500" : "text-sky-500"
-            }`}
-          >
-            {Array.from({ length: right }, (_, column) => (
-              <span key={column}>●</span>
-            ))}
-          </div>
+      <div className="flex flex-wrap items-center justify-center gap-2 text-lg font-bold text-sky-600">
+        {Array.from({ length: groups }, (_, index) => (
+          <span key={index} className="flex items-center gap-2">
+            <span className="rounded-xl bg-sky-100 px-3 py-1">{each}</span>
+            {index < groups - 1 ? <span className="text-slate-400">+</span> : null}
+          </span>
         ))}
       </div>
     );
   }
 
-  const groups = Array.from({ length: right }, () => problem.answer);
+  const answer = Number(problem.answer);
+  const compact = right <= 6 && answer <= 12;
   return (
     <div className="flex flex-wrap justify-center gap-2">
-      {groups.map((count, group) => (
+      {Array.from({ length: right }, (_, group) => (
         <div
           key={group}
-          className={`min-w-16 rounded-2xl border-2 border-dashed p-2 text-sky-500 transition ${
+          className={`min-w-16 rounded-2xl border-2 border-dashed p-2 text-center text-sky-500 transition ${
             guideStep > 0 && group < guideStep ? "border-amber-400 bg-amber-100 scale-105" : "border-sky-300"
           }`}
         >
-          {"●".repeat(count)}
+          {compact ? "●".repeat(answer) : <span className="font-bold">?</span>}
         </div>
       ))}
+    </div>
+  );
+}
+
+function ComparisonVisual({ problem, guideStep }: { problem: ComparisonProblem; guideStep: number }) {
+  const max = Math.max(problem.left, problem.right, 1);
+  const sign = problem.left > problem.right ? ">" : problem.left < problem.right ? "<" : "=";
+  return (
+    <div className="mx-auto w-56 space-y-3">
+      {[problem.left, problem.right].map((value, index) => (
+        <div key={index} className="flex items-center gap-2">
+          <span className="w-10 text-right font-bold text-slate-700">{value}</span>
+          <div className="h-5 flex-1 overflow-hidden rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-orange-500"
+              style={{ width: `${(value / max) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
+      {guideStep > 0 ? (
+        <div className="text-center text-3xl font-bold text-emerald-600 anim-pop-in">{sign}</div>
+      ) : null}
+    </div>
+  );
+}
+
+function ShapeVisual({ problem }: { problem: ShapeProblem }) {
+  return <div className="text-center text-6xl anim-bob">{problem.shape}</div>;
+}
+
+function TimeVisual({ problem }: { problem: TimeProblem }) {
+  const hourAngle = ((problem.hour % 12) + problem.minute / 60) * 30;
+  const minuteAngle = problem.minute * 6;
+  return (
+    <div className="relative mx-auto h-28 w-28 rounded-full border-4 border-slate-300 bg-white">
+      <div
+        className="absolute left-1/2 top-1/2 h-9 w-1 origin-bottom -translate-x-1/2 -translate-y-full rounded-full bg-slate-700"
+        style={{ transform: `translate(-50%, -100%) rotate(${hourAngle}deg)` }}
+      />
+      <div
+        className="absolute left-1/2 top-1/2 h-12 w-0.5 origin-bottom -translate-x-1/2 -translate-y-full rounded-full bg-amber-500"
+        style={{ transform: `translate(-50%, -100%) rotate(${minuteAngle}deg)` }}
+      />
+      <div className="absolute left-1/2 top-1/2 h-2 w-2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-slate-800" />
+    </div>
+  );
+}
+
+function FractionVisual({ problem, guideStep }: { problem: FractionProblem; guideStep: number }) {
+  return (
+    <div className="mx-auto flex w-56 overflow-hidden rounded-xl ring-2 ring-slate-300">
+      {Array.from({ length: problem.denominator }, (_, index) => (
+        <div
+          key={index}
+          className={`h-12 flex-1 border-r border-white last:border-r-0 transition ${
+            index < problem.numerator
+              ? guideStep > 0
+                ? "bg-pink-400 anim-pop-in"
+                : "bg-pink-300"
+              : "bg-slate-50"
+          }`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function MeasurementVisual({ problem }: { problem: MeasurementProblem }) {
+  if (!problem.bars) {
+    return (
+      <div className="text-center">
+        <div className="text-5xl">📏</div>
+        <p className="mt-1 text-sm font-bold text-slate-500">1 米 = 100 厘米</p>
+      </div>
+    );
+  }
+  const max = Math.max(...problem.bars.map((bar) => bar.length), 1);
+  return (
+    <div className="mx-auto w-56 space-y-2">
+      {problem.bars.map((bar) => (
+        <div key={bar.label} className="flex items-center gap-2">
+          <span className="w-10 text-right text-sm font-bold text-slate-600">{bar.label}</span>
+          <div className="h-4 flex-1 rounded-full bg-slate-100">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-sky-400 to-cyan-500"
+              style={{ width: `${(bar.length / max) * 100}%` }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function WordVisual({ problem }: { problem: WordProblem }) {
+  const emoji = problem.op === "×" ? "🍪" : problem.op === "-" ? "📚" : "💰";
+  return (
+    <div className="flex items-center justify-center gap-3 text-2xl font-bold text-slate-600">
+      <span className="text-4xl">{emoji}</span>
+      <span className="rounded-xl bg-white/70 px-3 py-1">{problem.operands[0]}</span>
+      <span className="text-amber-600">{problem.op}</span>
+      <span className="rounded-xl bg-white/70 px-3 py-1">{problem.operands[1]}</span>
     </div>
   );
 }
@@ -127,11 +247,29 @@ export function MathVisual({
   problem: MathProblem;
   guideStep?: number;
 }) {
-  if (problem.tier === "BASIC") {
-    return <BasicVisual problem={problem} guideStep={guideStep} />;
+  switch (problem.kind) {
+    case "arithmetic": {
+      if (problem.op === "×" || problem.op === "÷") {
+        return <ArrayVisual problem={problem} guideStep={guideStep} />;
+      }
+      const small = Math.max(problem.operands[0], problem.operands[1]) <= 10;
+      return small ? (
+        <CountVisual problem={problem} guideStep={guideStep} />
+      ) : (
+        <ColumnVisual problem={problem} guideStep={guideStep} />
+      );
+    }
+    case "comparison":
+      return <ComparisonVisual problem={problem} guideStep={guideStep} />;
+    case "shape":
+      return <ShapeVisual problem={problem} />;
+    case "time":
+      return <TimeVisual problem={problem} />;
+    case "fraction":
+      return <FractionVisual problem={problem} guideStep={guideStep} />;
+    case "measurement":
+      return <MeasurementVisual problem={problem} />;
+    case "word":
+      return <WordVisual problem={problem} />;
   }
-  if (problem.tier === "MID") {
-    return <MidVisual problem={problem} guideStep={guideStep} />;
-  }
-  return <AdvancedVisual problem={problem} guideStep={guideStep} />;
 }

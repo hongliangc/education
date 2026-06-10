@@ -1,45 +1,57 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
-import { generateRound, type MathProblem, type MathTier } from "@/content/math";
+import { generateRound, type MathProblem } from "@/content/math";
+import type { Grade } from "@/lib/grades";
 import { getMistakes, mistakeToProblem } from "@/lib/math/mistakes";
 import type { OnComplete } from "./types";
 import { GameDone } from "./GameDone";
 import { MathRound } from "./math/MathRound";
-import { MathTierPicker } from "./math/MathTierPicker";
 
-type Screen = "picker" | "round" | "done" | "review" | "review-done";
+type Screen = "round" | "done" | "review" | "review-done";
 
 export function MathGame({
   childId,
+  grade,
   onComplete,
   onExit,
 }: {
   childId: string;
+  grade: Grade;
   onComplete: OnComplete;
   onExit: () => void;
 }) {
-  const [screen, setScreen] = useState<Screen>("picker");
-  const [tier, setTier] = useState<MathTier | null>(null);
-  const [round, setRound] = useState<MathProblem[]>([]);
+  const [screen, setScreen] = useState<Screen>("round");
+  const [round, setRound] = useState<MathProblem[]>(() => generateRound(grade));
   const [mistakeCount, setMistakeCount] = useState(0);
   const [correctQ, setCorrectQ] = useState(0);
   const startedAt = useRef(Date.now());
+  const gradeRef = useRef(grade);
 
-  const refreshMistakes = () => setMistakeCount(getMistakes(childId).length);
+  const refreshMistakes = useCallback(
+    () => setMistakeCount(getMistakes(childId).length),
+    [childId],
+  );
 
   useEffect(() => {
     refreshMistakes();
-  }, [childId]);
+  }, [refreshMistakes]);
 
-  const startTier = (nextTier: MathTier) => {
-    setTier(nextTier);
-    setRound(generateRound(nextTier));
+  const startRound = useCallback(() => {
+    setRound(generateRound(grade));
     setCorrectQ(0);
     startedAt.current = Date.now();
     setScreen("round");
-  };
+  }, [grade]);
+
+  // Restart with a fresh round whenever the parent switches the practice grade.
+  useEffect(() => {
+    if (gradeRef.current !== grade) {
+      gradeRef.current = grade;
+      startRound();
+    }
+  }, [grade, startRound]);
 
   const startReview = () => {
     const problems = getMistakes(childId).map(mistakeToProblem);
@@ -61,16 +73,6 @@ export function MathGame({
     });
     setScreen("done");
   };
-
-  if (screen === "picker") {
-    return (
-      <MathTierPicker
-        mistakeCount={mistakeCount}
-        onSelect={startTier}
-        onReview={startReview}
-      />
-    );
-  }
 
   if (screen === "round") {
     return (
@@ -112,10 +114,10 @@ export function MathGame({
           className="mt-6"
           onClick={() => {
             refreshMistakes();
-            setScreen("picker");
+            startRound();
           }}
         >
-          返回难度选择
+          继续练习
         </Btn>
       </div>
     );
@@ -127,9 +129,9 @@ export function MathGame({
       starsEarned={stars}
       correctQ={correctQ}
       totalQ={round.length}
-      onAgain={() => tier && startTier(tier)}
-      onChangeMode={() => setScreen("picker")}
-      changeModeLabel="换难度"
+      onAgain={startRound}
+      onChangeMode={mistakeCount > 0 ? startReview : undefined}
+      changeModeLabel={`复习错题 (${mistakeCount})`}
       onClose={onExit}
     />
   );
