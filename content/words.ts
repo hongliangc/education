@@ -8,6 +8,7 @@ import { KINDERGARTEN_WORDS } from "./words/kindergarten";
 import { GRADE_ONE_WORDS } from "./words/grade-one";
 import { GRADE_TWO_WORDS } from "./words/grade-two";
 import { GRADE_THREE_WORDS } from "./words/grade-three";
+import { pickRound, wordsUpToGrade } from "./words/round";
 
 export interface GradedWord {
   id: string;
@@ -27,21 +28,12 @@ export const WORD_CATALOG: readonly GradedWord[] = [
   ...GRADE_THREE_WORDS,
 ];
 
-const GRADE_RANK = new Map<Grade, number>(GRADES.map((grade, index) => [grade, index]));
-
 // Cumulative vocabulary up to and including `grade` (design §4.3 — higher grades build on earlier).
 export function getWordsForGrade(grade: Grade): GradedWord[] {
-  const ceiling = GRADE_RANK.get(grade) ?? 0;
-  return WORD_CATALOG.filter((word) => (GRADE_RANK.get(word.grade) ?? 0) <= ceiling);
+  return wordsUpToGrade(WORD_CATALOG, grade, GRADES);
 }
 
-// ---------------------------------------------------------------------------
-// Legacy shape — kept until the matching game adopts the graded catalog (Task 7).
-// ---------------------------------------------------------------------------
-export interface WordPair {
-  zh: string;
-  en: string;
-  emoji: string;
+// A matching-game round: up to `count` distinct words drawn from the grade's cumulative pool.
+export function generateRound(grade: Grade, count = 4): GradedWord[] {
+  return pickRound(getWordsForGrade(grade), count);
 }
-
-export const WORDS: WordPair[] = WORD_CATALOG.map(({ zh, en, emoji }) => ({ zh, en, emoji }));

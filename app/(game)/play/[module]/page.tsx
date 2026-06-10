@@ -101,7 +101,9 @@ export default function PlayPage({
       {slug === "alphabet" && (
         <AlphabetGame grade={grade} onComplete={onSessionComplete} onExit={back} />
       )}
-      {slug === "words" && <WordsGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "words" && (
+        <WordsGame grade={grade} onComplete={onSessionComplete} onExit={back} />
+      )}
       {slug === "math" && (
         <MathGame
           childId={child.id}

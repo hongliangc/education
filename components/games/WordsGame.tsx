@@ -1,80 +1,93 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
-import { Btn } from "@/components/Btn";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useSFX } from "@/components/audio/useSFX";
 import { speakText } from "@/lib/speech";
-import { WORDS, type WordPair } from "@/content/words";
+import { generateRound, type GradedWord } from "@/content/words";
 import { shuffle } from "@/lib/utils";
+import type { Grade } from "@/lib/grades";
 import type { OnComplete } from "./types";
 import { GameDone } from "./GameDone";
 
 const ROUND_SIZE = 4;
 
 export function WordsGame({
+  grade,
   onComplete,
   onExit,
 }: {
+  grade: Grade;
   onComplete: OnComplete;
   onExit: () => void;
 }) {
-  const [round, setRound] = useState<WordPair[]>(() => shuffle(WORDS).slice(0, ROUND_SIZE));
+  const [round, setRound] = useState<GradedWord[]>(() => generateRound(grade, ROUND_SIZE));
   const [matched, setMatched] = useState<Set<string>>(new Set());
-  const [selectedZh, setSelectedZh] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [flash, setFlash] = useState<{ id: string; ok: boolean } | null>(null);
   const [wrongCount, setWrongCount] = useState(0);
   const [done, setDone] = useState(false);
   const { sfx } = useSFX();
   const startedAt = useRef(Date.now());
+  const gradeRef = useRef(grade);
 
   const emojiOrder = useMemo(() => shuffle(round), [round]);
 
+  const restart = useCallback(() => {
+    setRound(generateRound(grade, ROUND_SIZE));
+    setMatched(new Set());
+    setSelectedId(null);
+    setFlash(null);
+    setWrongCount(0);
+    setDone(false);
+    startedAt.current = Date.now();
+  }, [grade]);
+
+  // Restart with fresh content whenever the parent switches the practice grade.
+  useEffect(() => {
+    if (gradeRef.current !== grade) {
+      gradeRef.current = grade;
+      restart();
+    }
+  }, [grade, restart]);
+
   if (done) {
-    const correct = round.length;
     const stars = wrongCount === 0 ? 3 : wrongCount <= 2 ? 2 : 1;
     return (
       <GameDone
         starsEarned={stars}
-        correctQ={correct}
+        correctQ={round.length}
         totalQ={round.length}
-        onAgain={() => {
-          setRound(shuffle(WORDS).slice(0, ROUND_SIZE));
-          setMatched(new Set());
-          setSelectedZh(null);
-          setWrongCount(0);
-          setDone(false);
-          startedAt.current = Date.now();
-        }}
+        onAgain={restart}
         onClose={onExit}
       />
     );
   }
 
-  const onPickZh = (w: WordPair) => {
-    if (matched.has(w.zh)) return;
+  const onPickZh = (w: GradedWord) => {
+    if (matched.has(w.id)) return;
     sfx.click();
-    setSelectedZh(w.zh);
+    setSelectedId(w.id);
     speakText(w.zh, { lang: "zh-CN" });
   };
 
-  const onPickEmoji = (w: WordPair) => {
-    if (matched.has(w.zh)) return;
-    if (!selectedZh) {
+  const onPickEmoji = (w: GradedWord) => {
+    if (matched.has(w.id)) return;
+    if (!selectedId) {
       sfx.click();
       return;
     }
-    const ok = selectedZh === w.zh;
-    setFlash({ id: w.zh, ok });
+    const ok = selectedId === w.id;
+    setFlash({ id: w.id, ok });
     if (ok) {
       sfx.coin();
       const next = new Set(matched);
-      next.add(w.zh);
+      next.add(w.id);
       setMatched(next);
-      setSelectedZh(null);
+      setSelectedId(null);
       if (next.size >= round.length) {
         const stars = wrongCount === 0 ? 3 : wrongCount <= 2 ? 2 : 1;
         onComplete({
-          score: 100 - wrongCount * 10,
+          score: Math.max(0, 100 - wrongCount * 10),
           totalQ: round.length,
           correctQ: round.length,
           durationSec: Math.round((Date.now() - startedAt.current) / 1000),
@@ -85,7 +98,7 @@ export function WordsGame({
     } else {
       sfx.wrong();
       setWrongCount((c) => c + 1);
-      setSelectedZh(null);
+      setSelectedId(null);
     }
     setTimeout(() => setFlash(null), 500);
   };
@@ -99,11 +112,11 @@ export function WordsGame({
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           {round.map((w) => {
-            const isSelected = selectedZh === w.zh;
-            const isMatched = matched.has(w.zh);
+            const isSelected = selectedId === w.id;
+            const isMatched = matched.has(w.id);
             return (
               <button
-                key={`zh-${w.zh}`}
+                key={`zh-${w.id}`}
                 onClick={() => onPickZh(w)}
                 disabled={isMatched}
                 aria-label={`配对：${w.zh}`}
@@ -113,7 +126,7 @@ export function WordsGame({
                     : isSelected
                     ? "bg-pink-400 text-white ring-4 ring-pink-200 scale-105"
                     : "bg-white ring-2 ring-pink-200 text-slate-700 hover:bg-pink-50"
-                } ${flash?.id === w.zh && !flash.ok ? "anim-shake" : ""}`}
+                } ${flash?.id === w.id && !flash.ok ? "anim-shake" : ""}`}
               >
                 {w.zh}
               </button>
@@ -123,11 +136,11 @@ export function WordsGame({
 
         <div className="space-y-2">
           {emojiOrder.map((w) => {
-            const isMatched = matched.has(w.zh);
-            const showOk = flash?.id === w.zh && flash.ok;
+            const isMatched = matched.has(w.id);
+            const showOk = flash?.id === w.id && flash.ok;
             return (
               <button
-                key={`em-${w.zh}`}
+                key={`em-${w.id}`}
                 onClick={() => onPickEmoji(w)}
                 disabled={isMatched}
                 aria-label={`图：${w.emoji} 代表 ${w.zh}`}
