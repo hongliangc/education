@@ -8,7 +8,14 @@ import { KINDERGARTEN_WORDS } from "./words/kindergarten";
 import { GRADE_ONE_WORDS } from "./words/grade-one";
 import { GRADE_TWO_WORDS } from "./words/grade-two";
 import { GRADE_THREE_WORDS } from "./words/grade-three";
-import { pickRound, wordsUpToGrade } from "./words/round";
+import {
+  generateChallenges as buildChallenges,
+  pickRound,
+  wordsUpToGrade,
+} from "./words/round";
+
+export type { WordChallenge, WordChoice, WordRoundKind } from "./words/round";
+export { usesMatchingGrid } from "./words/round";
 
 export interface GradedWord {
   id: string;
@@ -33,7 +40,12 @@ export function getWordsForGrade(grade: Grade): GradedWord[] {
   return wordsUpToGrade(WORD_CATALOG, grade, GRADES);
 }
 
-// A matching-game round: up to `count` distinct words drawn from the grade's cumulative pool.
+// A matching-game round (kindergarten): up to `count` distinct words from the cumulative pool.
 export function generateRound(grade: Grade, count = 4): GradedWord[] {
   return pickRound(getWordsForGrade(grade), count);
+}
+
+// A multiple-choice round (primary grades): grade-appropriate challenges over the cumulative pool.
+export function generateChallenges(grade: Grade, count = 5) {
+  return buildChallenges(getWordsForGrade(grade), grade, count);
 }

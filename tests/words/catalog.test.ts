@@ -89,3 +89,17 @@ test("each band file only tags its own grade", () => {
     }
   }
 });
+
+test("every grade-three word ships an example sentence containing the word", () => {
+  for (const word of GRADE_THREE_WORDS) {
+    assert.ok(
+      typeof word.example === "string" && word.example.length > 0,
+      `${word.id} is missing its example sentence`,
+    );
+    assert.match(
+      word.example as string,
+      new RegExp(`\\b${word.en}\\b`, "i"),
+      `${word.id} example must contain "${word.en}" so it can be blanked`,
+    );
+  }
+});
