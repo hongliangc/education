@@ -57,9 +57,13 @@ export function createHoldToTalkSession(
     async end() {
       const recording = active;
       if (!recording) return null;
+      // 同一次录音只接受一次 end。触屏松手会同步派发 pointerup + pointerleave，
+      // 两个 handler 都会调 end()；重复调用返回 null，避免同一份录音被识别/作答两次
+      // （见 bugfix:2026-06-10-fairy-voice-double-answer）。
+      if (recording.released) return null;
 
       recording.released = true;
-      recording.stopPromise ??= (async () => {
+      recording.stopPromise = (async () => {
         try {
           await Promise.all([recording.startPromise, wait(stopDelayMs)]);
           if (recording.cancelled) return null;

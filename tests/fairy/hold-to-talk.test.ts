@@ -62,6 +62,29 @@ test("keeps recording for 200ms after release before stopping", async () => {
   assert.equal(stopCalls, 1);
 });
 
+test("ignores a duplicate release so one gesture submits the recording once", async () => {
+  let stopCalls = 0;
+  const audio = new Blob(["voice"], { type: "audio/wav" });
+  const recorder = {
+    async start() {},
+    async stop() {
+      stopCalls++;
+      return audio;
+    },
+    cancel() {},
+  };
+  const session = createHoldToTalkSession(() => recorder, { wait: async () => {} });
+
+  assert.equal(await session.begin(), true);
+  // 触屏松手同步派发 pointerup + pointerleave → end() 被同步调用两次。
+  const first = session.end();
+  const second = session.end();
+
+  assert.equal(await first, audio);
+  assert.equal(await second, null); // 第二次调用必须落空，否则会重复作答
+  assert.equal(stopCalls, 1);
+});
+
 test("does not stop or submit a recording cancelled during the release delay", async () => {
   let finishDelay: (() => void) | undefined;
   let stopCalls = 0;
