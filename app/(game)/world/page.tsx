@@ -31,6 +31,7 @@ type WorldNode =
 const NODES: WorldNode[] = [
   { kind: "module", id: "WRITING",  x: 135, y: 460 },
   { kind: "module", id: "ALPHABET", x: 310, y: 320 },
+  { kind: "module", id: "LITERATURE", x: 480, y: 150 },
   { kind: "module", id: "MATH",     x: 480, y: 460 },
   { kind: "module", id: "WORDS",    x: 665, y: 285 },
   { kind: "module", id: "STORY",    x: 835, y: 455 },
@@ -74,9 +75,14 @@ export default function WorldMapPage() {
 
   if (!child) return null;
 
+  // 全屏阅读类模块走独立路由，其余走通用 /play/[module]
+  const ROUTE_OVERRIDE: Partial<Record<ModuleId, string>> = {
+    STORY: "/story",
+    LITERATURE: "/literature",
+  };
   const open = (m: ModuleId) => {
     sfx.click();
-    router.push(m === "STORY" ? "/story" : `/play/${m.toLowerCase()}`);
+    router.push(ROUTE_OVERRIDE[m] ?? `/play/${m.toLowerCase()}`);
   };
 
   const openTheater = () => {

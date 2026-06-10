@@ -35,9 +35,13 @@ const HISTORY_TURNS = 6; // 最近 6 条 = 3 轮
 export function FairyChat({
   child,
   onClose,
+  context,
+  suggestions,
 }: {
   child: { name: string; age?: number; totalStars?: number };
   onClose: () => void;
+  context?: string; // 当前名句/寓言原文+解读，传给后端接地作答；不传时行为不变
+  suggestions?: string[]; // 起步问题气泡，给还不会提问的小小孩搭梯子
 }) {
   const [status, setStatus] = useState<Status>("idle");
   const [messages, setMessages] = useState<Turn[]>([]);
@@ -83,6 +87,7 @@ export function FairyChat({
           childName: child.name,
           age: child.age,
           stars: child.totalStars,
+          context, // undefined 时 JSON.stringify 自动省略，旧调用不受影响
         }),
       });
       const { reply } = await res.json();
@@ -200,6 +205,21 @@ export function FairyChat({
             </div>
           ))}
         </div>
+
+        {messages.length === 0 && suggestions && suggestions.length > 0 && (
+          <div className="w-full flex flex-wrap justify-center gap-2">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                onClick={() => void ask(s)}
+                disabled={status === "thinking"}
+                className="rounded-full bg-pink-50 ring-1 ring-pink-200 px-3 py-1.5 text-sm text-pink-600 transition hover:bg-pink-100 disabled:opacity-50"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
 
         {typing ? (
           <div className="w-full flex items-center gap-2">

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
-const VALID_MODULES = ["WRITING", "ALPHABET", "WORDS", "MATH", "STORY", "LIFE"] as const;
+const VALID_MODULES = ["WRITING", "ALPHABET", "WORDS", "MATH", "STORY", "LITERATURE", "LIFE"] as const;
 
 export async function POST(req: Request) {
   const session = await auth();

@@ -52,7 +52,7 @@ model LearningProgress {
   id          String    @id @default(cuid())
   childId     String
   child       Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
-  module      String // WRITING | ALPHABET | WORDS | MATH | STORY | LIFE
+  module      String // WRITING | ALPHABET | WORDS | MATH | STORY | LITERATURE | LIFE
   level       Int       @default(1)
   stars       Int       @default(0)
   masteryPct  Int       @default(0)
