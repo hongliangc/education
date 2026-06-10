@@ -1,0 +1,102 @@
+// Grade Two vocabulary (~220 cumulative target) — jobs, places, verbs, adjectives, feelings and
+// other concept words. Self-contained data leaf: the only import is the erased `GradedWord` type,
+// so the Node test runner loads it directly without resolving any runtime path.
+import type { GradedWord } from "../words";
+
+function w(en: string, zh: string, emoji: string, category: string): GradedWord {
+  return { id: `g2-${en.replace(/\s+/g, "-")}`, grade: "G2", en, zh, emoji, category };
+}
+
+export const GRADE_TWO_WORDS: GradedWord[] = [
+  // jobs
+  w("doctor", "医生", "🧑‍⚕️", "jobs"),
+  w("nurse", "护士", "👩‍⚕️", "jobs"),
+  w("teacher", "老师", "🧑‍🏫", "jobs"),
+  w("farmer", "农民", "🧑‍🌾", "jobs"),
+  w("pilot", "飞行员", "🧑‍✈️", "jobs"),
+  w("chef", "厨师", "🧑‍🍳", "jobs"),
+  w("police", "警察", "👮", "jobs"),
+  w("singer", "歌手", "🎤", "jobs"),
+  w("painter", "画家", "🧑‍🎨", "jobs"),
+  w("dancer", "舞者", "💃", "jobs"),
+  // places
+  w("school", "学校", "🏫", "places"),
+  w("park", "公园", "🏞️", "places"),
+  w("store", "商店", "🏬", "places"),
+  w("hospital", "医院", "🏥", "places"),
+  w("library", "图书馆", "📚", "places"),
+  w("zoo", "动物园", "🦓", "places"),
+  w("museum", "博物馆", "🏛️", "places"),
+  w("bank", "银行", "🏦", "places"),
+  w("market", "市场", "🛒", "places"),
+  w("airport", "机场", "🛫", "places"),
+  // verbs
+  w("read", "读", "📖", "verbs"),
+  w("write", "写", "✍️", "verbs"),
+  w("draw", "画", "🖌️", "verbs"),
+  w("sing", "唱", "🎵", "verbs"),
+  w("dance", "跳舞", "🕺", "verbs"),
+  w("cook", "做饭", "🍳", "verbs"),
+  w("swim", "游泳", "🏊", "verbs"),
+  w("climb", "爬", "🧗", "verbs"),
+  w("throw", "扔", "🤾", "verbs"),
+  w("catch", "接", "🧤", "verbs"),
+  w("push", "推", "🙌", "verbs"),
+  w("pull", "拉", "💪", "verbs"),
+  // adjectives
+  w("big", "大", "🐘", "adjectives"),
+  w("small", "小", "🐜", "adjectives"),
+  w("tall", "高", "🦒", "adjectives"),
+  w("short", "矮", "🐧", "adjectives"),
+  w("happy", "开心", "😄", "adjectives"),
+  w("sad", "伤心", "😢", "adjectives"),
+  w("fast", "快", "🏎️", "adjectives"),
+  w("slow", "慢", "🐢", "adjectives"),
+  w("hot", "热", "🔥", "adjectives"),
+  w("cold", "冷", "🧊", "adjectives"),
+  w("new", "新", "✨", "adjectives"),
+  w("old", "旧", "📜", "adjectives"),
+  // feelings
+  w("angry", "生气", "😠", "feelings"),
+  w("scared", "害怕", "😨", "feelings"),
+  w("tired", "累", "🥱", "feelings"),
+  w("hungry", "饿", "🍽️", "feelings"),
+  w("thirsty", "渴", "🥤", "feelings"),
+  w("excited", "兴奋", "🤩", "feelings"),
+  // time
+  w("day", "白天", "🌞", "time"),
+  w("night", "夜晚", "🌜", "time"),
+  w("morning", "早上", "🌅", "time"),
+  w("evening", "傍晚", "🌆", "time"),
+  w("week", "星期", "🗓️", "time"),
+  w("month", "月份", "📅", "time"),
+  w("year", "年", "🎊", "time"),
+  w("today", "今天", "📆", "time"),
+  // sea & nature
+  w("sea", "海", "🌊", "nature"),
+  w("lake", "湖", "🏞️", "nature"),
+  w("sand", "沙子", "🏖️", "nature"),
+  w("shell", "贝壳", "🐚", "nature"),
+  w("wave", "海浪", "🌊", "nature"),
+  w("island", "岛", "🏝️", "nature"),
+  w("beach", "沙滩", "⛱️", "nature"),
+  w("cave", "洞穴", "🕳️", "nature"),
+  // food
+  w("pizza", "披萨", "🍕", "food"),
+  w("soup", "汤", "🍲", "food"),
+  w("salad", "沙拉", "🥗", "food"),
+  w("cheese", "奶酪", "🧀", "food"),
+  w("butter", "黄油", "🧈", "food"),
+  w("cookie", "饼干", "🍪", "food"),
+  w("pie", "派", "🥧", "food"),
+  w("noodle", "面条", "🍜", "food"),
+  // sports
+  w("soccer", "足球", "⚽", "sports"),
+  w("basketball", "篮球", "🏀", "sports"),
+  w("baseball", "棒球", "⚾", "sports"),
+  w("tennis", "网球", "🎾", "sports"),
+  w("hockey", "曲棍球", "🏒", "sports"),
+  w("golf", "高尔夫", "⛳", "sports"),
+  w("racing", "赛跑", "🏁", "sports"),
+  w("surfing", "冲浪", "🏄", "sports"),
+];
