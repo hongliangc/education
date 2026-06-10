@@ -1,36 +1,61 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
 import { speakText } from "@/lib/speech";
-import { ALPHABET, type LetterItem } from "@/content/alphabet";
-import { shuffle } from "@/lib/utils";
+import { generateRound, isLetterDisplaySkill, type AlphabetQuestion } from "@/content/alphabet";
+import type { Grade } from "@/lib/grades";
 import type { OnComplete } from "./types";
 import { GameDone } from "./GameDone";
+import { AlphabetRound } from "./alphabet/AlphabetRound";
+import { PhonicsRound } from "./alphabet/PhonicsRound";
 
 export function AlphabetGame({
+  grade,
   onComplete,
   onExit,
 }: {
+  grade: Grade;
   onComplete: OnComplete;
   onExit: () => void;
 }) {
-  const [round, setRound] = useState(() => makeRound());
+  const [round, setRound] = useState<AlphabetQuestion[]>(() => generateRound(grade));
   const [qi, setQi] = useState(0);
   const [correctQ, setCorrectQ] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
   const [done, setDone] = useState(false);
   const { sfx } = useSFX();
   const startedAt = useRef(Date.now());
+  const gradeRef = useRef(grade);
 
-  const item = round[qi];
-  const choices = useMemo(() => makeChoices(item), [item]);
+  const question = round[qi];
 
+  const replay = useCallback(() => {
+    if (question) speakText(question.speak.text, { lang: question.speak.lang, rate: 0.85 });
+  }, [question]);
+
+  // Read each new question aloud (letter name or word) as it appears.
   useEffect(() => {
-    if (!item) return;
-    speakText(item.word, { lang: "en-US", rate: 0.9 });
-  }, [item]);
+    if (question) speakText(question.speak.text, { lang: question.speak.lang, rate: 0.9 });
+  }, [question]);
+
+  const restart = useCallback(() => {
+    setRound(generateRound(grade));
+    setQi(0);
+    setCorrectQ(0);
+    setFeedback(null);
+    setDone(false);
+    startedAt.current = Date.now();
+  }, [grade]);
+
+  // Restart with fresh content whenever the parent switches the practice grade.
+  useEffect(() => {
+    if (gradeRef.current !== grade) {
+      gradeRef.current = grade;
+      restart();
+    }
+  }, [grade, restart]);
 
   if (done) {
     const stars = Math.max(1, Math.round((correctQ / round.length) * 3));
@@ -39,21 +64,17 @@ export function AlphabetGame({
         starsEarned={stars}
         correctQ={correctQ}
         totalQ={round.length}
-        onAgain={() => {
-          setRound(makeRound());
-          setQi(0);
-          setCorrectQ(0);
-          setDone(false);
-          startedAt.current = Date.now();
-        }}
+        onAgain={restart}
         onClose={onExit}
       />
     );
   }
 
-  const choose = (letter: string) => {
+  if (!question) return null;
+
+  const choose = (choice: string) => {
     if (feedback) return;
-    const ok = letter === item.letter;
+    const ok = choice === question.answer;
     setFeedback(ok ? "correct" : "wrong");
     if (ok) {
       sfx.correct();
@@ -81,37 +102,26 @@ export function AlphabetGame({
   return (
     <div>
       <ProgressBar value={qi / round.length} />
-      <div
-        className={`mt-5 rounded-3xl bg-gradient-to-br from-sky-100 to-blue-100 p-6 text-center anim-pop-in ${
-          feedback === "correct" ? "anim-correct" : feedback === "wrong" ? "anim-shake" : ""
-        }`}
-      >
-        <div className="text-8xl">{item.emoji}</div>
-        <div className="mt-2 text-2xl font-bold text-slate-700">{item.word}</div>
-        <button
-          onClick={() => speakText(item.word, { lang: "en-US", rate: 0.85 })}
-          aria-label={`重新朗读 ${item.word}`}
-          className="mt-1 text-sm text-sky-600 underline"
-        >
-          🔊 再听一次
-        </button>
-      </div>
 
-      <p className="mt-4 text-center text-slate-600">
-        这个单词以哪个字母开头？
-      </p>
+      {isLetterDisplaySkill(question.skill) ? (
+        <AlphabetRound question={question} feedback={feedback} onReplay={replay} />
+      ) : (
+        <PhonicsRound question={question} feedback={feedback} onReplay={replay} />
+      )}
+
+      <p className="mt-4 text-center text-slate-600">{question.prompt}</p>
 
       <div className="mt-3 grid grid-cols-3 gap-3">
-        {choices.map((c) => (
+        {question.choices.map((choice) => (
           <Btn
-            key={c}
+            key={choice}
             size="lg"
-            variant={c === item.letter && feedback === "correct" ? "secondary" : "primary"}
-            onClick={() => choose(c)}
+            variant={choice === question.answer && feedback === "correct" ? "secondary" : "primary"}
+            onClick={() => choose(choice)}
             disabled={!!feedback}
-            className="text-3xl py-6"
+            className="py-5 text-2xl"
           >
-            {c}
+            {choice}
           </Btn>
         ))}
       </div>
@@ -121,16 +131,6 @@ export function AlphabetGame({
       </p>
     </div>
   );
-}
-
-function makeRound(): LetterItem[] {
-  return shuffle(ALPHABET).slice(0, 5);
-}
-
-function makeChoices(item: LetterItem): string[] {
-  const all = ALPHABET.map((a) => a.letter).filter((l) => l !== item.letter);
-  const wrong = shuffle(all).slice(0, 2);
-  return shuffle([item.letter, ...wrong]);
 }
 
 function ProgressBar({ value }: { value: number }) {

@@ -98,7 +98,9 @@ export default function PlayPage({
         </div>
       )}
       {slug === "writing" && <WritingGame onComplete={onSessionComplete} onExit={back} />}
-      {slug === "alphabet" && <AlphabetGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "alphabet" && (
+        <AlphabetGame grade={grade} onComplete={onSessionComplete} onExit={back} />
+      )}
       {slug === "words" && <WordsGame onComplete={onSessionComplete} onExit={back} />}
       {slug === "math" && (
         <MathGame
