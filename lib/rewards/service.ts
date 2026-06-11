@@ -1,5 +1,5 @@
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
-import { InsufficientStarsError, InvalidRedemptionStateError, InvalidRewardInputError, OutOfStockError, PreviousChapterRequiredError, RedemptionNotFoundError, RewardAccessDeniedError, RewardResourceUnavailableError } from "./errors.ts";
+import { InsufficientStarsError, InvalidRedemptionStateError, InvalidRewardInputError, OutOfStockError, RedemptionNotFoundError, RewardAccessDeniedError, RewardResourceUnavailableError } from "./errors.ts";
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
 import { makeResourceScopeKey, makeUnlockKey, resolveEffectiveCost } from "./pricing.ts";
 import type { RewardOwnerType, RewardRedemptionStatus, RewardResourceType, StarLedgerReason } from "./types.ts";
@@ -199,20 +199,6 @@ async function redeemInTransaction(
     const existing = await tx.findRedemptionByUnlockKey(unlockKey);
     if (existing) {
       return { redemption: existing, balance: await currentBalance(tx, input.childId) };
-    }
-  }
-
-  if (resource.resourceType === "STORY_CHAPTER") {
-    const { bookId, chapterIdx } = parseChapterKey(resource.resourceKey);
-    if (chapterIdx > 0) {
-      const previousUnlockKey = makeUnlockKey(
-        input.childId,
-        "STORY_CHAPTER",
-        `${bookId}:${chapterIdx - 1}`,
-      );
-      if (!(await tx.findRedemptionByUnlockKey(previousUnlockKey))) {
-        throw new PreviousChapterRequiredError();
-      }
     }
   }
 

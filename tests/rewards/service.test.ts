@@ -3,7 +3,7 @@ import test from "node:test";
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
 import { fulfillRedemption, recordSessionStars, redeemResource, rejectAndRefundRedemption, type RewardResourceRecord, type RewardsAdapter, type RewardsTransaction, type RedemptionRecord, type StarLedgerRecord } from "../../lib/rewards/service.ts";
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
-import { InsufficientStarsError, OutOfStockError, PreviousChapterRequiredError } from "../../lib/rewards/errors.ts";
+import { InsufficientStarsError, OutOfStockError } from "../../lib/rewards/errors.ts";
 
 interface FakeState {
   children: Map<string, { id: string; parentId: string; totalStars: number }>;
@@ -477,7 +477,7 @@ test("a concurrent rejection winner is returned without duplicate refund side ef
   );
 });
 
-test("chapter index is zero-based and chapter N requires chapter N-1", async () => {
+test("any chapter can be unlocked directly without the previous one", async () => {
   const adapter = new FakeAdapter([
     resource({
       resourceType: "STORY_CHAPTER",
@@ -486,28 +486,7 @@ test("chapter index is zero-based and chapter N requires chapter N-1", async () 
     }),
   ]);
 
-  await assert.rejects(
-    redeemResource({
-      childId: "child-1",
-      resourceId: "platform-resource",
-      adapter,
-    }),
-    PreviousChapterRequiredError,
-  );
-
-  adapter.state.redemptions.set("previous", {
-    id: "previous",
-    childId: "child-1",
-    resourceId: "chapter-zero",
-    resourceType: "STORY_CHAPTER",
-    resourceKey: "journey:0",
-    starsSpent: 0,
-    status: "COMPLETED",
-    unlockKey: "child-1:STORY_CHAPTER:journey:0",
-    fulfilledAt: null,
-    fulfilledById: null,
-    note: null,
-  });
+  // No prior chapter redemption exists; unlocking chapter 1 must still succeed.
   const result = await redeemResource({
     childId: "child-1",
     resourceId: "platform-resource",

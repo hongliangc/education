@@ -162,12 +162,9 @@ export async function getChildRewardCatalog(
       };
     }
 
-    let previousUnlocked = true;
     const chapters: CatalogChapter[] = book.chapters.map((chapter) => {
       const resourceKey = `${book.id}:${chapter.idx}`;
       const unlocked = unlockedKeys.has(makeUnlockKey(childId, "STORY_CHAPTER", resourceKey));
-      const available = chapter.idx === 0 || previousUnlocked;
-      previousUnlocked = unlocked;
       return {
         resourceId: idFor("STORY_CHAPTER", resourceKey),
         resourceKey,
@@ -175,7 +172,8 @@ export async function getChildRewardCatalog(
         title: chapter.title,
         starsCost: costFor("STORY_CHAPTER", resourceKey, chapter.idx === 0),
         unlocked,
-        available,
+        // Every chapter is independently redeemable with stars — no sequential gating.
+        available: true,
       };
     });
     return { bookId: book.id, title: book.title, emoji: book.emoji, kind: "novel", chapters };
