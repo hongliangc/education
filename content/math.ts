@@ -124,13 +124,13 @@ function arithmetic(
   };
 }
 
-function addWithin(grade: Grade, max: number, spread: number): ArithmeticProblem {
+export function addWithin(grade: Grade, max: number, spread: number): ArithmeticProblem {
   const a = randomInt(0, max);
   const b = randomInt(0, max - a);
   return arithmetic(grade, "+", a, b, a + b, spread);
 }
 
-function subWithin(grade: Grade, max: number, spread: number): ArithmeticProblem {
+export function subWithin(grade: Grade, max: number, spread: number): ArithmeticProblem {
   const a = randomInt(0, max);
   const b = randomInt(0, a);
   return arithmetic(grade, "-", a, b, a - b, spread);
@@ -156,7 +156,7 @@ function multiDigit(grade: Grade): ArithmeticProblem {
   return arithmetic(grade, "÷", big * factor, factor, big, 30);
 }
 
-function comparison(grade: Grade, max: number): ComparisonProblem {
+export function comparison(grade: Grade, max: number): ComparisonProblem {
   const left = randomInt(0, max);
   const right = randomInt(0, max);
   const answer = left > right ? ">" : left < right ? "<" : "=";
@@ -181,7 +181,7 @@ const SHAPES = [
   { emoji: "💛", name: "爱心" },
 ];
 
-function shapeProblem(grade: Grade): ShapeProblem {
+export function shapeProblem(grade: Grade): ShapeProblem {
   const options = shuffle([...SHAPES]).slice(0, 4);
   const target = pick(options);
   const prompt = `哪个是${target.name}?`;
@@ -200,7 +200,7 @@ function formatTime(hour: number, minute: number): string {
   return `${hour}:${String(minute).padStart(2, "0")}`;
 }
 
-function timeProblem(grade: Grade): TimeProblem {
+export function timeProblem(grade: Grade): TimeProblem {
   const minutes = grade === "G3" ? [0, 15, 30, 45] : [0, 30];
   const hour = randomInt(1, 12);
   const minute = pick(minutes);
