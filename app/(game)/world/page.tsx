@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { FairyBubble } from "@/components/fairy/FairyBubble";
 import { FairyChat } from "@/components/fairy/FairyChat";
 import { useSFX } from "@/components/audio/useSFX";
 import { MODULES, MODULE_META, type ModuleId } from "@/lib/utils";
+import {
+  GRADE_LABELS,
+  indexGradeProgress,
+  LEGACY_GRADE,
+  progressKey,
+  resolveChildGrade,
+} from "@/lib/grades";
 
 interface NodeProgress {
-  module: ModuleId;
+  module: string;
+  gradeLevel: string;
   level: number;
   stars: number;
   masteryPct: number;
@@ -48,7 +56,7 @@ const NODES: WorldNode[] = [
 export default function WorldMapPage() {
   const router = useRouter();
   const child = useGameStore((s) => s.activeChild);
-  const [progressMap, setProgressMap] = useState<Record<string, NodeProgress>>({});
+  const [rows, setRows] = useState<NodeProgress[]>([]);
   const [hello, setHello] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
   const { sfx } = useSFX();
@@ -62,9 +70,7 @@ export default function WorldMapPage() {
       const res = await fetch(`/api/progress/${child.id}`);
       if (res.ok) {
         const j = await res.json();
-        const map: Record<string, NodeProgress> = {};
-        for (const p of j.progress ?? []) map[p.module] = p;
-        setProgressMap(map);
+        setRows((j.progress ?? []) as NodeProgress[]);
       }
       setHello(
         `今天好呀，${child.name}！\n你现在有 ${child.totalStars} 颗星啦 ⭐\n选一个关卡开始冒险吧！`,
@@ -72,7 +78,20 @@ export default function WorldMapPage() {
     })();
   }, [child, router]);
 
+  // Current-grade progress, keyed `<module>:<grade>` (LEGACY excluded). Non-graded modules keep a
+  // LEGACY row, so fall back to it when a module has no row for the active grade yet.
+  const gradeMap = useMemo(() => indexGradeProgress(rows), [rows]);
+  const legacyMap = useMemo(() => {
+    const map = new Map<string, NodeProgress>();
+    for (const row of rows) if (row.gradeLevel === LEGACY_GRADE) map.set(row.module, row);
+    return map;
+  }, [rows]);
+
   if (!child) return null;
+
+  const childGrade = resolveChildGrade(child);
+  const moduleProgress = (module: ModuleId): NodeProgress | undefined =>
+    gradeMap.get(progressKey(module, childGrade)) ?? legacyMap.get(module);
 
   const open = (m: ModuleId) => {
     sfx.click();
@@ -109,8 +128,11 @@ export default function WorldMapPage() {
 
         {/* 模块选择器（顶部） */}
         <div className="mb-6">
-          <div className="mb-2 px-1 text-sm font-bold text-white/90 drop-shadow">
-            选一个去玩 🎮
+          <div className="mb-2 flex items-center justify-between px-1">
+            <span className="text-sm font-bold text-white/90 drop-shadow">选一个去玩 🎮</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-white/85 px-3 py-1 text-xs font-bold text-slate-700 shadow ring-1 ring-white">
+              🎓 {GRADE_LABELS[childGrade]}
+            </span>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {MODULES.map((m) => {
@@ -170,7 +192,7 @@ export default function WorldMapPage() {
                 n.kind === "module"
                   ? MODULE_META[n.id]
                   : { label: n.label, emoji: n.emoji, color: n.color };
-              const prog = n.kind === "module" ? progressMap[n.id] : undefined;
+              const prog = n.kind === "module" ? moduleProgress(n.id) : undefined;
               const stars = prog?.stars ?? 0;
               return (
                 <g

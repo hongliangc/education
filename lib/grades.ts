@@ -111,3 +111,37 @@ export function summarizeModuleGrade(
   const stars = scoped.reduce((sum, s) => sum + s.starsEarned, 0);
   return { masteryPct: Math.round(accuracy * 100), stars };
 }
+
+// ---------------------------------------------------------------------------
+// Progress presentation — shared by the world map and game-completion screens.
+// ---------------------------------------------------------------------------
+
+export interface GradeProgressRow {
+  module: string;
+  gradeLevel: string;
+  stars: number;
+  masteryPct: number;
+}
+
+// Lookup key for a module's progress at a specific grade.
+export function progressKey(module: string, grade: string): string {
+  return `${module}:${grade}`;
+}
+
+// Index progress rows by `<module>:<grade>`, dropping LEGACY pre-grade rows so they never appear
+// as current-grade mastery. Their stars still count toward the child's running total elsewhere.
+export function indexGradeProgress<T extends GradeProgressRow>(
+  rows: readonly T[],
+): Map<string, T> {
+  const map = new Map<string, T>();
+  for (const row of rows) {
+    if (row.gradeLevel === LEGACY_GRADE) continue;
+    map.set(progressKey(row.module, row.gradeLevel), row);
+  }
+  return map;
+}
+
+// The grade a child's screens default to: their confirmed grade, or one inferred from age.
+export function resolveChildGrade(child: { gradeLevel: string | null; age: number }): Grade {
+  return isGrade(child.gradeLevel) ? child.gradeLevel : inferGradeFromAge(child.age);
+}

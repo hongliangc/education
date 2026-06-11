@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { generateRound, type MathProblem } from "@/content/math";
-import type { Grade } from "@/lib/grades";
+import { GRADE_LABELS, type Grade } from "@/lib/grades";
 import { getMistakes, mistakeToProblem } from "@/lib/math/mistakes";
 import type { OnComplete } from "./types";
 import { GameDone } from "./GameDone";
@@ -129,6 +129,7 @@ export function MathGame({
       starsEarned={stars}
       correctQ={correctQ}
       totalQ={round.length}
+      gradeLabel={GRADE_LABELS[grade]}
       onAgain={startRound}
       onChangeMode={mistakeCount > 0 ? startReview : undefined}
       changeModeLabel={`复习错题 (${mistakeCount})`}

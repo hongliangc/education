@@ -5,7 +5,7 @@ import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
 import { speakText } from "@/lib/speech";
 import { generateChallenges, type WordChallenge } from "@/content/words";
-import type { Grade } from "@/lib/grades";
+import { GRADE_LABELS, type Grade } from "@/lib/grades";
 import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
 
@@ -57,6 +57,7 @@ export function WordContextRound({
         starsEarned={stars}
         correctQ={correctQ}
         totalQ={round.length}
+        gradeLabel={GRADE_LABELS[grade]}
         onAgain={restart}
         onClose={onExit}
       />

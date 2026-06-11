@@ -10,7 +10,7 @@ import { WordsGame } from "@/components/games/WordsGame";
 import { MathGame } from "@/components/games/MathGame";
 import { GradeSwitcher } from "@/components/games/grades/GradeSwitcher";
 import { useGameStore } from "@/store/gameStore";
-import { inferGradeFromAge, isGrade, type Grade } from "@/lib/grades";
+import { resolveChildGrade, type Grade } from "@/lib/grades";
 
 // Math, alphabet and word matching generate grade-appropriate content; other modules don't.
 const GRADE_AWARE = new Set<Slug>(["math", "alphabet", "words"]);
@@ -38,12 +38,7 @@ export default function PlayPage({
   const bumpStars = useGameStore((s) => s.bumpStars);
 
   // Default the practice grade to the child's confirmed grade (inferred before confirmation).
-  const childGrade: Grade =
-    child && isGrade(child.gradeLevel)
-      ? child.gradeLevel
-      : child
-        ? inferGradeFromAge(child.age)
-        : "K1";
+  const childGrade: Grade = child ? resolveChildGrade(child) : "K1";
   const [grade, setGrade] = useState<Grade>(childGrade);
   useEffect(() => {
     setGrade(childGrade);
