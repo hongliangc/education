@@ -1,59 +1,73 @@
 ---
 name: mlk-adapt-classic-story
-description: Use when adapting/rewriting a public-domain classic into MLK StoryBook chapters, or expanding/rewriting a chapter's narrative text (改编 / 改写 / 扩写 / 西游记 / 名著 / 经典故事). NOT for quiz pools (→ mlk-add-knowledge-pack) or StoryReader/TTS playback.
+description: Use when adapting/rewriting a public-domain classic for MLK — 叙事名著章节（改编/改写/扩写/西游记/名著/经典故事）或诸子思想内容（庄子寓言/老子孔孟名句/经典原文精读/诸子百家）. NOT for quiz pools (→ mlk-add-knowledge-pack) or StoryReader/TTS playback.
 ---
 
-# 改编经典故事 → 儿童章节
+# 改编经典 → 儿童内容
 
-把公有领域名著（《西游记》等）改写成 MLK 的 `StoryBook` 章节。核心：**比传统童话更长、人物有血有肉、适度照进社会现实，但守住 8–10 岁尺度。**
+公有领域经典改写成 MLK 内容。**两类经典、两套规则，不可互相套用：**
+
+- **A 叙事名著**（《西游记》等故事）：靠"长 + 人物立体 + 照进现实"勾人。
+- **B 诸子思想**（庄子寓言、老子/孔孟名句）：**言简意赅、通俗易懂**，以理为主、宁短勿水。
 
 ## 何时用 / 何时不用
-- ✅ 改写/扩写某本书的某一章正文；统一一本书的风格；新建一本多章长篇
+- ✅ 改写名著某章 / 统一一本书风格 / 新建多章长篇 → 走 **A**
+- ✅ 写庄子寓言、诸子名句、经典原文精读 → 走 **B**
 - ❌ 只往汉字/字母/单词/算术题池加条目 → `mlk-add-knowledge-pack`
 - ❌ 改朗读/分段/TTS 播放 → 语音子系统，别碰 `lib/speech*`
 
-## 数据落点（唯一真源）
-- 类型：`content/storybooks/types.ts` —— `StoryBook → Chapter → StoryQuestion`
-- 一书一文件：`content/storybooks/<kebab-id>.ts`，导出常量
-- 注册：在 `content/storybooks/index.ts` 的 `STORY_BOOKS` 数组里加上（长篇在前）
-- `kind`: 多章名著 = `"novel"`；恰 1 章短篇 = `"tale"`。名著用 `ageBand: "8-10"`
+---
 
-> 篇幅/风格标准以本 skill 为**唯一真源**；`types.ts` 的 `text` 注释只指回这里，别再在代码或 spec 里复写字数。
+## A 叙事名著（落点 `content/storybooks/`）
 
-## 改编四规则（覆盖旧 §3）
-1. **篇幅**：每章按**听读 5–10 分钟**设计，正文约 **850–1200 字**。段落用 `\n` 分隔（StoryReader 逐字渲染）。
-2. **人物立体**：靠**对话 + 情绪小动作**写出缺点与可爱处，别写"高高在上、一尘不染的圣人"。悟空骄傲/火爆/受委屈仍忠心；唐僧善良但固执、易被外表骗、会错怪人；八戒贪吃/嫉妒/爱挑拨（喜剧担当）。
-3. **社会现实与"势力"**：可适度照进现实——等级权术（天宫论资排辈、玉帝拿"齐天大圣"空衔哄人）、有靠山 vs 没靠山的区别对待、自私偏心、强弱之分。让故事可信、有分量、记得住。
-4. **守住尺度**：现实点到为止，**不渲染黑暗绝望**；结尾落到能和孩子讨论的道理上（`moral`）。
+**数据落点（唯一真源）**
+- 类型：`content/storybooks/types.ts`（`StoryBook → Chapter → StoryQuestion`）
+- 一书一文件 `content/storybooks/<kebab-id>.ts`；注册进 `index.ts` 的 `STORY_BOOKS`（长篇在前）
+- `kind`：多章=`"novel"` / 单章短篇=`"tale"`；名著用 `ageBand: "8-10"`
 
-## 安全底线（不可破）
-- 打斗软化：赶跑 / 打回原形 / 打散法术；**不写血腥、不写"打死人"**。
-- 用词贴合 `ageBand`，长难句拆短。
-- **不要直接抄原著文言**——一律改写成现代儿童口语；`author` 注明 `"根据公有领域《X》改编"`（出处如 ctext.org）。
+**四规则**
+1. **篇幅**：每章按听读 5–10 分钟设计，正文约 **850–1200 字**，`\n` 分段（StoryReader 逐字渲染）。
+2. **人物立体**：对话 + 情绪小动作写出缺点与可爱处，别写圣人。悟空骄傲/火爆仍忠心；唐僧善良固执、易被外表骗；八戒贪吃嫉妒（喜剧担当）。
+3. **社会现实与势力**：适度照进现实（等级权术、有无靠山的区别、偏心、强弱），让故事可信、记得住。
+4. **守尺度**：现实点到为止，不渲染黑暗绝望；结尾落到能和孩子讨论的 `moral`。
 
-## 每章结构清单
+**每章清单**
 - [ ] `idx` 0-based 连续、`title`、`emoji`
 - [ ] `text` 850–1200 字、`\n` 分段
 - [ ] `questions` 2–3 题**递进**，`answer` 是 0-based index 且落在 `choices` 内，每题带 `explain`
 - [ ] `moral` 一句话道理
 
-## 范例（已落地，可读全文模仿）
-`content/storybooks/journey-to-the-west.ts` 的「三打白骨精」「取得真经」。手法示例——开头用势力现实勾住：石猴出世一章里，大猴子起先嫌他"没爹没娘、石头缝里蹦出来的"，等他探出水帘洞有用了才围上来奉承。这类"对话+偏心"两三句就立住了人物和现实。
+**范例 / 反例**
+- 范例：`content/storybooks/journey-to-the-west.ts`「三打白骨精」「取得真经」。开头用势力现实勾住：石猴出世一章，大猴子先嫌他"石头缝里蹦出来的"，等他有用了才围上奉承——两三句立住人物和现实。
+- 反例：❌ 300–600 字扁平复述 ／ ❌ 全是完美圣人、只有打斗没性格
 
-## 反例（不要做）
-- ❌ 章节仍是 300–600 字的扁平复述
-- ❌ 人物全是完美圣人 / 只有打斗没有性格
-- ❌ 直接粘原著文言 ／ 不注明改编出处
-- ❌ `answer` 写成字符串、`questions` 缺 `explain`
+---
+
+## B 诸子思想（落点 `content/classics/`）
+
+**核心：言简意赅、通俗易懂——把道理讲清楚，让孩子能理解、记得住。** 篇幅随内容定：该展开就展开（补历史典故、人物背景、关联上下文帮助理解），该收就收。**"言简意赅"指没有水分、句句有用，不是越短越好**——既不为凑字数注水，也不强压成干巴巴的一两句。三种形态：
+
+1. **寓言 tale**（`parables.ts`，如庄子「井底之蛙」）：仍是单章 `StoryBook`，以把哲思讲透为准；篇幅按需要伸缩，**不套 A 的 850–1200 字硬指标**。
+2. **名句卡**（`decks.ts`，老子/孔子/孟子）：`meaning` 白话点题、`interpretation` 把道理说清说透（讲明白为准，不堆术语、不灌水）；可在 `interpretation` 里带上相关典故/出处背景，关键字/词放 `glossary`。
+3. **经典原文版**（`classicTexts.ts`）：取公有领域（ctext.org）**精选名段**，逐句配白话直译 + 就近 `notes`（字/词/典故）。这是"读原文"层，与改编版并存、阅读页切换——**此处保留原文言**（A 的"不抄文言"只管叙事改编版）。
+
+---
+
+## 安全底线（两类都守）
+- 打斗软化：赶跑 / 打回原形 / 打散法术；**不写血腥、不写"打死人"**。
+- 用词贴合 `ageBand`，长难句拆短。
+- **叙事改编版（A）不抄原著文言**，一律现代儿童口语；`author` 注明 `"根据公有领域《X》改编"`（出处如 ctext.org）。经典原文版（B-3）例外。
 
 ## 验证
 - 类型检查：见 `AGENTS.md` 标准验证。
-- 字数：逐章 `[...c.text].length` 落在 850–1200；`validateStoryBooks` 是 dev 守卫。
+- A 字数：逐章 `[...c.text].length` 落在 850–1200；`validateStoryBooks` 是 dev 守卫。
+- B：`content/classics/index.ts` 的 dev 守卫校验寓言 / 卡组 / 经典原文。
 
 ## 提交（共享工作树）
 另一个 Claude 可能并发改 `lib/speech*`。**点名提交内容文件**，别 `git add -A`：
 ```bash
-git add content/storybooks/<file>.ts && git commit -m "内容(story): ..."
+git add content/storybooks/<file>.ts   # A
+git add content/classics/<file>.ts     # B
 ```
 
-Last verified against: content/storybooks/types.ts · journey-to-the-west.ts · 2026-06-02
+Last verified against: content/storybooks/types.ts · journey-to-the-west.ts · content/classics/ · 2026-06-11

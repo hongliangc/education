@@ -1,15 +1,14 @@
 // app/(game)/literature/deck/[deckId]/page.tsx
-// 名句卡翻看页：看完整组得固定小额星（v1 无测验）。
+// 名句卡翻看页：每张卡当场答一题，按答对数量得星（结算逻辑在 QuoteDeckPlayer）。
 "use client";
 
-import { use, useEffect, useRef } from "react";
+import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { Btn } from "@/components/Btn";
 import { getDeck } from "@/content/classics";
+import type { SessionResult } from "@/components/games/types";
 import { QuoteDeckPlayer } from "@/components/games/literature/QuoteDeckPlayer";
-
-const DECK_STARS = 2; // 看完一组的固定奖励
 
 export default function DeckPage({
   params,
@@ -21,7 +20,6 @@ export default function DeckPage({
   const child = useGameStore((s) => s.activeChild);
   const bumpStars = useGameStore((s) => s.bumpStars);
   const deck = getDeck(deckId);
-  const startedAt = useRef(Date.now());
 
   useEffect(() => {
     if (!child) router.replace("/child-select");
@@ -46,22 +44,13 @@ export default function DeckPage({
     );
   }
 
-  const onComplete = async () => {
-    bumpStars(DECK_STARS);
-    const durationSec = Math.round((Date.now() - startedAt.current) / 1000);
+  const onComplete = async (r: SessionResult) => {
+    bumpStars(r.starsEarned);
     try {
       await fetch("/api/sessions", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          childId: child.id,
-          module: "LITERATURE",
-          score: 0,
-          totalQ: 0,
-          correctQ: 0,
-          durationSec,
-          starsEarned: DECK_STARS,
-        }),
+        body: JSON.stringify({ childId: child.id, module: "LITERATURE", ...r }),
       });
     } catch {
       // 网络失败：本地星星已加，不阻断

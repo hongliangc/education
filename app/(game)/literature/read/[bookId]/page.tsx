@@ -2,13 +2,14 @@
 // 寓言阅读器：复用 ChapterReader（与故事同款朗读/理解题），但从 getParable 取书、不接付费解锁。
 "use client";
 
-import { use, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { Btn } from "@/components/Btn";
-import { getParable } from "@/content/classics";
+import { getParable, getClassicText } from "@/content/classics";
 import type { SessionResult } from "@/components/games/types";
 import { ChapterReader } from "@/components/games/story/ChapterReader";
+import { ClassicReader } from "@/components/games/literature/ClassicReader";
 
 export default function ParableReadPage({
   params,
@@ -20,6 +21,8 @@ export default function ParableReadPage({
   const child = useGameStore((s) => s.activeChild);
   const bumpStars = useGameStore((s) => s.bumpStars);
   const book = getParable(bookId);
+  const classic = getClassicText(bookId); // 有经典原文版才显示版本切换
+  const [version, setVersion] = useState<"adapted" | "classic">("adapted");
 
   useEffect(() => {
     if (!child) router.replace("/child-select");
@@ -86,11 +89,44 @@ export default function ParableReadPage({
           {book.author && (
             <p className="text-xs text-slate-400 text-center mb-2">{book.author}</p>
           )}
-          <ChapterReader
-            key={chapter.idx}
-            chapter={chapter}
-            onChapterComplete={onChapterComplete}
-          />
+
+          {classic && (
+            <div className="mb-4 flex justify-center gap-2">
+              <Btn
+                size="sm"
+                variant={version === "adapted" ? "primary" : "ghost"}
+                onClick={() => setVersion("adapted")}
+              >
+                📖 故事版
+              </Btn>
+              <Btn
+                size="sm"
+                variant={version === "classic" ? "primary" : "ghost"}
+                onClick={() => setVersion("classic")}
+              >
+                🏛️ 经典原文
+              </Btn>
+            </div>
+          )}
+
+          {classic && version === "classic" ? (
+            <ClassicReader
+              title={book.title}
+              emoji={book.emoji}
+              classic={classic}
+              child={{
+                name: child.name,
+                age: child.age,
+                totalStars: child.totalStars,
+              }}
+            />
+          ) : (
+            <ChapterReader
+              key={chapter.idx}
+              chapter={chapter}
+              onChapterComplete={onChapterComplete}
+            />
+          )}
         </div>
       </div>
     </main>
