@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect } from "react";
+import { use, useEffect, useState } from "react";
 import { notFound, useRouter } from "next/navigation";
 import { GameModal } from "@/components/GameModal";
 import { MODULE_META, type ModuleId } from "@/lib/utils";
@@ -8,6 +8,8 @@ import { WritingGame } from "@/components/games/WritingGame";
 import { AlphabetGame } from "@/components/games/AlphabetGame";
 import { WordsGame } from "@/components/games/WordsGame";
 import { MathGame } from "@/components/games/MathGame";
+import { MathPath } from "@/components/games/math/MathPath";
+import { getMathCurriculum } from "@/content/math/curriculum";
 import { useGameStore } from "@/store/gameStore";
 import { resolveChildGrade, type Grade } from "@/lib/grades";
 
@@ -41,6 +43,10 @@ export default function PlayPage({
   // child's profile grade (inferred before confirmation).
   const grade: Grade = activeGrade ?? (child ? resolveChildGrade(child) : "K1");
   const gradeAware = GRADE_AWARE.has(slug);
+  // Math at a grade with a guided curriculum opens the lesson path; "综合练习" switches to the
+  // classic mixed round. Grades without a curriculum go straight to the classic round.
+  const mathHasPath = slug === "math" && getMathCurriculum(grade) !== null;
+  const [mathMode, setMathMode] = useState<"path" | "classic">("path");
 
   useEffect(() => {
     if (!child) router.replace("/child-select");
@@ -91,14 +97,22 @@ export default function PlayPage({
       {slug === "words" && (
         <WordsGame grade={grade} onComplete={onSessionComplete} onExit={back} />
       )}
-      {slug === "math" && (
-        <MathGame
-          childId={child.id}
-          grade={grade}
-          onComplete={onSessionComplete}
-          onExit={back}
-        />
-      )}
+      {slug === "math" &&
+        (mathHasPath && mathMode === "path" ? (
+          <MathPath
+            childId={child.id}
+            grade={grade}
+            onComplete={onSessionComplete}
+            onReview={() => setMathMode("classic")}
+          />
+        ) : (
+          <MathGame
+            childId={child.id}
+            grade={grade}
+            onComplete={onSessionComplete}
+            onExit={mathHasPath ? () => setMathMode("path") : back}
+          />
+        ))}
     </GameModal>
   );
 }

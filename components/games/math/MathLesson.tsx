@@ -1,0 +1,118 @@
+"use client";
+
+import { useRef, useState } from "react";
+import { Btn } from "@/components/Btn";
+import { speakText } from "@/lib/speech";
+import type { MathProblem } from "@/content/math";
+import type { MathLesson as Lesson } from "@/content/math/curriculum";
+import type { OnComplete } from "../types";
+import { GameDone } from "../GameDone";
+import { MathRound } from "./MathRound";
+import { MathVisual } from "./MathVisual";
+import { MathGuide } from "./MathGuide";
+
+const ROUND_SIZE = 5;
+
+type Phase = "intro" | "demo" | "practice" | "done";
+
+// One guided lesson: 引入概念 → 示范 → 练习 → 巩固. Reuses the module's round/visual/guide so the
+// teaching matches the rest of the math experience.
+export function MathLesson({
+  lesson,
+  childId,
+  onComplete,
+  onExit,
+  onMistakesChanged,
+}: {
+  lesson: Lesson;
+  childId: string;
+  onComplete: OnComplete;
+  onExit: () => void;
+  onMistakesChanged: () => void;
+}) {
+  const [phase, setPhase] = useState<Phase>("intro");
+  const [problems, setProblems] = useState<MathProblem[]>(() => lesson.generate(ROUND_SIZE));
+  const [example, setExample] = useState<MathProblem>(() => lesson.generate(1)[0]);
+  const [correctQ, setCorrectQ] = useState(0);
+  const startedAt = useRef(Date.now());
+
+  const restart = () => {
+    setProblems(lesson.generate(ROUND_SIZE));
+    setExample(lesson.generate(1)[0]);
+    setCorrectQ(0);
+    startedAt.current = Date.now();
+    setPhase("intro");
+  };
+
+  if (phase === "intro") {
+    return (
+      <div className="py-4 text-center anim-pop-in">
+        <div className="text-6xl">{lesson.icon}</div>
+        <h3 className="mt-2 text-2xl font-bold text-slate-700">{lesson.title}</h3>
+        <p className="mx-auto mt-3 max-w-sm rounded-2xl bg-sky-50 px-4 py-3 text-base font-bold text-slate-600 ring-1 ring-sky-100">
+          {lesson.concept}
+        </p>
+        <div className="mt-5 flex flex-wrap justify-center gap-3">
+          <Btn variant="ghost" onClick={() => speakText(lesson.concept, { lang: "zh-CN" })}>
+            🔊 再听一遍
+          </Btn>
+          <Btn variant="primary" onClick={() => setPhase("demo")}>
+            看老师做一遍 ▶
+          </Btn>
+        </div>
+      </div>
+    );
+  }
+
+  if (phase === "demo") {
+    return (
+      <div>
+        <p className="text-center text-sm font-bold text-slate-500">老师先做个示范 👀</p>
+        <div className="mt-3 rounded-3xl bg-gradient-to-br from-amber-50 to-yellow-100 p-5 text-center">
+          <div className="text-3xl font-bold text-amber-700 sm:text-4xl">
+            {example.prompt}
+            {example.kind === "arithmetic" ? " = ?" : ""}
+          </div>
+          <div className="mt-5 min-h-24">
+            <MathVisual problem={example} />
+          </div>
+        </div>
+        <MathGuide problem={example} onComplete={() => setPhase("practice")} />
+      </div>
+    );
+  }
+
+  if (phase === "practice") {
+    return (
+      <MathRound
+        childId={childId}
+        problems={problems}
+        review={false}
+        onMistakesChanged={onMistakesChanged}
+        onFinish={(correct) => {
+          setCorrectQ(correct);
+          const stars = Math.max(1, Math.round((correct / problems.length) * 3));
+          onComplete({
+            score: correct * 10,
+            totalQ: problems.length,
+            correctQ: correct,
+            durationSec: Math.round((Date.now() - startedAt.current) / 1000),
+            starsEarned: stars,
+          });
+          setPhase("done");
+        }}
+      />
+    );
+  }
+
+  const stars = Math.max(1, Math.round((correctQ / problems.length) * 3));
+  return (
+    <GameDone
+      starsEarned={stars}
+      correctQ={correctQ}
+      totalQ={problems.length}
+      onAgain={restart}
+      onClose={onExit}
+    />
+  );
+}
