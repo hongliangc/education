@@ -8,7 +8,6 @@ import { FairyChat } from "@/components/fairy/FairyChat";
 import { useSFX } from "@/components/audio/useSFX";
 import { MODULES, MODULE_META, type ModuleId } from "@/lib/utils";
 import {
-  GRADE_LABELS,
   indexGradeProgress,
   LEGACY_GRADE,
   progressKey,
@@ -56,6 +55,7 @@ const NODES: WorldNode[] = [
 export default function WorldMapPage() {
   const router = useRouter();
   const child = useGameStore((s) => s.activeChild);
+  const activeGrade = useGameStore((s) => s.activeGrade);
   const [rows, setRows] = useState<NodeProgress[]>([]);
   const [hello, setHello] = useState<string | null>(null);
   const [chatOpen, setChatOpen] = useState(false);
@@ -89,9 +89,10 @@ export default function WorldMapPage() {
 
   if (!child) return null;
 
-  const childGrade = resolveChildGrade(child);
+  // Progress follows the grade selected in the HUD, falling back to the child's profile grade.
+  const grade = activeGrade ?? resolveChildGrade(child);
   const moduleProgress = (module: ModuleId): NodeProgress | undefined =>
-    gradeMap.get(progressKey(module, childGrade)) ?? legacyMap.get(module);
+    gradeMap.get(progressKey(module, grade)) ?? legacyMap.get(module);
 
   const open = (m: ModuleId) => {
     sfx.click();
@@ -128,11 +129,8 @@ export default function WorldMapPage() {
 
         {/* 模块选择器（顶部） */}
         <div className="mb-6">
-          <div className="mb-2 flex items-center justify-between px-1">
+          <div className="mb-2 px-1">
             <span className="text-sm font-bold text-white/90 drop-shadow">选一个去玩 🎮</span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-white/85 px-3 py-1 text-xs font-bold text-slate-700 shadow ring-1 ring-white">
-              🎓 {GRADE_LABELS[childGrade]}
-            </span>
           </div>
           <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
             {MODULES.map((m) => {

@@ -66,6 +66,12 @@ export function canAccessGrade(childGrade: Grade, targetGrade: string): boolean 
   return gradeIndex(targetGrade) <= gradeIndex(childGrade) + 1;
 }
 
+// Clamp a requested practice grade to what the child may access (at or below one step above
+// their own); anything out of reach falls back to the child's own grade.
+export function clampToAllowedGrade(childGrade: Grade, grade: Grade): Grade {
+  return canAccessGrade(childGrade, grade) ? grade : childGrade;
+}
+
 // Pre-grade progress is bucketed under LEGACY so it never blends into a confirmed grade.
 export const LEGACY_GRADE = "LEGACY";
 

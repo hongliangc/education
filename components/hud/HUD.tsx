@@ -1,15 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { VoicePicker } from "@/components/speech/VoicePicker";
+import { GradeSwitcher } from "@/components/games/grades/GradeSwitcher";
+import { resolveChildGrade } from "@/lib/grades";
 
 export function HUD() {
   const router = useRouter();
+  const pathname = usePathname();
   const child = useGameStore((s) => s.activeChild);
+  const activeGrade = useGameStore((s) => s.activeGrade);
+  const setActiveGrade = useGameStore((s) => s.setActiveGrade);
   const [voiceOpen, setVoiceOpen] = useState(false);
   if (!child) return null;
+
+  // The grade control belongs on the learning surfaces (world map + a module) where grade
+  // actually drives the content; elsewhere (story/shop/theater) it has no effect.
+  const childGrade = resolveChildGrade(child);
+  const grade = activeGrade ?? childGrade;
+  const showGrade = pathname === "/world" || pathname.startsWith("/play/");
 
   return (
     <>
@@ -26,20 +37,25 @@ export function HUD() {
           </div>
         </button>
 
-        <div className="pointer-events-auto flex items-center gap-2 bg-white/85 backdrop-blur px-4 py-2 rounded-2xl shadow-lg ring-1 ring-white/40">
-          <Stat icon="⭐" value={child.totalStars} color="text-amber-500" />
-          <Sep />
-          <Stat icon="❤️" value={child.hearts} color="text-rose-500" />
-          <Sep />
-          <Stat icon="🔥" value={child.streakDays} color="text-orange-500" />
-          <Sep />
-          <button
-            onClick={() => setVoiceOpen(true)}
-            aria-label="选择精灵声音"
-            className="text-lg leading-none transition hover:scale-110"
-          >
-            🔊
-          </button>
+        <div className="pointer-events-auto flex items-center gap-2">
+          {showGrade && (
+            <GradeSwitcher childGrade={childGrade} value={grade} onChange={setActiveGrade} />
+          )}
+          <div className="flex items-center gap-2 bg-white/85 backdrop-blur px-4 py-2 rounded-2xl shadow-lg ring-1 ring-white/40">
+            <Stat icon="⭐" value={child.totalStars} color="text-amber-500" />
+            <Sep />
+            <Stat icon="❤️" value={child.hearts} color="text-rose-500" />
+            <Sep />
+            <Stat icon="🔥" value={child.streakDays} color="text-orange-500" />
+            <Sep />
+            <button
+              onClick={() => setVoiceOpen(true)}
+              aria-label="选择精灵声音"
+              className="text-lg leading-none transition hover:scale-110"
+            >
+              🔊
+            </button>
+          </div>
         </div>
       </div>
 
