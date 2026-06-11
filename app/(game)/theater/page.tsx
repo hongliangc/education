@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Btn } from "@/components/Btn";
 import { GameModal } from "@/components/GameModal";
+import { BackButton } from "@/components/BackButton";
 import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { useSFX } from "@/components/audio/useSFX";
 import { useGameStore } from "@/store/gameStore";
@@ -172,14 +173,7 @@ export default function TheaterPage() {
     <main className="min-h-screen px-4 pb-12 pt-20">
       <div className="mx-auto max-w-6xl">
         <header className="mb-5 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => router.push("/world")}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/75 text-2xl font-black text-slate-700 shadow ring-1 ring-white"
-            aria-label="返回世界地图"
-          >
-            ‹
-          </button>
+          <BackButton label="返回世界" onClick={() => router.push("/world")} />
           <div className="min-w-0 flex-1">
             <h1 className="text-3xl font-black text-white drop-shadow sm:text-4xl">
               🎬 视频影院

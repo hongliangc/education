@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useSFX } from "@/components/audio/useSFX";
+import { BackButton } from "@/components/BackButton";
 import { RedeemError, fetchRewardCatalog, redeemRewardResource } from "@/lib/rewards/client";
 import { RewardCard, type ShopReward } from "@/components/shop/RewardCard";
 import { MyRedemptions, type MyRedemptionItem } from "@/components/shop/MyRedemptions";
@@ -106,16 +107,7 @@ export default function ShopPage() {
     <main className="min-h-screen pt-20 px-4 pb-10">
       <div className="max-w-5xl mx-auto">
         <header className="mb-4 flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              sfx.click();
-              router.push("/world");
-            }}
-            className="rounded-full bg-white/75 px-4 py-2 font-bold text-slate-700 shadow ring-1 ring-white transition hover:scale-105"
-          >
-            ← 返回世界
-          </button>
+          <BackButton label="返回世界" onClick={() => { sfx.click(); router.push("/world"); }} />
           <h1 className="text-2xl font-bold text-white drop-shadow">🏪 星星商店</h1>
           <span className="ml-auto rounded-full bg-white/85 px-4 py-2 font-bold text-amber-500 shadow">
             ⭐ {balance}

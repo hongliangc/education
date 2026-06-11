@@ -5,13 +5,13 @@ import test from "node:test";
 const source = readFileSync("app/(game)/story/page.tsx", "utf8");
 
 test("story library exposes a visible control that returns to the world", () => {
-  const returnButton = [...source.matchAll(/<button\b[\s\S]*?<\/button>/g)].find(
+  const returnButton = [...source.matchAll(/<BackButton\b[\s\S]*?\/>/g)].find(
     ([button]) =>
-      button.includes("← 返回世界") &&
+      button.includes('label="返回世界"') &&
       /onClick=\{[\s\S]*?router\.push\("\/world"\)[\s\S]*?\}/.test(button),
   );
 
-  assert.ok(returnButton, "missing a return button whose own handler navigates to /world");
+  assert.ok(returnButton, "missing a BackButton whose own handler navigates to /world");
 });
 
 test("story library section headings use a clear second-level hierarchy", () => {

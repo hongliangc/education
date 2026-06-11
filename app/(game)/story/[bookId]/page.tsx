@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useSFX } from "@/components/audio/useSFX";
 import { Btn } from "@/components/Btn";
+import { BackButton } from "@/components/BackButton";
 import { getBook } from "@/lib/content/storybooks";
 import type { SessionResult } from "@/components/games/types";
 import { ChapterReader } from "@/components/games/story/ChapterReader";
@@ -246,9 +247,11 @@ export default function BookDetailPage({ params }: { params: Promise<{ bookId: s
   return (
     <main className="min-h-screen pt-20 px-4 pb-10">
       <div className="max-w-2xl mx-auto">
-        <button onClick={() => router.push("/story")} className="text-white/90 text-sm mb-3">
-          ← 书架
-        </button>
+        <BackButton
+          label="返回书架"
+          onClick={() => { sfx.click(); router.push("/story"); }}
+          className="mb-3"
+        />
         <div className="rounded-3xl bg-white/85 backdrop-blur p-5 shadow-xl ring-1 ring-white/60">
           <div className="text-center">
             <div className="text-6xl">{book.emoji}</div>
