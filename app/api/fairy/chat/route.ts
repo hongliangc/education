@@ -28,10 +28,12 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { message, history, childName, age, recentModule, stars } = await req
-    .json()
-    .catch(() => ({}));
+  const { message, history, childName, age, recentModule, stars, context } =
+    await req.json().catch(() => ({}));
   const userMessage = String(message ?? "你好");
+  // 接地内容（当前名句/寓言原文+解读）：限长裁剪，纳入提示注入防护，只作参考资料
+  const safeContext =
+    typeof context === "string" ? context.slice(0, 800) : undefined;
 
   // 多轮历史：只取最近 6 条、裁剪单条长度，防 token 膨胀与提示注入
   const safeHistory = Array.isArray(history)
@@ -110,7 +112,13 @@ export async function POST(req: Request) {
     }
   }
 
-  const system = buildFairyPrompt({ childName, age, recentModule, stars });
+  const system = buildFairyPrompt({
+    childName,
+    age,
+    recentModule,
+    stars,
+    context: safeContext,
+  });
   const { reply, source } = await generateFairyReply({
     system,
     userMessage,

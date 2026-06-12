@@ -5,7 +5,7 @@ import { createPrismaRewardsAdapter } from "@/lib/rewards/adapter";
 import { recordSessionStars } from "@/lib/rewards/service";
 import { resolveSessionGrade, summarizeModuleGrade } from "@/lib/grades";
 
-const VALID_MODULES = ["WRITING", "ALPHABET", "WORDS", "MATH", "STORY", "LIFE"] as const;
+const VALID_MODULES = ["WRITING", "ALPHABET", "WORDS", "MATH", "STORY", "LITERATURE", "LIFE"] as const;
 
 export async function POST(req: Request) {
   const session = await auth();

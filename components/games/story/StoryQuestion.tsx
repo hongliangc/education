@@ -16,12 +16,14 @@ export function StoryQuestion({
   total,
   onReplay,
   onAnswered,
+  lastLabel = "看看道理 →",
 }: {
   question: StoryQuestionData;
   index: number;
   total: number;
   onReplay: () => void;
   onAnswered: (correct: boolean) => void;
+  lastLabel?: string; // 最后一题按钮文案；寓言默认「看看道理」，名句卡传「看完啦 ✓」
 }) {
   const [chosen, setChosen] = useState<number | null>(null);
   const speechRef = useRef<SpeechController | null>(null);
@@ -110,7 +112,7 @@ export function StoryQuestion({
           </p>
           <div className="mt-3 text-right">
             <Btn variant="primary" onClick={next}>
-              {index + 1 >= total ? "看看道理 →" : "下一题 →"}
+              {index + 1 >= total ? lastLabel : "下一题 →"}
             </Btn>
           </div>
         </div>

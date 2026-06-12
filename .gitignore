@@ -55,3 +55,5 @@ prisma/*.db-journal
 
 # 故事插画源稿（仅优化后的 WebP 进 public/）
 Resources/
+
+.superpowers

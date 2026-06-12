@@ -5,8 +5,7 @@ import { GameModal } from "@/components/GameModal";
 import { Btn } from "@/components/Btn";
 import { FairySprite, type FairyMood } from "@/components/fairy/FairySprite";
 import {
-  speakText,
-  speakTextStream,
+  speakChunks,
   stopSpeaking,
   createRecorder,
   recognizeBlob,
@@ -36,9 +35,15 @@ const HISTORY_TURNS = 6; // 最近 6 条 = 3 轮
 export function FairyChat({
   child,
   onClose,
+  context,
+  suggestions,
+  opening,
 }: {
   child: { name: string; age?: number; totalStars?: number };
   onClose: () => void;
+  context?: string; // 当前名句/寓言原文+解读，传给后端接地作答；不传时行为不变
+  suggestions?: string[]; // 起步问题气泡，给还不会提问的小小孩搭梯子
+  opening?: string; // 传入则一打开就让精灵先主动讲一遍（如「语句解读」），不显示用户气泡；之后照常语音追问
 }) {
   const [status, setStatus] = useState<Status>("idle");
   const [messages, setMessages] = useState<Turn[]>([]);
@@ -47,6 +52,7 @@ export function FairyChat({
   const holdSessionRef = useRef<ReturnType<typeof createHoldToTalkSession> | null>(null);
   const speakRef = useRef<SpeechController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const openedRef = useRef(false);
   const recordingAudio = useRecordingAudioGuard();
   holdSessionRef.current ??= createHoldToTalkSession(createRecorder);
 
@@ -67,12 +73,15 @@ export function FairyChat({
     };
   }, []);
 
-  // 一轮问答（语音 / 打字共用）：带最近 N 条历史
-  const ask = async (question: string) => {
+  // 一轮问答（语音 / 打字共用）：带最近 N 条历史。
+  // opts.silent：把 question 当作给精灵的指令发出去，但不渲染「用户提问」气泡（用于「语句解读」开场自动讲解）。
+  const ask = async (question: string, opts?: { silent?: boolean }) => {
     const q = question.trim();
     if (!q) return;
     const history = messages.slice(-HISTORY_TURNS);
-    setMessages((m) => [...m, { role: "user", content: q }]);
+    if (!opts?.silent) {
+      setMessages((m) => [...m, { role: "user", content: q }]);
+    }
     setStatus("thinking");
     try {
       const res = await fetch("/api/fairy/chat", {
@@ -84,6 +93,7 @@ export function FairyChat({
           childName: child.name,
           age: child.age,
           stars: child.totalStars,
+          context, // undefined 时 JSON.stringify 自动省略，旧调用不受影响
         }),
       });
       const { reply } = await res.json();
@@ -92,8 +102,8 @@ export function FairyChat({
       const text = String(reply ?? "").trim() || "我想想哦，等下再问我一次好吗？✨";
       setMessages((m) => [...m, { role: "fairy", content: text }]);
       setStatus("speaking");
-      // 流式朗读：首声 ~1s（整段约 4.7s）；失败自动回退整段/Web Speech
-      speakRef.current = speakTextStream(text, {
+      // 分段流式朗读：短回复仍快速出声，长回复会逐段续播到完整结束。
+      speakRef.current = speakChunks(text, {
         lang: "zh-CN",
         onEnd: () => setStatus("idle"),
       });
@@ -155,6 +165,16 @@ export function FairyChat({
     void ask(q);
   };
 
+  // 「语句解读」：打开即让精灵先主动讲一遍这句（带上下文/典故），之后照常语音追问。只触发一次。
+  useEffect(() => {
+    if (opening && !openedRef.current) {
+      openedRef.current = true;
+      void ask(opening, { silent: true });
+    }
+    // 仅在挂载时跑一次：每次打开都是新挂载（按句打开/关闭），ask 闭包此时已就绪。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // 朗读时点精灵可打断
   const interrupt = () => {
     if (status === "speaking") {
@@ -190,7 +210,7 @@ export function FairyChat({
                 <button
                   onClick={() => {
                     speakRef.current?.stop();
-                    speakRef.current = speakText(m.content, { lang: "zh-CN" });
+                    speakRef.current = speakChunks(m.content, { lang: "zh-CN" });
                   }}
                   className="ml-1 text-pink-400 hover:text-pink-600"
                   aria-label="重听"
@@ -201,6 +221,21 @@ export function FairyChat({
             </div>
           ))}
         </div>
+
+        {messages.length === 0 && suggestions && suggestions.length > 0 && (
+          <div className="w-full flex flex-wrap justify-center gap-2">
+            {suggestions.map((s) => (
+              <button
+                key={s}
+                onClick={() => void ask(s)}
+                disabled={status === "thinking"}
+                className="rounded-full bg-pink-50 ring-1 ring-pink-200 px-3 py-1.5 text-sm text-pink-600 transition hover:bg-pink-100 disabled:opacity-50"
+              >
+                {s}
+              </button>
+            ))}
+          </div>
+        )}
 
         {typing ? (
           <div className="w-full flex items-center gap-2">
