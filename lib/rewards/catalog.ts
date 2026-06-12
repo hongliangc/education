@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { STORY_BOOKS } from "@/content/storybooks";
 import { DEFAULT_CHAPTER_COST, DEFAULT_TALE_COST } from "@/lib/rewards/migration";
 import { makeResourceScopeKey, makeUnlockKey, resolveEffectiveCost } from "@/lib/rewards/pricing";
+import { ensurePlatformStoryResources } from "@/lib/rewards/ensure-resources";
 import type { RewardResourceType } from "@/lib/rewards/types";
 
 export interface CatalogChapter {
@@ -64,6 +65,10 @@ export async function getChildRewardCatalog(
     select: { id: true, totalStars: true },
   });
   if (!child) return null;
+
+  // Self-heal: make sure every story chapter/tale has a platform resource row so the catalog
+  // hands out a real resourceId. Otherwise the book page treats a missing resource as "free".
+  await ensurePlatformStoryResources();
 
   const familyScope = makeResourceScopeKey("FAMILY", parentId);
   const [resources, redemptions] = await Promise.all([
