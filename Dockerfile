@@ -1,10 +1,12 @@
 # 魔法学习王国 — Next.js 16 生产镜像（全栈容器化，roadmap B2）
 # 多阶段：deps（装依赖）→ build（prisma generate + next build）→ runner（运行）
-FROM node:24-slim AS base
+# 基础镜像按 digest 固定，避免 node:24-slim 标签漂移导致缓存失效后重新联网构建。
+# 升级 Node：docker pull node:24-slim 后用 `docker inspect --format '{{index .RepoDigests 0}}'` 取新 digest 替换。
+FROM node:24-slim@sha256:2c87ef9bd3c6a3bd4b472b4bec2ce9d16354b0c574f736c476489d09f560a203 AS base
 WORKDIR /app
-# Prisma 引擎需要 openssl
-RUN apt-get update \
- && apt-get install -y --no-install-recommends openssl ca-certificates \
+# Prisma 引擎需要 openssl。Acquire::Retries 让 apt 在瞬时网络抖动时自动重试，避免构建因此失败。
+RUN apt-get -o Acquire::Retries=3 update \
+ && apt-get -o Acquire::Retries=3 install -y --no-install-recommends openssl ca-certificates \
  && rm -rf /var/lib/apt/lists/*
 
 FROM base AS deps
