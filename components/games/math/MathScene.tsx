@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { speakTextStream, type SpeechController } from "@/lib/speech";
-import type { TenFrameScene } from "@/content/math/scene";
-import { TenFrameStage } from "./ten-frame/TenFrameStage";
+import type { Storyboard } from "@/content/math/scene";
+import { SceneStage } from "./ten-frame/SceneStage";
 
 // Shared with MathGuide so muting the guide also mutes the animation and vice versa.
 const MUTE_KEY = "mlk:mathGuideMuted";
@@ -19,7 +19,7 @@ export function MathScene({
   autoStart = false,
   onComplete,
 }: {
-  scene: TenFrameScene;
+  scene: Storyboard;
   autoStart?: boolean;
   onComplete?: () => void;
 }) {
@@ -171,7 +171,7 @@ export function MathScene({
   return (
     <div className="rounded-[28px] bg-gradient-to-b from-sky-50 to-amber-50 p-5 ring-1 ring-amber-100 shadow-sm">
       <div className="relative">
-        <TenFrameStage scene={scene} step={step} />
+        <SceneStage scene={scene} step={step} />
         {status === "idle" && (
           <button
             type="button"

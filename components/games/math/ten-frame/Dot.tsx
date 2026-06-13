@@ -12,12 +12,14 @@ export function Dot({
   highlight,
   delay = 0,
   gone = false,
+  radius = R,
 }: {
   to: Pt;
   fill: string;
   highlight: string;
   delay?: number;
   gone?: boolean;
+  radius?: number;
 }) {
   return (
     <motion.g
@@ -25,8 +27,8 @@ export function Dot({
       animate={{ x: to.x, y: to.y, scale: gone ? 0 : 1, opacity: gone ? 0 : 1 }}
       transition={{ type: "spring", stiffness: 240, damping: 22, delay }}
     >
-      <circle r={R} fill={fill} />
-      <circle cx={-R * 0.32} cy={-R * 0.32} r={R * 0.3} fill={highlight} opacity={0.85} />
+      <circle r={radius} fill={fill} />
+      <circle cx={-radius * 0.32} cy={-radius * 0.32} r={radius * 0.3} fill={highlight} opacity={0.85} />
     </motion.g>
   );
 }
