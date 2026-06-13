@@ -4,6 +4,8 @@ import test from "node:test";
 import { getMathCurriculum } from "../../content/math/curriculum.ts";
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
 import { GRADES, type Grade } from "../../lib/grades.ts";
+// @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
+import { sceneForProblem } from "../../content/math/scene.ts";
 
 const MIN_LESSONS: Record<Grade, number> = { K1: 4, K2: 4, K3: 4, G1: 5, G2: 5, G3: 5 };
 
@@ -41,11 +43,23 @@ test("each lesson generates the requested count of in-grade problems", () => {
   }
 });
 
-test("G1 within-20 arithmetic stays inside its range", () => {
+test("G1 within-20 arithmetic always crosses ten and stays animatable", () => {
   const add = getMathCurriculum("G1")!.find((l) => l.key === "g1-add-within-20")!;
   const sub = getMathCurriculum("G1")!.find((l) => l.key === "g1-sub-within-20")!;
-  for (const p of add.generate(20)) assert.ok(Number(p.answer) <= 20 && Number(p.answer) >= 0);
-  for (const p of sub.generate(20)) assert.ok(Number(p.answer) <= 20 && Number(p.answer) >= 0);
+  for (const p of add.generate(50)) {
+    assert.equal(p.kind, "arithmetic");
+    if (p.kind !== "arithmetic") continue;
+    const [a, b] = p.operands;
+    assert.ok(a <= 9 && b <= 9 && a + b >= 11 && a + b <= 18, p.prompt);
+    assert.equal(sceneForProblem(p)?.kind, "make-ten-add");
+  }
+  for (const p of sub.generate(50)) {
+    assert.equal(p.kind, "arithmetic");
+    if (p.kind !== "arithmetic") continue;
+    const [a, b] = p.operands;
+    assert.ok(a >= 11 && a <= 18 && a - 10 < b && a - b >= 1, p.prompt);
+    assert.equal(sceneForProblem(p)?.kind, "break-ten-sub");
+  }
 });
 
 test("G3 splits multiplication and division into focused lessons", () => {
@@ -62,6 +76,33 @@ test("G3 splits multiplication and division into focused lessons", () => {
     if (p.kind === "arithmetic") {
       assert.equal(p.op, "÷");
       assert.equal(p.operands[0] % p.operands[1], 0, "division must be exact");
+    }
+  }
+});
+
+test("lessons in the three supported arithmetic bands only generate animatable problems", () => {
+  const lessonKeys = [
+    "k1-add-5",
+    "k1-sub-5",
+    "k2-add-10",
+    "k2-sub-10",
+    "k3-add-10",
+    "k3-sub-10",
+    "g1-add-within-20",
+    "g1-sub-within-20",
+    "g2-multiply",
+    "g3-multiply",
+    "g3-divide",
+  ];
+
+  const lessons = GRADES.flatMap((grade) => getMathCurriculum(grade)!).filter((lesson) =>
+    lessonKeys.includes(lesson.key),
+  );
+  assert.equal(lessons.length, lessonKeys.length);
+
+  for (const lesson of lessons) {
+    for (const problem of lesson.generate(100)) {
+      assert.ok(sceneForProblem(problem), `${lesson.key} generated ${problem.prompt}`);
     }
   }
 });

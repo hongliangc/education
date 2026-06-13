@@ -94,8 +94,7 @@ export interface ShareScene {
   steps: SceneStep[];
 }
 
-// Every storyboard the player can drive. sceneForProblem currently returns only the TenFrame ones;
-// the new builders are surfaced directly on the /math-demo preview for evaluation.
+// Every storyboard the player can drive.
 export type Storyboard = TenFrameScene | TenBondScene | ArrayScene | ShareScene;
 
 // Make-ten only helps when the first addend is below ten and the sum crosses ten; the caller
@@ -191,17 +190,40 @@ export function buildShareDiv(a: number, b: number): ShareScene {
   return { kind: "share-div", a, b, total: a, baskets: b, per, answer: per, steps };
 }
 
-// Pick the ten-frame storyboard that fits a practice problem, or null when none applies (the
-// caller then falls back to the generic step-by-step guide). Only the two within-20 carry/borrow
-// cases animate well on a ten-frame; everything else (no carry, ×÷, fractions, …) returns null.
-export function sceneForProblem(problem: MathProblem): TenFrameScene | null {
+// Pick the storyboard that fits a supported arithmetic problem. Other problem kinds and arithmetic
+// outside the teaching ranges fall back to the generic guide.
+export function sceneForProblem(problem: MathProblem): Storyboard | null {
   if (problem.kind !== "arithmetic") return null;
   const [a, b] = problem.operands;
-  if (problem.op === "+" && a >= 1 && a < 10 && b >= 1 && b < 10 && a + b > 10 && a + b <= 18) {
-    return buildMakeTenAdd(a, b);
+
+  if (problem.op === "+") {
+    if (a >= 1 && a <= 9 && b >= 1 && b <= 9 && a + b >= 11 && a + b <= 18) {
+      return buildMakeTenAdd(a, b);
+    }
+    if (a >= 1 && b >= 1 && a + b <= 10) {
+      return buildTenBondAdd(a, b);
+    }
+    return null;
   }
-  if (problem.op === "-" && a > 10 && a <= 18 && b >= 1 && b < 10 && a - 10 < b && a - b >= 1) {
-    return buildBreakTenSub(a, b);
+
+  if (problem.op === "-") {
+    if (a >= 11 && a <= 18 && b >= 1 && b <= 9 && a - 10 < b && a - b >= 1) {
+      return buildBreakTenSub(a, b);
+    }
+    if (a <= 10 && b >= 1 && b <= a) {
+      return buildTenBondSub(a, b);
+    }
+    return null;
   }
+
+  if (problem.op === "×" && a >= 1 && a <= 9 && b >= 1 && b <= 9) {
+    return buildArrayMul(a, b);
+  }
+
+  if (problem.op === "÷" && b >= 1 && b <= 9 && a % b === 0) {
+    const quotient = a / b;
+    if (quotient >= 1 && quotient <= 9) return buildShareDiv(a, b);
+  }
+
   return null;
 }

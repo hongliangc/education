@@ -71,7 +71,9 @@ test("sceneForProblem builds a break-ten scene only for subtractions that borrow
       assert.ok(scene && scene.kind === "break-ten-sub", `expected break-ten for ${a}-${b}`);
       assert.equal(scene.answer, a - b);
     } else if (scene) {
-      assert.equal(scene.kind, "break-ten-sub");
+      // Non-borrowing subtractions that still animate are within-10 → 数的组成 (ten-bond),
+      // never break-ten.
+      assert.equal(scene.kind, "ten-bond");
     }
   }
 });

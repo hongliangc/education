@@ -1,7 +1,36 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-// @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
-import { buildTenBondAdd, buildTenBondSub, buildArrayMul, buildShareDiv } from "../../content/math/scene.ts";
+import {
+  borrowSubWithin,
+  crossingAddWithin,
+  tenBondAddWithin,
+  tenBondSubWithin,
+  type ArithmeticProblem,
+  // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
+} from "../../content/math.ts";
+import {
+  buildTenBondAdd,
+  buildTenBondSub,
+  buildArrayMul,
+  buildShareDiv,
+  sceneForProblem,
+  // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
+} from "../../content/math/scene.ts";
+
+function arithmetic(op: ArithmeticProblem["op"], a: number, b: number): ArithmeticProblem {
+  const answer =
+    op === "+" ? a + b : op === "-" ? a - b : op === "×" ? a * b : a / b;
+  return {
+    kind: "arithmetic",
+    id: `test:${a}${op}${b}`,
+    grade: "G1",
+    op,
+    operands: [a, b],
+    prompt: `${a} ${op} ${b}`,
+    answer: String(answer),
+    choices: [String(answer)],
+  };
+}
 
 // 数的组成 (number bond) over a ten-frame: the two parts fill the frame and a part-whole bond
 // makes the relationship explicit. Used for within-10 addition/subtraction.
@@ -130,5 +159,72 @@ test("buildShareDiv deals one round per quotient unit between show and answer", 
     const rounds = ids.slice(1, -1);
     assert.equal(rounds.length, a / b, `one round per unit for ${a}÷${b}`);
     assert.ok(rounds.every((id) => id === "round"), `middle beats are rounds for ${a}÷${b}`);
+  }
+});
+
+test("sceneForProblem dispatches each supported arithmetic range", () => {
+  assert.equal(sceneForProblem(arithmetic("+", 4, 5))?.kind, "ten-bond");
+  assert.equal(sceneForProblem(arithmetic("-", 9, 4))?.kind, "ten-bond");
+  assert.equal(sceneForProblem(arithmetic("-", 10, 10))?.kind, "ten-bond");
+  assert.equal(sceneForProblem(arithmetic("+", 8, 5))?.kind, "make-ten-add");
+  assert.equal(sceneForProblem(arithmetic("-", 13, 5))?.kind, "break-ten-sub");
+  assert.equal(sceneForProblem(arithmetic("×", 7, 8))?.kind, "array-mul");
+  assert.equal(sceneForProblem(arithmetic("÷", 42, 6))?.kind, "share-div");
+});
+
+test("sceneForProblem rejects arithmetic outside the supported ranges", () => {
+  for (const problem of [
+    arithmetic("+", 0, 5),
+    arithmetic("+", 9, 10),
+    arithmetic("-", 14, 3),
+    arithmetic("×", 10, 2),
+    arithmetic("÷", 10, 3),
+    arithmetic("÷", 100, 10),
+  ]) {
+    assert.equal(sceneForProblem(problem), null, problem.prompt);
+  }
+});
+
+test("constrained addition generators only produce animatable ranges", () => {
+  for (let index = 0; index < 200; index++) {
+    const tenBond = tenBondAddWithin("K2", 10, 4);
+    const [a, b] = tenBond.operands;
+    assert.ok(a >= 1 && b >= 1 && a + b <= 10, tenBond.prompt);
+    assert.equal(sceneForProblem(tenBond)?.kind, "ten-bond");
+
+    const crossing = crossingAddWithin("G1", 6);
+    const [crossingA, crossingB] = crossing.operands;
+    assert.ok(
+      crossingA >= 1 &&
+        crossingA <= 9 &&
+        crossingB >= 1 &&
+        crossingB <= 9 &&
+        crossingA + crossingB >= 11 &&
+        crossingA + crossingB <= 18,
+      crossing.prompt,
+    );
+    assert.equal(sceneForProblem(crossing)?.kind, "make-ten-add");
+  }
+});
+
+test("constrained subtraction generators only produce animatable ranges", () => {
+  for (let index = 0; index < 200; index++) {
+    const tenBond = tenBondSubWithin("K2", 10, 4);
+    const [a, b] = tenBond.operands;
+    assert.ok(a <= 10 && b >= 1 && b <= a && a - b >= 1, tenBond.prompt);
+    assert.equal(sceneForProblem(tenBond)?.kind, "ten-bond");
+
+    const borrow = borrowSubWithin("G1", 6);
+    const [borrowA, borrowB] = borrow.operands;
+    assert.ok(
+      borrowA >= 11 &&
+        borrowA <= 18 &&
+        borrowB >= 1 &&
+        borrowB <= 9 &&
+        borrowA - 10 < borrowB &&
+        borrowA - borrowB >= 1,
+      borrow.prompt,
+    );
+    assert.equal(sceneForProblem(borrow)?.kind, "break-ten-sub");
   }
 });
