@@ -1,8 +1,8 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
-import { speakText } from "@/lib/speech";
+import { speakTextStream, type SpeechController } from "@/lib/speech";
 import type { MathProblem } from "@/content/math";
 import type { MathLesson as Lesson } from "@/content/math/curriculum";
 import type { OnComplete } from "../types";
@@ -35,6 +35,14 @@ export function MathLesson({
   const [example, setExample] = useState<MathProblem>(() => lesson.generate(1)[0]);
   const [correctQ, setCorrectQ] = useState(0);
   const startedAt = useRef(Date.now());
+  // The intro "再听一遍" voice; stop it when leaving the intro so it never bleeds into the
+  // demo (where MathGuide starts its own narration) or gets cut mid-sentence on transition.
+  const conceptSpeech = useRef<SpeechController | null>(null);
+  const stopConcept = () => {
+    conceptSpeech.current?.stop();
+    conceptSpeech.current = null;
+  };
+  useEffect(() => stopConcept, []);
 
   const restart = () => {
     setProblems(lesson.generate(ROUND_SIZE));
@@ -53,10 +61,22 @@ export function MathLesson({
           {lesson.concept}
         </p>
         <div className="mt-5 flex flex-wrap justify-center gap-3">
-          <Btn variant="ghost" onClick={() => speakText(lesson.concept, { lang: "zh-CN" })}>
+          <Btn
+            variant="ghost"
+            onClick={() => {
+              stopConcept();
+              conceptSpeech.current = speakTextStream(lesson.concept, { lang: "zh-CN" });
+            }}
+          >
             🔊 再听一遍
           </Btn>
-          <Btn variant="primary" onClick={() => setPhase("demo")}>
+          <Btn
+            variant="primary"
+            onClick={() => {
+              stopConcept();
+              setPhase("demo");
+            }}
+          >
             看老师做一遍 ▶
           </Btn>
         </div>

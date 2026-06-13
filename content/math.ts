@@ -141,11 +141,20 @@ function addSubWithin(grade: Grade, max: number, spread: number): ArithmeticProb
 }
 
 // Times-table facts: factors 1-9, division derived from a product so it divides exactly.
-function timesTable(grade: Grade): ArithmeticProblem {
+export function multiplyFact(grade: Grade): ArithmeticProblem {
   const a = randomInt(1, 9);
   const b = randomInt(1, 9);
-  if (Math.random() < 0.5) return arithmetic(grade, "×", a, b, a * b, 6);
+  return arithmetic(grade, "×", a, b, a * b, 6);
+}
+
+export function divideFact(grade: Grade): ArithmeticProblem {
+  const a = randomInt(1, 9);
+  const b = randomInt(1, 9);
   return arithmetic(grade, "÷", a * b, a, b, 5);
+}
+
+function timesTable(grade: Grade): ArithmeticProblem {
+  return Math.random() < 0.5 ? multiplyFact(grade) : divideFact(grade);
 }
 
 // Multi-digit multiplication (two-digit × one-digit) and the matching exact division.
@@ -223,7 +232,7 @@ export function timeProblem(grade: Grade): TimeProblem {
 
 const DENOMINATORS = [2, 3, 4, 5, 6, 8];
 
-function fractionProblem(grade: Grade): FractionProblem {
+export function fractionProblem(grade: Grade): FractionProblem {
   const denominator = pick(DENOMINATORS);
   const numerator = randomInt(1, denominator - 1);
   const answer = `${numerator}/${denominator}`;
@@ -246,7 +255,7 @@ function fractionProblem(grade: Grade): FractionProblem {
 
 const LENGTH_ITEMS = ["铅笔", "绳子", "尺子", "丝带", "吸管"];
 
-function compareLength(grade: Grade): MeasurementProblem {
+export function compareLength(grade: Grade): MeasurementProblem {
   const items = shuffle([...LENGTH_ITEMS]).slice(0, 3);
   const lengths = shuffle([4, 8, 12, 16, 20]).slice(0, 3);
   const bars = items.map((label, index) => ({ label, length: lengths[index]! }));
@@ -262,7 +271,7 @@ function compareLength(grade: Grade): MeasurementProblem {
   };
 }
 
-function unitConversion(grade: Grade): MeasurementProblem {
+export function unitConversion(grade: Grade): MeasurementProblem {
   const meters = randomInt(1, 9);
   const cm = meters * 100;
   const prompt = `${meters} 米 = ? 厘米`;
@@ -278,7 +287,7 @@ function unitConversion(grade: Grade): MeasurementProblem {
   };
 }
 
-function wordProblem(grade: Grade): WordProblem {
+export function wordProblem(grade: Grade): WordProblem {
   const big = grade === "G3";
   const spread = big ? 25 : 10;
   const roll = randomInt(0, 2);

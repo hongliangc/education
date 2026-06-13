@@ -302,6 +302,8 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
 
   let aborted = false;
   let ended = false;
+  let paused = false; // pause() 可能在音频还没 attach（首块缓冲中）时就被调用——记下来，
+  // attach 时据此决定是否自动播放，避免「缓冲期间按下的暂停被丢、音频照样起播」。
   let inner: SpeechController | null = null; // 回退后的整段控制器
   let audio: HTMLAudioElement | null = null;
   let objUrl: string | null = null;
@@ -353,6 +355,7 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
     if (aborted || inner || ended) return;
     cleanup();
     inner = speakText(text, opts); // onEnd 改由 inner 触发
+    if (paused) inner.pause(); // 暂停状态下回退：别让整段控制器自动播起来
   };
   const attach = (a: HTMLAudioElement) => {
     audio = a;
@@ -364,6 +367,7 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
       stopRaf();
       rafId = requestAnimationFrame(() => tick(a));
     };
+    if (paused) return; // 缓冲期间已被暂停：接好音频但先不播，等 resume() 再 play()
     a.play().catch(() => {
       // 自动播放被拦 → 放弃流式，回退整段（其内部再回退 Web Speech）
       if (currentAudio === a) currentAudio = null;
@@ -461,10 +465,12 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
 
   return {
     pause() {
+      paused = true;
       if (inner) inner.pause();
       else audio?.pause();
     },
     resume() {
+      paused = false;
       if (inner) inner.resume();
       else void audio?.play().catch(() => {});
     },

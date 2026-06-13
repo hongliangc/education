@@ -1,15 +1,40 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
-import { speakText, type SpeechController } from "@/lib/speech";
+import { speakTextStream, type SpeechController } from "@/lib/speech";
 import type { MathProblem } from "@/content/math";
+import { sceneForProblem } from "@/content/math/scene";
 import { buildGuideText, getGuideStepCount } from "./guideText";
+import { MathScene } from "./MathScene";
 import { MathVisual } from "./MathVisual";
 
 const MUTE_KEY = "mlk:mathGuideMuted";
 
+// Picks the richer animated ten-frame walkthrough (凑十法 / 破十法) when the problem fits one, and
+// otherwise falls back to the generic step-by-step guide. `useMemo` keeps the scene reference
+// stable so MathScene doesn't restart playback on every parent re-render. Only one hook runs here
+// before the branch, so the conditional return is hooks-safe (each branch mounts its own subtree).
 export function MathGuide({
+  problem,
+  onComplete,
+}: {
+  problem: MathProblem;
+  onComplete: () => void;
+}) {
+  const scene = useMemo(() => sceneForProblem(problem), [problem]);
+  if (scene) {
+    return (
+      <div className="mt-4 anim-pop-in">
+        <p className="mb-2 text-center font-bold text-amber-700">别着急，看动画一步一步学 ✨</p>
+        <MathScene scene={scene} autoStart onComplete={onComplete} />
+      </div>
+    );
+  }
+  return <StepByStepGuide problem={problem} onComplete={onComplete} />;
+}
+
+function StepByStepGuide({
   problem,
   onComplete,
 }: {
@@ -70,7 +95,9 @@ export function MathGuide({
 
     if (muted) return;
 
-    controllerRef.current = speakText(buildGuideText(problem), {
+    // Streaming TTS: first sound at ~0.6s instead of waiting for the whole clip (~3-4s),
+    // so the voice lands with the step animation instead of lagging far behind it.
+    controllerRef.current = speakTextStream(buildGuideText(problem), {
       lang: "zh-CN",
       rate: 0.88,
       onEnd: () => {

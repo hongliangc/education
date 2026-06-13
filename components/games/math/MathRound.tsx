@@ -24,7 +24,9 @@ export function MathRound({
   const [questionIndex, setQuestionIndex] = useState(0);
   const [correctQ, setCorrectQ] = useState(0);
   const [feedback, setFeedback] = useState<"correct" | "wrong" | null>(null);
-  const [showGuide, setShowGuide] = useState(false);
+  // "wrong" = auto-shown after a miss (records a mistake on finish); "help" = on-demand 求助
+  // peek that the child opens before answering (no mistake, returns to the choices).
+  const [guideReason, setGuideReason] = useState<"wrong" | "help" | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { sfx } = useSFX();
   const current = problems[questionIndex];
@@ -41,7 +43,7 @@ export function MathRound({
     (wasCorrect: boolean) => {
       const nextCorrect = correctQ + (wasCorrect ? 1 : 0);
       setFeedback(null);
-      setShowGuide(false);
+      setGuideReason(null);
       if (questionIndex + 1 >= problems.length) {
         onFinish(nextCorrect);
         return;
@@ -70,7 +72,7 @@ export function MathRound({
     }
 
     sfx.wrong();
-    timerRef.current = setTimeout(() => setShowGuide(true), 450);
+    timerRef.current = setTimeout(() => setGuideReason("wrong"), 450);
   };
 
   const finishGuide = () => {
@@ -80,6 +82,14 @@ export function MathRound({
     }
     advance(false);
   };
+
+  // On-demand help: open the guided walkthrough before answering, then return to the choices.
+  const requestHelp = () => {
+    if (feedback || guideReason) return;
+    sfx.click();
+    setGuideReason("help");
+  };
+  const closeHelp = () => setGuideReason(null);
 
   return (
     <div>
@@ -104,23 +114,42 @@ export function MathRound({
         </div>
       </div>
 
-      {showGuide ? (
-        <MathGuide problem={current} onComplete={finishGuide} />
+      {guideReason !== null ? (
+        <>
+          <MathGuide
+            problem={current}
+            onComplete={guideReason === "wrong" ? finishGuide : () => {}}
+          />
+          {guideReason === "help" && (
+            <div className="mt-3 text-center">
+              <Btn size="sm" variant="primary" onClick={closeHelp}>
+                ✏️ 我来试试
+              </Btn>
+            </div>
+          )}
+        </>
       ) : (
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {choices.map((choice) => (
-            <Btn
-              key={choice}
-              size="lg"
-              variant="primary"
-              onClick={() => choose(choice)}
-              disabled={feedback !== null}
-              className="py-6 text-3xl"
-            >
-              {choice}
+        <>
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {choices.map((choice) => (
+              <Btn
+                key={choice}
+                size="lg"
+                variant="primary"
+                onClick={() => choose(choice)}
+                disabled={feedback !== null}
+                className="py-6 text-3xl"
+              >
+                {choice}
+              </Btn>
+            ))}
+          </div>
+          <div className="mt-3 text-center">
+            <Btn size="sm" variant="ghost" onClick={requestHelp} disabled={feedback !== null}>
+              🆘 求助
             </Btn>
-          ))}
-        </div>
+          </div>
+        </>
       )}
 
       <p className="mt-3 text-center text-sm text-slate-400">
