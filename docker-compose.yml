@@ -4,6 +4,39 @@
 #   停止：docker compose down       （加 -v 连同数据卷一起删）
 
 services:
+  openlist-init:
+    image: alpine:3.22
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 1001:1001 /opt/openlist/data"]
+    volumes:
+      - openlistdata:/opt/openlist/data
+    restart: "no"
+
+  openlist:
+    image: "${OPENLIST_IMAGE:-openlistteam/openlist:v4.2.2}"
+    environment:
+      UMASK: "022"
+    volumes:
+      - openlistdata:/opt/openlist/data
+    expose:
+      - "5244"
+    depends_on:
+      openlist-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "-q",
+          "--spider",
+          "http://localhost:5244/ping",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
   db:
     image: postgres:17
     environment:
@@ -40,17 +73,22 @@ services:
       # 大模型音色（扣大模型预付费包）：601009 爱小芊(童趣女声,9情感) / 501009 WeWinny(英文女声)
       TTS_VOICE_ZH: "${TTS_VOICE_ZH:-601009}"
       TTS_VOICE_EN: "${TTS_VOICE_EN:-501009}"
-      # 阿里云盘知识影院；留空则 /api/videos 返回未配置
-      ALIYUN_APP_ID: "${ALIYUN_APP_ID:-}"
-      ALIYUN_APP_SECRET: "${ALIYUN_APP_SECRET:-}"
-      ALIYUN_REFRESH_TOKEN: "${ALIYUN_REFRESH_TOKEN:-}"
-      ALIYUN_VIDEO_FOLDER_ID: "${ALIYUN_VIDEO_FOLDER_ID:-}"
-      ALIYUN_DRIVE_ID: "${ALIYUN_DRIVE_ID:-}"
+      VIDEO_SOURCE: "${VIDEO_SOURCE:-openlist}"
+      OPENLIST_BASE_URL: "${OPENLIST_BASE_URL:-http://openlist:5244}"
+      OPENLIST_USERNAME: "${OPENLIST_USERNAME:-}"
+      OPENLIST_PASSWORD: "${OPENLIST_PASSWORD:-}"
+      OPENLIST_VIDEO_ROOT: "${OPENLIST_VIDEO_ROOT:-/videos}"
+      OPENLIST_CATALOG_FILE: "${OPENLIST_CATALOG_FILE:-/videos/catalog.json}"
+      OPENLIST_MAX_VIDEO_QUALITY: "${OPENLIST_MAX_VIDEO_QUALITY:-FHD}"
+      OPENLIST_CATALOG_TTL_SEC: "${OPENLIST_CATALOG_TTL_SEC:-600}"
+      OPENLIST_PLAY_CACHE_TTL_SEC: "${OPENLIST_PLAY_CACHE_TTL_SEC:-600}"
     expose:
       - "3000"
     volumes:
       - ttscache:/app/.cache/tts
     depends_on:
+      openlist:
+        condition: service_healthy
       db:
         condition: service_healthy
     healthcheck:
@@ -77,5 +115,6 @@ services:
         condition: service_healthy
 
 volumes:
+  openlistdata:
   pgdata:
   ttscache:

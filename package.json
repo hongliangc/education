@@ -8,7 +8,8 @@
     "start": "next start",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "videos:verify-openlist": "node scripts/verify-openlist-video.mjs"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"
