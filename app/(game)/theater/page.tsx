@@ -1,39 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Btn } from "@/components/Btn";
-import { GameModal } from "@/components/GameModal";
 import { BackButton } from "@/components/BackButton";
+import {
+  TheaterCatalog,
+  type TheaterVideoItem,
+} from "@/components/video/TheaterCatalog";
+import { TheaterUnlockModal } from "@/components/video/TheaterUnlockModal";
 import { VideoPlayer } from "@/components/video/VideoPlayer";
+import { useTheaterCatalog } from "@/components/video/useTheaterCatalog";
 import { useSFX } from "@/components/audio/useSFX";
 import { useGameStore } from "@/store/gameStore";
-
-interface VideoItem {
-  id: string;
-  title: string;
-  posterUrl?: string;
-  durationSec?: number;
-  resolution?: string;
-  ageBand?: string;
-  subject?: string;
-  summary?: string;
-  order: number;
-  cost: number;
-  unlocked: boolean;
-}
+import { playRetryDelayMs } from "@/lib/video/playback";
 
 interface PlayInfo {
   url: string;
   quality?: string;
-}
-
-function formatDuration(seconds: number | undefined): string {
-  if (!seconds) return "短片";
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds % 60;
-  if (minutes <= 0) return `${rest}秒`;
-  return `${minutes}:${String(rest).padStart(2, "0")}`;
 }
 
 export default function TheaterPage() {
@@ -41,16 +24,22 @@ export default function TheaterPage() {
   const child = useGameStore((state) => state.activeChild);
   const setStars = useGameStore((state) => state.setStars);
   const { sfx } = useSFX();
-  const [videos, setVideos] = useState<VideoItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [catalogError, setCatalogError] = useState<string | null>(null);
-  const [activeVideo, setActiveVideo] = useState<VideoItem | null>(null);
-  const [pendingUnlock, setPendingUnlock] = useState<VideoItem | null>(null);
+  const {
+    sortedVideos,
+    setVideos,
+    loading,
+    error: catalogError,
+  } = useTheaterCatalog(child?.id);
+  const [activeVideo, setActiveVideo] = useState<TheaterVideoItem | null>(null);
+  const [pendingUnlock, setPendingUnlock] = useState<TheaterVideoItem | null>(null);
   const [unlockLoading, setUnlockLoading] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [playInfo, setPlayInfo] = useState<PlayInfo | null>(null);
   const [playLoading, setPlayLoading] = useState(false);
   const [playError, setPlayError] = useState<string | null>(null);
+  const [resumeAtSec, setResumeAtSec] = useState(0);
+  const playAbortRef = useRef<AbortController | null>(null);
+  const sourceRefreshCountRef = useRef(0);
 
   useEffect(() => {
     if (!child) {
@@ -58,66 +47,79 @@ export default function TheaterPage() {
     }
   }, [child, router]);
 
-  useEffect(() => {
-    if (!child) return;
-    const activeChild = child;
-    let cancelled = false;
-
-    async function loadVideos() {
-      setLoading(true);
-      setCatalogError(null);
-      try {
-        const res = await fetch(`/api/videos?childId=${encodeURIComponent(activeChild.id)}`);
-        if (!res.ok) throw new Error("catalog_failed");
-        const json = (await res.json()) as { videos?: VideoItem[] };
-        if (!cancelled) setVideos(json.videos ?? []);
-      } catch {
-        if (!cancelled) setCatalogError("视频暂时看不了，等一下再试试。");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    void loadVideos();
-    return () => {
-      cancelled = true;
-    };
-  }, [child]);
-
-  const sortedVideos = useMemo(
-    () => videos.toSorted((a, b) => a.order - b.order || a.title.localeCompare(b.title, "zh-CN")),
-    [videos],
+  useEffect(
+    () => () => {
+      playAbortRef.current?.abort();
+    },
+    [],
   );
 
-  const startPlayback = async (video: VideoItem) => {
+  const startPlayback = useCallback(async (
+    video: TheaterVideoItem,
+    resumeAt = 0,
+    refreshSource = false,
+  ) => {
     if (!child) return;
     const activeChild = child;
+    playAbortRef.current?.abort();
+    const controller = new AbortController();
+    playAbortRef.current = controller;
+    if (!refreshSource) sourceRefreshCountRef.current = 0;
     setActiveVideo(video);
     setPlayInfo(null);
+    setResumeAtSec(resumeAt);
     setPlayError(null);
     setPlayLoading(true);
 
     try {
-      const res = await fetch(
-        `/api/videos/${encodeURIComponent(video.id)}/play?childId=${encodeURIComponent(activeChild.id)}`,
-      );
-      if (res.status === 403) throw new Error("locked");
-      if (!res.ok) throw new Error("play_failed");
-      const json = (await res.json()) as { play?: PlayInfo };
-      if (!json.play?.url) throw new Error("play_missing");
-      setPlayInfo(json.play);
+      for (let attempt = 0; attempt < 6; attempt++) {
+        const res = await fetch(
+          `/api/videos/${encodeURIComponent(video.id)}/play?childId=${encodeURIComponent(activeChild.id)}${refreshSource ? "&refresh=1" : ""}`,
+          { signal: controller.signal },
+        );
+        if (res.status === 403) throw new Error("locked");
+        const json = (await res.json().catch(() => ({}))) as {
+          play?: PlayInfo;
+          error?: string;
+          retryAfterSec?: number;
+        };
+        if (res.status === 202 && json.error === "video_preparing") {
+          await new Promise<void>((resolve, reject) => {
+            const timeout = window.setTimeout(resolve, playRetryDelayMs(attempt, json.retryAfterSec));
+            controller.signal.addEventListener(
+              "abort",
+              () => {
+                window.clearTimeout(timeout);
+                reject(new DOMException("Aborted", "AbortError"));
+              },
+              { once: true },
+            );
+          });
+          continue;
+        }
+        if (!res.ok) throw new Error("play_failed");
+        if (!json.play?.url) throw new Error("play_missing");
+        setPlayInfo(json.play);
+        return;
+      }
+      throw new Error("video_preparing");
     } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
       setPlayError(
         error instanceof Error && error.message === "locked"
           ? "先用小星星解锁吧。"
+          : error instanceof Error && error.message === "video_preparing"
+            ? "视频还在准备中，稍后再试。"
           : "这个视频暂时打不开。",
       );
     } finally {
-      setPlayLoading(false);
+      if (playAbortRef.current === controller) {
+        setPlayLoading(false);
+      }
     }
-  };
+  }, [child]);
 
-  const openVideo = (video: VideoItem) => {
+  const openVideo = (video: TheaterVideoItem) => {
     sfx.click();
     setUnlockError(null);
     if (!video.unlocked) {
@@ -184,92 +186,12 @@ export default function TheaterPage() {
           </div>
         </header>
 
-        {loading && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {Array.from({ length: 8 }).map((_, index) => (
-              <div
-                key={index}
-                className="aspect-[3/4] animate-pulse rounded-3xl bg-white/55 shadow ring-1 ring-white/60"
-              />
-            ))}
-          </div>
-        )}
-
-        {!loading && catalogError && (
-          <div className="rounded-3xl bg-white/90 p-6 text-center shadow-xl ring-1 ring-white">
-            <div className="mb-2 text-5xl">☁️</div>
-            <p className="mb-4 text-lg font-bold text-slate-700">{catalogError}</p>
-            <Btn variant="secondary" onClick={() => window.location.reload()}>
-              再试一次
-            </Btn>
-          </div>
-        )}
-
-        {!loading && !catalogError && sortedVideos.length === 0 && (
-          <div className="rounded-3xl bg-white/90 p-6 text-center shadow-xl ring-1 ring-white">
-            <div className="mb-2 text-5xl">📁</div>
-            <p className="text-lg font-bold text-slate-700">视频库还是空的。</p>
-          </div>
-        )}
-
-        {!loading && !catalogError && sortedVideos.length > 0 && (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-            {sortedVideos.map((video) => (
-              <button
-                key={video.id}
-                type="button"
-                onClick={() => openVideo(video)}
-                className="group overflow-hidden rounded-3xl bg-white/90 text-left shadow-xl ring-1 ring-white transition hover:-translate-y-1 hover:shadow-2xl"
-              >
-                <div className="relative aspect-[3/4] bg-gradient-to-br from-sky-200 via-emerald-100 to-amber-100">
-                  {video.posterUrl ? (
-                    <img
-                      src={video.posterUrl}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      referrerPolicy="no-referrer"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-6xl">🎞️</div>
-                  )}
-                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-2 bg-gradient-to-t from-black/70 to-transparent p-3">
-                    <span className="rounded-full bg-white/90 px-2 py-1 text-xs font-black text-slate-700">
-                      {formatDuration(video.durationSec)}
-                    </span>
-                    {(video.subject || video.ageBand) && (
-                      <span className="rounded-full bg-emerald-300 px-2 py-1 text-xs font-black text-emerald-950">
-                        {video.subject ?? video.ageBand}
-                      </span>
-                    )}
-                  </div>
-                  {!video.unlocked && (
-                    <div className="absolute left-3 top-3 flex items-center gap-1 rounded-full bg-slate-950/75 px-3 py-1 text-sm font-black text-white shadow">
-                      <span aria-hidden="true">🔒</span>
-                      <span>⭐×{video.cost}</span>
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h2 className="line-clamp-2 min-h-10 text-base font-black text-slate-700">
-                    {video.title}
-                  </h2>
-                  {video.summary ? (
-                    <p className="mt-1 line-clamp-2 text-xs font-bold text-slate-500">
-                      {video.summary}
-                    </p>
-                  ) : video.resolution ? (
-                    <p className="mt-1 text-xs font-bold text-slate-400">{video.resolution}</p>
-                  ) : null}
-                  {video.subject && video.ageBand && (
-                    <p className="mt-2 inline-flex rounded-full bg-sky-100 px-2 py-1 text-xs font-black text-sky-700">
-                      {video.ageBand}
-                    </p>
-                  )}
-                </div>
-              </button>
-            ))}
-          </div>
-        )}
+        <TheaterCatalog
+          videos={sortedVideos}
+          loading={loading}
+          error={catalogError}
+          onOpen={openVideo}
+        />
       </div>
 
       {activeVideo && (
@@ -279,58 +201,40 @@ export default function TheaterPage() {
           src={playInfo?.url}
           loading={playLoading}
           error={playError ?? undefined}
+          resumeAtSec={resumeAtSec}
+          onRefreshSource={(currentTime) => {
+            if (sourceRefreshCountRef.current >= 2) {
+              setPlayInfo(null);
+              setPlayLoading(false);
+              setPlayError("视频连接不稳定，稍后再试。");
+              return;
+            }
+            sourceRefreshCountRef.current++;
+            void startPlayback(activeVideo, currentTime, true);
+          }}
           onBack={() => {
+            playAbortRef.current?.abort();
             setActiveVideo(null);
             setPlayInfo(null);
             setPlayError(null);
             setPlayLoading(false);
+            setResumeAtSec(0);
           }}
         />
       )}
 
       {pendingUnlock && (
-        <GameModal
-          title="解锁动画片"
-          emoji="⭐"
-          color="#f59e0b"
-          onClose={() => {
-            if (!unlockLoading) {
-              setPendingUnlock(null);
-              setUnlockError(null);
-            }
+        <TheaterUnlockModal
+          video={pendingUnlock}
+          balance={child.totalStars}
+          loading={unlockLoading}
+          error={unlockError}
+          onCancel={() => {
+            setPendingUnlock(null);
+            setUnlockError(null);
           }}
-        >
-          <div className="space-y-5 text-center">
-            <div>
-              <p className="text-lg font-black text-slate-700">
-                用 {pendingUnlock.cost}⭐ 解锁《{pendingUnlock.title}》吗？
-              </p>
-              <p className="mt-2 text-sm font-bold text-slate-500">
-                你现在有 {child.totalStars}⭐，解锁后可以一直重看。
-              </p>
-            </div>
-            {unlockError && (
-              <div className="rounded-2xl bg-amber-100 px-4 py-3 text-sm font-black text-amber-800">
-                {unlockError}
-              </div>
-            )}
-            <div className="flex flex-wrap justify-center gap-3">
-              <Btn
-                variant="ghost"
-                disabled={unlockLoading}
-                onClick={() => {
-                  setPendingUnlock(null);
-                  setUnlockError(null);
-                }}
-              >
-                返回
-              </Btn>
-              <Btn disabled={unlockLoading} onClick={() => void confirmUnlock()}>
-                {unlockLoading ? "解锁中..." : "确认解锁"}
-              </Btn>
-            </div>
-          </div>
-        </GameModal>
+          onConfirm={() => void confirmUnlock()}
+        />
       )}
     </main>
   );

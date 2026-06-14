@@ -1,15 +1,25 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { AliyunApiError, AliyunConfigError, getAliyunVideoPlayInfo } from "@/lib/aliyun/client";
+import {
+  OpenListApiError,
+  OpenListConfigError,
+} from "@/lib/openlist/client";
 import { prisma } from "@/lib/db";
-import { getVideoCatalog } from "@/lib/video/catalog";
+import { getVideoSource, OpenListCatalogError } from "@/lib/video/catalog";
+import { getOpenListVideoPlayInfo } from "@/lib/video/play";
 import { isVideoUnlocked } from "@/lib/rewards/management";
 
 function playErrorResponse(error: unknown) {
-  if (error instanceof AliyunConfigError) {
+  if (error instanceof OpenListConfigError || error instanceof OpenListCatalogError) {
     return NextResponse.json({ error: "video_unconfigured" }, { status: 503 });
   }
-  if (error instanceof AliyunApiError) {
+  if (error instanceof OpenListApiError) {
+    if (error.status === 202) {
+      return NextResponse.json(
+        { error: "video_preparing", retryAfterSec: 5 },
+        { status: 202, headers: { "Retry-After": "5" } },
+      );
+    }
     if (error.status === 404) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -44,8 +54,7 @@ export async function GET(
       return NextResponse.json({ error: "Child not found" }, { status: 404 });
     }
 
-    const videos = await getVideoCatalog();
-    const video = videos.find((item) => item.id === id);
+    const video = await getVideoSource(id);
     if (!video) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
@@ -54,7 +63,8 @@ export async function GET(
       return NextResponse.json({ error: "locked" }, { status: 403 });
     }
 
-    const play = await getAliyunVideoPlayInfo(id);
+    const forceRefresh = url.searchParams.get("refresh") === "1";
+    const play = await getOpenListVideoPlayInfo(video.sourcePath, forceRefresh);
     return NextResponse.json({ play });
   } catch (error) {
     return playErrorResponse(error);

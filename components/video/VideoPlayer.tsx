@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { cn } from "@/lib/utils";
+import { clampResumeTime } from "@/lib/video/playback";
 
 interface VideoPlayerProps {
   title: string;
@@ -10,6 +11,8 @@ interface VideoPlayerProps {
   src?: string;
   loading?: boolean;
   error?: string;
+  resumeAtSec?: number;
+  onRefreshSource?: (resumeAtSec: number) => void;
   onBack: () => void;
 }
 
@@ -19,11 +22,18 @@ export function VideoPlayer({
   src,
   loading = false,
   error,
+  resumeAtSec = 0,
+  onRefreshSource,
   onBack,
 }: VideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  const refreshSourceRef = useRef(onRefreshSource);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
+
+  useEffect(() => {
+    refreshSourceRef.current = onRefreshSource;
+  }, [onRefreshSource]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -31,10 +41,30 @@ export function VideoPlayer({
 
     let disposed = false;
     let destroy: (() => void) | undefined;
+    let refreshRequested = false;
+
+    const resume = () => {
+      if (resumeAtSec > 0) {
+        video.currentTime = clampResumeTime(resumeAtSec, video.duration);
+      }
+    };
+    const refreshSource = () => {
+      if (refreshRequested || disposed || !refreshSourceRef.current) return;
+      refreshRequested = true;
+      refreshSourceRef.current(video.currentTime);
+    };
+    video.addEventListener("loadedmetadata", resume);
+    video.addEventListener("error", refreshSource);
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = src;
-      return;
+      return () => {
+        disposed = true;
+        video.removeEventListener("loadedmetadata", resume);
+        video.removeEventListener("error", refreshSource);
+        video.removeAttribute("src");
+        video.load();
+      };
     }
 
     void import("hls.js").then(({ default: Hls }) => {
@@ -46,6 +76,14 @@ export function VideoPlayer({
         capLevelToPlayerSize: true,
         enableWorker: true,
       });
+      hls.on(Hls.Events.ERROR, (_event, data) => {
+        if (!data.fatal) return;
+        if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+          hls.recoverMediaError();
+          return;
+        }
+        refreshSource();
+      });
       hls.loadSource(src);
       hls.attachMedia(video);
       destroy = () => hls.destroy();
@@ -54,10 +92,12 @@ export function VideoPlayer({
     return () => {
       disposed = true;
       destroy?.();
+      video.removeEventListener("loadedmetadata", resume);
+      video.removeEventListener("error", refreshSource);
       video.removeAttribute("src");
       video.load();
     };
-  }, [src]);
+  }, [resumeAtSec, src]);
 
   const togglePlay = async () => {
     const video = videoRef.current;

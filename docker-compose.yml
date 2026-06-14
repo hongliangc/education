@@ -20,6 +20,8 @@ services:
       - openlistdata:/opt/openlist/data
     expose:
       - "5244"
+    ports:
+      - "127.0.0.1:5244:5244"
     depends_on:
       openlist-init:
         condition: service_completed_successfully
@@ -77,8 +79,8 @@ services:
       OPENLIST_BASE_URL: "${OPENLIST_BASE_URL:-http://openlist:5244}"
       OPENLIST_USERNAME: "${OPENLIST_USERNAME:-}"
       OPENLIST_PASSWORD: "${OPENLIST_PASSWORD:-}"
-      OPENLIST_VIDEO_ROOT: "${OPENLIST_VIDEO_ROOT:-/videos}"
-      OPENLIST_CATALOG_FILE: "${OPENLIST_CATALOG_FILE:-/videos/catalog.json}"
+      OPENLIST_VIDEO_ROOT: "${OPENLIST_VIDEO_ROOT:-/}"
+      OPENLIST_CATALOG_FILE: "${OPENLIST_CATALOG_FILE:-/catalog.json}"
       OPENLIST_MAX_VIDEO_QUALITY: "${OPENLIST_MAX_VIDEO_QUALITY:-FHD}"
       OPENLIST_CATALOG_TTL_SEC: "${OPENLIST_CATALOG_TTL_SEC:-600}"
       OPENLIST_PLAY_CACHE_TTL_SEC: "${OPENLIST_PLAY_CACHE_TTL_SEC:-600}"

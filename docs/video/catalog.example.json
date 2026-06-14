@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "videos": [
+    {
+      "id": "perfect-planet-s01e02",
+      "path": "A.Perfect.Planet.2021.S01E02_阳光.mp4",
+      "poster": "A.Perfect.Planet.2021.S01E02_阳光.jpg",
+      "title": "完美星球：阳光",
+      "summary": "了解阳光如何塑造地球上的生命。",
+      "subject": "自然科学",
+      "ageBand": "6-10岁",
+      "durationSec": 3000,
+      "resolution": "1920x1080",
+      "order": 1,
+      "cost": 20
+    }
+  ]
+}

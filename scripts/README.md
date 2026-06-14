@@ -25,6 +25,7 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
 - **`docker-recreate.sh`** — `docker compose up -d` 后轮询 `education-web-1` 健康状态直到 healthy（约 30s 超时）。容器模式重启栈用。
 - **`check-agent-context.sh`** — 检查 Agent 入口文件大小、外部 wiki 路径及废弃的工作流/二级索引是否残留。修改 `AGENTS.md`、`CLAUDE.md` 或 Skills 后运行。
 - **`verify-openlist-video.mjs`** — 登录 OpenList，验证阿里云盘 `video_preview` 的 M3U8、首个媒体分片和 CORS；不会打印签名 URL。运行：`npm run videos:verify-openlist`。
+  - 首次配置流程及稳定目录格式见 `docs/video/openlist-setup.md`。
 - **`sync-reward-resources.mjs`** — 幂等迁移：把历史 `ReadingProgress` / `VideoUnlock` 导入统一奖励系统，并按内容生成平台 `RewardResource` 目录与每个孩子的开账余额（`OPENING_BALANCE`）。可重复运行（资源/开账/永久解锁均按唯一键去重）。`--dry-run` 只打印计划不写库。需要 `DATABASE_URL`；通过 `ts-resolve-hooks.mjs` 加载 `content/storybooks` 的无扩展名 TS 导入。
   - 预演：`node scripts/sync-reward-resources.mjs --dry-run`
   - 应用：`node scripts/sync-reward-resources.mjs`
