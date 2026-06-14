@@ -185,6 +185,18 @@ export function divideFact(grade: Grade): ArithmeticProblem {
   return arithmetic(grade, "÷", a * b, a, b, 5);
 }
 
+export function tableMultiply(grade: Grade): ArithmeticProblem {
+  const a = randomInt(2, 9);
+  const b = randomInt(2, 9);
+  return arithmetic(grade, "×", a, b, a * b, 6);
+}
+
+export function tableDivide(grade: Grade): ArithmeticProblem {
+  const a = randomInt(2, 9);
+  const b = randomInt(2, 9);
+  return arithmetic(grade, "÷", a * b, a, b, 5);
+}
+
 function timesTable(grade: Grade): ArithmeticProblem {
   return Math.random() < 0.5 ? multiplyFact(grade) : divideFact(grade);
 }

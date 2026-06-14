@@ -70,7 +70,7 @@ export function MathPath({
       <div className="mb-3 flex items-center justify-between">
         <p className="text-sm font-bold text-slate-500">闯关学习 · 一步步来 🎯</p>
         <Btn variant="ghost" size="sm" onClick={onReview}>
-          综合练习
+          🔙 选择内容
         </Btn>
       </div>
       <div className="space-y-2">
