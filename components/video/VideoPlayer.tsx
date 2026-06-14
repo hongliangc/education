@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { cn } from "@/lib/utils";
+import { createNoReferrerHlsRequest } from "@/lib/video/hls-request";
 import { clampResumeTime } from "@/lib/video/playback";
 
 interface VideoPlayerProps {
@@ -38,6 +39,7 @@ export function VideoPlayer({
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !src) return;
+    video.setAttribute("referrerpolicy", "no-referrer");
 
     let disposed = false;
     let destroy: (() => void) | undefined;
@@ -75,6 +77,8 @@ export function VideoPlayer({
       const hls = new Hls({
         capLevelToPlayerSize: true,
         enableWorker: true,
+        fetchSetup: (context, initParams) =>
+          createNoReferrerHlsRequest(context.url, initParams as RequestInit),
       });
       hls.on(Hls.Events.ERROR, (_event, data) => {
         if (!data.fatal) return;
