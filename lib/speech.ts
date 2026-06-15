@@ -280,6 +280,61 @@ export function stopSpeaking(): void {
   if (isSpeechSupported()) window.speechSynthesis.cancel();
 }
 
+// ---------- 分段连读（字母名→拼读音→例词 / 单独示范音素用） ----------
+export interface SpeechSegment {
+  text: string;
+  rate?: number;
+  /** 本段读完后、下一段开始前的停顿（毫秒）；不传用 opts.gapMs。 */
+  gapAfterMs?: number;
+}
+
+/**
+ * 依次朗读多段，段间留明显停顿——例如字母「ay … a … apple」三段示范、或音标先单独示范音素。
+ * 复用 speakText（云 TTS→Web Speech 回退），靠 onEnd 串接，stop() 同时清掉定时器与当前段。
+ */
+export function speakSequence(
+  segments: readonly SpeechSegment[],
+  opts: { lang?: string; rate?: number; gapMs?: number } = {},
+): SpeechController {
+  const lang = opts.lang ?? "en-US";
+  const gapMs = opts.gapMs ?? 420;
+  let stopped = false;
+  let current: SpeechController | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const playFrom = (i: number) => {
+    if (stopped || i >= segments.length) return;
+    const seg = segments[i];
+    current = speakText(seg.text, {
+      lang,
+      rate: seg.rate ?? opts.rate ?? 0.8,
+      onEnd: () => {
+        if (stopped) return;
+        timer = setTimeout(() => playFrom(i + 1), seg.gapAfterMs ?? gapMs);
+      },
+    });
+  };
+
+  stopSpeaking();
+  playFrom(0);
+
+  return {
+    pause() {
+      current?.pause();
+    },
+    resume() {
+      current?.resume();
+    },
+    stop() {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      current?.stop();
+      current = null;
+    },
+  };
+}
+
 /**
  * 流式朗读：边收边播腾讯云流式 TTS。用 MediaSource 渐进追加 mp3 分块，首声 ~0.6s
  * （远快于整段 ~4.7s），并在流结束时 `endOfStream()` 收尾——否则裸 <audio> 播放无
