@@ -69,7 +69,7 @@ function SceneHeader({ scene, step }: { scene: Scene; step: number }) {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-black text-slate-800">🛒 {scene.title}</h2>
+        <h2 className="text-lg font-black text-slate-800">{scene.icon} {scene.title}</h2>
         <span className="text-xs font-bold text-slate-400">
           {scene.zhTitle} · {scene.level}
         </span>

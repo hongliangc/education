@@ -17,7 +17,8 @@ export function EnglishHub() {
   const scene = ENGLISH_SCENES.find((item) => item.id === sceneId) ?? ENGLISH_SCENES[0];
 
   return (
-    <main className="mx-auto min-h-full max-w-md px-4 py-8 font-[family-name:var(--font-kid)]">
+    <main className="mx-auto min-h-full w-full px-4 py-8 font-[family-name:var(--font-kid)]">
+      <div className="mx-auto max-w-md">
       <header className="text-center">
         <p className="text-sm font-bold tracking-wide text-purple-500">魔法学习王国 · 英语岛</p>
         <h1 className="mt-1 text-2xl font-black text-slate-800">听一听，大胆开口说</h1>
@@ -74,13 +75,15 @@ export function EnglishHub() {
                   : "bg-white text-slate-600 ring-1 ring-slate-200 hover:bg-emerald-50"
               }`}
             >
-              {item.title}
+              {item.icon} {item.title}
             </button>
           ))}
         </div>
       ) : null}
+      </div>
 
-      <div className="mt-5 rounded-3xl bg-white/60 p-4 shadow-sm ring-1 ring-slate-100">
+      <div className={`mx-auto mt-5 ${mainCategory === "sounds" ? "max-w-5xl" : "max-w-md"}`}>
+      <div className="rounded-3xl bg-white/60 p-4 shadow-sm ring-1 ring-slate-100">
         {mainCategory === "scene" ? (
           <EnglishScene
             key={runKey}
@@ -93,8 +96,9 @@ export function EnglishHub() {
           <IpaCategory />
         )}
       </div>
+      </div>
 
-      <p className="mt-6 text-center text-xs text-slate-400">
+      <p className="mx-auto mt-6 max-w-md text-center text-xs text-slate-400">
         没有麦克风也能玩：跟读步骤会自动切到「👍 我说好了」。
       </p>
     </main>
