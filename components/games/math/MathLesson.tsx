@@ -5,15 +5,20 @@ import { Btn } from "@/components/Btn";
 import { speakTextStream, type SpeechController } from "@/lib/speech";
 import type { MathProblem } from "@/content/math";
 import type { MathLesson as Lesson } from "@/content/math/curriculum";
+import { sceneForProblem } from "@/content/math/scene";
 import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
 import { MathRound } from "./MathRound";
-import { MathVisual } from "./MathVisual";
 import { MathGuide } from "./MathGuide";
 
 const ROUND_SIZE = 5;
 
 type Phase = "intro" | "demo" | "practice" | "done";
+
+function generateExample(lesson: Lesson): MathProblem {
+  const candidates = lesson.generate(ROUND_SIZE);
+  return candidates.find((problem) => sceneForProblem(problem) !== null) ?? candidates[0]!;
+}
 
 // One guided lesson: 引入概念 → 示范 → 练习 → 巩固. Reuses the module's round/visual/guide so the
 // teaching matches the rest of the math experience.
@@ -32,7 +37,7 @@ export function MathLesson({
 }) {
   const [phase, setPhase] = useState<Phase>("intro");
   const [problems, setProblems] = useState<MathProblem[]>(() => lesson.generate(ROUND_SIZE));
-  const [example, setExample] = useState<MathProblem>(() => lesson.generate(1)[0]);
+  const [example, setExample] = useState<MathProblem>(() => generateExample(lesson));
   const [correctQ, setCorrectQ] = useState(0);
   const startedAt = useRef(Date.now());
   // The intro "再听一遍" voice; stop it when leaving the intro so it never bleeds into the
@@ -46,7 +51,7 @@ export function MathLesson({
 
   const restart = () => {
     setProblems(lesson.generate(ROUND_SIZE));
-    setExample(lesson.generate(1)[0]);
+    setExample(generateExample(lesson));
     setCorrectQ(0);
     startedAt.current = Date.now();
     setPhase("intro");
@@ -92,9 +97,6 @@ export function MathLesson({
           <div className="text-3xl font-bold text-amber-700 sm:text-4xl">
             {example.prompt}
             {example.kind === "arithmetic" ? " = ?" : ""}
-          </div>
-          <div className="mt-5 min-h-24">
-            <MathVisual problem={example} />
           </div>
         </div>
         <MathGuide problem={example} onComplete={() => setPhase("practice")} />

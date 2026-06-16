@@ -1,7 +1,23 @@
 import type { Grade } from "@/lib/grades";
 import type { MathProblem } from "../math";
-// @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
-import { addWithin, compareLength, comparison, divideFact, fractionProblem, multiplyFact, shapeProblem, subWithin, timeProblem, unitConversion, wordProblem } from "../math.ts";
+import {
+  addWithin,
+  borrowSubWithin,
+  compareLength,
+  comparison,
+  crossingAddWithin,
+  divideFact,
+  fractionProblem,
+  multiplyFact,
+  shapeProblem,
+  subWithin,
+  tenBondAddWithin,
+  tenBondSubWithin,
+  timeProblem,
+  unitConversion,
+  wordProblem,
+  // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
+} from "../math.ts";
 
 // One knowledge-point lesson on a grade's guided path: a concept to teach, then focused
 // practice generated for just this skill (reusing the module's existing problem generators).
@@ -26,7 +42,7 @@ const G1_LESSONS: MathLesson[] = [
     title: "20以内加法",
     icon: "➕",
     concept: "先把一个数凑成 10，再加上剩下的，又快又准！",
-    generate: (n) => repeat(() => addWithin("G1", 20, 6), n),
+    generate: (n) => repeat(() => crossingAddWithin("G1", 6), n),
   },
   {
     key: "g1-sub-within-20",
@@ -34,7 +50,7 @@ const G1_LESSONS: MathLesson[] = [
     title: "20以内减法",
     icon: "➖",
     concept: "个位不够减的时候，向十位借一个 10 再减就好啦。",
-    generate: (n) => repeat(() => subWithin("G1", 20, 6), n),
+    generate: (n) => repeat(() => borrowSubWithin("G1", 6), n),
   },
   {
     key: "g1-compare-100",
@@ -70,7 +86,7 @@ const K1_LESSONS: MathLesson[] = [
     title: "5以内加法",
     icon: "➕",
     concept: "把两堆合在一起，一个一个数一数，就知道一共有几个。",
-    generate: (n) => repeat(() => addWithin("K1", 5, 4), n),
+    generate: (n) => repeat(() => tenBondAddWithin("K1", 5, 4), n),
   },
   {
     key: "k1-sub-5",
@@ -78,7 +94,7 @@ const K1_LESSONS: MathLesson[] = [
     title: "5以内减法",
     icon: "➖",
     concept: "拿走几个，再数一数剩下的，就是答案。",
-    generate: (n) => repeat(() => subWithin("K1", 5, 4), n),
+    generate: (n) => repeat(() => tenBondSubWithin("K1", 5, 4), n),
   },
   {
     key: "k1-compare-5",
@@ -106,7 +122,7 @@ const K2_LESSONS: MathLesson[] = [
     title: "10以内加法",
     icon: "➕",
     concept: "先把一个数凑成 10，再数剩下的，又快又准。",
-    generate: (n) => repeat(() => addWithin("K2", 10, 4), n),
+    generate: (n) => repeat(() => tenBondAddWithin("K2", 10, 4), n),
   },
   {
     key: "k2-sub-10",
@@ -114,7 +130,7 @@ const K2_LESSONS: MathLesson[] = [
     title: "10以内减法",
     icon: "➖",
     concept: "从总数里拿走一些，剩下的就是得数。",
-    generate: (n) => repeat(() => subWithin("K2", 10, 4), n),
+    generate: (n) => repeat(() => tenBondSubWithin("K2", 10, 4), n),
   },
   {
     key: "k2-compare-10",
@@ -142,7 +158,7 @@ const K3_LESSONS: MathLesson[] = [
     title: "10以内加法",
     icon: "➕",
     concept: "熟练地把两个数合起来，争取一眼就看出得数。",
-    generate: (n) => repeat(() => addWithin("K3", 10, 4), n),
+    generate: (n) => repeat(() => tenBondAddWithin("K3", 10, 4), n),
   },
   {
     key: "k3-sub-10",
@@ -150,7 +166,7 @@ const K3_LESSONS: MathLesson[] = [
     title: "10以内减法",
     icon: "➖",
     concept: "想一想几加几等于它，就能很快算出减法。",
-    generate: (n) => repeat(() => subWithin("K3", 10, 4), n),
+    generate: (n) => repeat(() => tenBondSubWithin("K3", 10, 4), n),
   },
   {
     key: "k3-length",

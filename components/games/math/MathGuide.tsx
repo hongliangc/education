@@ -15,34 +15,46 @@ const MUTE_KEY = "mlk:mathGuideMuted";
 // otherwise falls back to the generic step-by-step guide. `useMemo` keeps the scene reference
 // stable so MathScene doesn't restart playback on every parent re-render. Only one hook runs here
 // before the branch, so the conditional return is hooks-safe (each branch mounts its own subtree).
+//
+// `autoPlay` distinguishes the two ways a guide opens: a wrong answer or the lesson demo plays
+// itself through and moves on (autoPlay), while on-demand 求助 is self-paced — the child presses ▶
+// and scrubs/replays at will (like the /math-demo player), then closes it themselves.
 export function MathGuide({
   problem,
   onComplete,
+  autoPlay = true,
 }: {
   problem: MathProblem;
   onComplete: () => void;
+  autoPlay?: boolean;
 }) {
   const scene = useMemo(() => sceneForProblem(problem), [problem]);
   if (scene) {
     return (
       <div className="mt-4 anim-pop-in">
-        <p className="mb-2 text-center font-bold text-amber-700">别着急，看动画一步一步学 ✨</p>
-        <MathScene scene={scene} autoStart onComplete={onComplete} />
+        <p className="mb-2 text-center font-bold text-amber-700">
+          {autoPlay ? "别着急，看动画一步一步学 ✨" : "点 ▶ 看动画，自己慢慢学 ✨"}
+        </p>
+        <MathScene scene={scene} autoStart={autoPlay} onComplete={onComplete} />
       </div>
     );
   }
-  return <StepByStepGuide problem={problem} onComplete={onComplete} />;
+  return <StepByStepGuide problem={problem} onComplete={onComplete} autoPlay={autoPlay} />;
 }
 
 function StepByStepGuide({
   problem,
   onComplete,
+  autoPlay,
 }: {
   problem: MathProblem;
   onComplete: () => void;
+  autoPlay: boolean;
 }) {
   const [guideStep, setGuideStep] = useState(0);
   const [muted, setMuted] = useState(false);
+  // Self-paced (求助) starts idle until the child presses ▶; auto-play starts immediately.
+  const [started, setStarted] = useState(autoPlay);
   const controllerRef = useRef<SpeechController | null>(null);
   const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
   const playbackRef = useRef(0);
@@ -118,9 +130,14 @@ function StepByStepGuide({
   }, []);
 
   useEffect(() => {
-    play();
+    if (autoPlay) play();
     return clearPlayback;
-  }, [clearPlayback, play]);
+  }, [autoPlay, clearPlayback, play]);
+
+  const startPlay = () => {
+    setStarted(true);
+    play();
+  };
 
   const toggleMuted = () => {
     const next = !muted;
@@ -146,8 +163,8 @@ function StepByStepGuide({
       </div>
       <p className="mt-3 text-center text-sm leading-6 text-slate-600">{buildGuideText(problem)}</p>
       <div className="mt-3 text-center">
-        <Btn size="sm" variant="ghost" onClick={play}>
-          再看一遍 🔁
+        <Btn size="sm" variant={started ? "ghost" : "primary"} onClick={startPlay}>
+          {started ? "再看一遍 🔁" : "▶ 播放"}
         </Btn>
       </div>
     </div>

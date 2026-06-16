@@ -136,6 +136,38 @@ export function subWithin(grade: Grade, max: number, spread: number): Arithmetic
   return arithmetic(grade, "-", a, b, a - b, spread);
 }
 
+export function tenBondAddWithin(
+  grade: Grade,
+  max: number,
+  spread: number,
+): ArithmeticProblem {
+  const a = randomInt(1, max - 1);
+  const b = randomInt(1, max - a);
+  return arithmetic(grade, "+", a, b, a + b, spread);
+}
+
+export function tenBondSubWithin(
+  grade: Grade,
+  max: number,
+  spread: number,
+): ArithmeticProblem {
+  const a = randomInt(2, max);
+  const b = randomInt(1, a - 1);
+  return arithmetic(grade, "-", a, b, a - b, spread);
+}
+
+export function crossingAddWithin(grade: Grade, spread: number): ArithmeticProblem {
+  const a = randomInt(2, 9);
+  const b = randomInt(11 - a, 9);
+  return arithmetic(grade, "+", a, b, a + b, spread);
+}
+
+export function borrowSubWithin(grade: Grade, spread: number): ArithmeticProblem {
+  const a = randomInt(11, 18);
+  const b = randomInt(a - 9, 9);
+  return arithmetic(grade, "-", a, b, a - b, spread);
+}
+
 function addSubWithin(grade: Grade, max: number, spread: number): ArithmeticProblem {
   return Math.random() < 0.5 ? addWithin(grade, max, spread) : subWithin(grade, max, spread);
 }
@@ -150,6 +182,18 @@ export function multiplyFact(grade: Grade): ArithmeticProblem {
 export function divideFact(grade: Grade): ArithmeticProblem {
   const a = randomInt(1, 9);
   const b = randomInt(1, 9);
+  return arithmetic(grade, "÷", a * b, a, b, 5);
+}
+
+export function tableMultiply(grade: Grade): ArithmeticProblem {
+  const a = randomInt(2, 9);
+  const b = randomInt(2, 9);
+  return arithmetic(grade, "×", a, b, a * b, 6);
+}
+
+export function tableDivide(grade: Grade): ArithmeticProblem {
+  const a = randomInt(2, 9);
+  const b = randomInt(2, 9);
   return arithmetic(grade, "÷", a * b, a, b, 5);
 }
 

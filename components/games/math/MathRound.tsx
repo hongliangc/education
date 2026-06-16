@@ -119,6 +119,7 @@ export function MathRound({
           <MathGuide
             problem={current}
             onComplete={guideReason === "wrong" ? finishGuide : () => {}}
+            autoPlay={guideReason === "wrong"}
           />
           {guideReason === "help" && (
             <div className="mt-3 text-center">
