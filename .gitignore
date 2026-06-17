@@ -57,3 +57,7 @@ prisma/*.db-journal
 Resources/
 
 .superpowers
+todo
+# build cache & downloaded media (never commit)
+/.cache/
+/资源下载/

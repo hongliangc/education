@@ -9,6 +9,13 @@ prisma/*.db-journal
 .codegraph
 .claude
 .claude-mem
+.superpowers
+.worktrees/
+.venv-manim/
+Resources/
+资源下载/
+todo/
+bugfix/
 docs
 deploy
 *.md
