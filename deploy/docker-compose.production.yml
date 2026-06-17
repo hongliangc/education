@@ -22,8 +22,8 @@ services:
     environment:
       DATABASE_URL: "postgresql://mlk:${POSTGRES_PASSWORD}@db:5432/mlk?schema=public"
       AUTH_SECRET: "${AUTH_SECRET}"
-      NEXTAUTH_URL: "http://kidora.cn"
-      NEXT_PUBLIC_APP_URL: "http://kidora.cn"
+      NEXTAUTH_URL: "${PUBLIC_URL:-http://kidora.cn}"
+      NEXT_PUBLIC_APP_URL: "${PUBLIC_URL:-http://kidora.cn}"
       NODE_ENV: "production"
       TTS_CACHE_DIR: "/app/.cache/tts"
     expose:

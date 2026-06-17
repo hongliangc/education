@@ -443,7 +443,7 @@ sudo docker compose \
 | `/api/health` 返回 503 | 检查 PostgreSQL 容器与 `DATABASE_URL` |
 | 域名不可访问 | 检查 DNS、Lighthouse 防火墙和 Nginx |
 | `http://kidora.cn` 被 302 跳到 `dnspod.qcloud.com/static/webblock.html` | 腾讯对**未备案域名**的 Host 拦截（webblock）。域名需完成 **ICP 备案**才能对外；备案前用公网 IP `http://119.91.153.49/` 直连绕过 |
-| 用 IP 访问被跳到 `http://kidora.cn/login`（再被 webblock） | 应用 `AUTH_URL`/`NEXTAUTH_URL` 配成了 `http://kidora.cn`，NextAuth 用它拼**绝对**登录跳转。临时用 IP 体验：把 `/opt/kidora/.env`（或 `.env.production`）的 `NEXTAUTH_URL`/`AUTH_URL` 改成 `http://119.91.153.49` 并 `compose up -d web` 重启；备案后改回域名 |
+| 用 IP 访问被跳到 `http://kidora.cn/login`（再被 webblock） | compose 里 `NEXTAUTH_URL` 默认是 `http://kidora.cn`，NextAuth 用它拼**绝对**登录跳转。临时用 IP 体验：部署时设 `PUBLIC_URL`，如 `PUBLIC_URL=http://119.91.153.49 bash scripts/release.sh`（compose 用它覆盖 `NEXTAUTH_URL`/`NEXT_PUBLIC_APP_URL`）；备案后正常部署即恢复域名 |
 | 本地构建上下文过大 | 检查 `.dockerignore`，不要打包 `.next`、`node_modules`、worktree 或下载素材 |
 
 ## 八、安全要求

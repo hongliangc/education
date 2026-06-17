@@ -7,7 +7,11 @@ DOCKER_IMAGE="${DOCKER_IMAGE:-hlc2012/mlk}"
 IMAGE_TAG="${IMAGE_TAG:-${1:-latest}}"
 DEPLOY_HOST="${DEPLOY_HOST:-ubuntu@119.91.153.49}"
 DEPLOY_DIR="${DEPLOY_DIR:-/opt/kidora}"
-HEALTH_URL="${HEALTH_URL:-http://kidora.cn/api/health}"
+# Public origin the app advertises (NextAuth redirects / absolute links). Defaults to the
+# domain; set PUBLIC_URL=http://119.91.153.49 to reach the app by IP before ICP 备案 clears
+# the kidora.cn webblock. Forwarded to the remote compose, and used for the health check.
+PUBLIC_URL="${PUBLIC_URL:-}"
+HEALTH_URL="${HEALTH_URL:-${PUBLIC_URL:-http://kidora.cn}/api/health}"
 DEPLOY_MODE="${DEPLOY_MODE:-transfer}"
 read -r -a DOCKER_CMD <<< "${DOCKER_CMD:-docker}"
 
@@ -34,11 +38,12 @@ elif [ "$DEPLOY_MODE" != "pull" ]; then
   exit 1
 fi
 
-ssh "$DEPLOY_HOST" bash -s -- "$DEPLOY_DIR" "$DOCKER_IMAGE" "$IMAGE_TAG" <<'REMOTE'
+ssh "$DEPLOY_HOST" bash -s -- "$DEPLOY_DIR" "$DOCKER_IMAGE" "$IMAGE_TAG" "$PUBLIC_URL" <<'REMOTE'
 set -euo pipefail
 deploy_dir="$1"
 docker_image="$2"
 image_tag="$3"
+public_url="$4"
 cd "$deploy_dir"
 
 # Both secret files must be provisioned (see deploy/README.md「一、首次安装 §3」),
@@ -54,6 +59,7 @@ compose=(
   sudo env
   "DOCKER_IMAGE=$docker_image"
   "IMAGE_TAG=$image_tag"
+  "PUBLIC_URL=$public_url"
   docker compose
   -p kidora
   --project-directory "$deploy_dir"
