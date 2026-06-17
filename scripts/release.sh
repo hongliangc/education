@@ -38,7 +38,7 @@ else
     .
 fi
 
-echo "▶ [2/2] 部署 ${DOCKER_IMAGE}:${IMAGE_TAG} → ${DEPLOY_HOST:-ubuntu@1.14.158.167} (${DEPLOY_MODE})"
+echo "▶ [2/2] 部署 ${DOCKER_IMAGE}:${IMAGE_TAG} → ${DEPLOY_HOST:-ubuntu@119.91.153.49} (${DEPLOY_MODE})"
 DOCKER_IMAGE="$DOCKER_IMAGE" IMAGE_TAG="$IMAGE_TAG" DEPLOY_MODE="$DEPLOY_MODE" \
   bash scripts/deploy.sh
 

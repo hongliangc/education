@@ -5,7 +5,7 @@ cd "$(dirname "$0")/.."
 
 DOCKER_IMAGE="${DOCKER_IMAGE:-hlc2012/mlk}"
 IMAGE_TAG="${IMAGE_TAG:-${1:-latest}}"
-DEPLOY_HOST="${DEPLOY_HOST:-ubuntu@1.14.158.167}"
+DEPLOY_HOST="${DEPLOY_HOST:-ubuntu@119.91.153.49}"
 DEPLOY_DIR="${DEPLOY_DIR:-/opt/kidora}"
 HEALTH_URL="${HEALTH_URL:-http://kidora.cn/api/health}"
 DEPLOY_MODE="${DEPLOY_MODE:-transfer}"

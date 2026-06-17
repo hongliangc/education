@@ -6,7 +6,7 @@
 | --- | --- |
 | 云服务器 | 腾讯云 Lighthouse，广州 |
 | 系统 | Ubuntu 24.04 LTS |
-| 公网 IP | `1.14.158.167` |
+| 公网 IP | `119.91.153.49` |
 | 域名 | `kidora.cn`、`www.kidora.cn` |
 | 部署目录 | `/opt/kidora` |
 | 镜像仓库 | Docker Hub 私有仓库 `hlc2012/mlk` |
@@ -31,7 +31,7 @@
 登录服务器：
 
 ```bash
-ssh ubuntu@1.14.158.167
+ssh ubuntu@119.91.153.49
 ```
 
 安装 Docker Engine 和 Compose：
@@ -293,7 +293,7 @@ bash scripts/publish-image.sh
 | `DOCKER_IMAGE` | `hlc2012/mlk` | 要部署的镜像名称 |
 | `IMAGE_TAG` | `latest` | 要部署的镜像版本；推荐显式指定 |
 | `DEPLOY_MODE` | `transfer` | `transfer` 为 SSH 直传；`pull` 为服务器直接拉取 |
-| `DEPLOY_HOST` | `ubuntu@1.14.158.167` | SSH 登录地址 |
+| `DEPLOY_HOST` | `ubuntu@119.91.153.49` | SSH 登录地址 |
 | `DEPLOY_DIR` | `/opt/kidora` | 服务器部署目录 |
 | `HEALTH_URL` | `http://kidora.cn/api/health` | 部署后的公网健康检查地址 |
 | `DOCKER_CMD` | `docker` | 本地读取镜像时使用的 Docker 命令 |
@@ -359,7 +359,7 @@ curl -fsSL -o /dev/null -w '%{http_code}\n' http://kidora.cn/
 服务器检查：
 
 ```bash
-ssh ubuntu@1.14.158.167
+ssh ubuntu@119.91.153.49
 cd /opt/kidora
 
 sudo docker compose \
@@ -442,6 +442,8 @@ sudo docker compose \
 | Web 一直 `starting` | 查看 Web 日志和数据库健康状态 |
 | `/api/health` 返回 503 | 检查 PostgreSQL 容器与 `DATABASE_URL` |
 | 域名不可访问 | 检查 DNS、Lighthouse 防火墙和 Nginx |
+| `http://kidora.cn` 被 302 跳到 `dnspod.qcloud.com/static/webblock.html` | 腾讯对**未备案域名**的 Host 拦截（webblock）。域名需完成 **ICP 备案**才能对外；备案前用公网 IP `http://119.91.153.49/` 直连绕过 |
+| 用 IP 访问被跳到 `http://kidora.cn/login`（再被 webblock） | 应用 `AUTH_URL`/`NEXTAUTH_URL` 配成了 `http://kidora.cn`，NextAuth 用它拼**绝对**登录跳转。临时用 IP 体验：把 `/opt/kidora/.env`（或 `.env.production`）的 `NEXTAUTH_URL`/`AUTH_URL` 改成 `http://119.91.153.49` 并 `compose up -d web` 重启；备案后改回域名 |
 | 本地构建上下文过大 | 检查 `.dockerignore`，不要打包 `.next`、`node_modules`、worktree 或下载素材 |
 
 ## 八、安全要求
