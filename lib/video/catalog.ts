@@ -1,16 +1,16 @@
 import "server-only";
 
+import { pinyin } from "pinyin-pro";
+import { getOpenListClient } from "@/lib/openlist/client";
 import {
-  AliyunApiError,
-  getAliyunDownloadUrl,
-  listAliyunFiles,
-  type AliyunOpenFile,
-} from "@/lib/aliyun/client";
-import { resolveVideoCost } from "@/lib/video/unlock";
+  buildVideoCatalog,
+  OpenListCatalogError,
+  type CategoryListing,
+  type OpenListVideoEntry,
+} from "@/lib/video/openlist-catalog";
 
-const CATALOG_TTL_MS = 10 * 60 * 1000;
-const VIDEO_EXTENSIONS = new Set(["mp4", "mkv", "mov", "m4v", "webm", "avi", "ts"]);
-const POSTER_EXTENSIONS = new Set(["jpg", "jpeg", "png", "webp"]);
+export { OpenListCatalogError };
+export type { OpenListVideoEntry };
 
 export interface VideoItem {
   id: string;
@@ -23,160 +23,182 @@ export interface VideoItem {
   summary?: string;
   order: number;
   cost: number;
-}
-
-interface CatalogOverride {
-  id?: string;
-  file?: string;
-  name?: string;
-  title?: string;
-  order?: number;
-  ageBand?: string;
-  age_band?: string;
-  subject?: string;
-  summary?: string;
-  poster?: string;
-  cost?: unknown;
+  category: string;
+  categoryTitle: string;
+  categoryOrder: number;
+  searchKey?: string;
 }
 
 interface CachedCatalog {
   expiresAt: number;
-  items: VideoItem[];
+  entries: OpenListVideoEntry[];
 }
 
 let cachedCatalog: CachedCatalog | null = null;
+let catalogPromise: Promise<OpenListVideoEntry[]> | null = null;
 
-function getFolderId(): string {
-  const folderId = process.env.ALIYUN_VIDEO_FOLDER_ID?.trim();
-  if (!folderId) {
-    throw new AliyunApiError("ALIYUN_VIDEO_FOLDER_ID is not configured", 503);
-  }
-  return folderId;
+function required(name: string, fallback?: string): string {
+  const value = process.env[name]?.trim() || fallback;
+  if (!value) throw new OpenListCatalogError(`${name} is not configured`);
+  return value;
 }
 
-function getExtension(name: string): string {
-  const index = name.lastIndexOf(".");
-  return index >= 0 ? name.slice(index + 1).toLowerCase() : "";
+function ttlMs(): number {
+  const value = Number(process.env.OPENLIST_CATALOG_TTL_SEC || 600);
+  return Number.isFinite(value) && value > 0 ? value * 1000 : 600_000;
 }
 
-function getBaseName(name: string): string {
-  const index = name.lastIndexOf(".");
-  return index >= 0 ? name.slice(0, index) : name;
+function joinPath(root: string, name: string): string {
+  return root === "/" ? `/${name}` : `${root}/${name}`;
 }
 
-function isVideoFile(file: AliyunOpenFile): boolean {
-  const extension = file.file_extension?.toLowerCase() || getExtension(file.name);
-  return file.category === "video" || VIDEO_EXTENSIONS.has(extension);
+function baseName(path: string): string {
+  const segments = path.split("/").filter(Boolean);
+  return segments[segments.length - 1] ?? path;
 }
 
-function isPosterFile(file: AliyunOpenFile): boolean {
-  const extension = file.file_extension?.toLowerCase() || getExtension(file.name);
-  return file.category === "image" || POSTER_EXTENSIONS.has(extension);
-}
-
-function durationToSeconds(value: unknown): number | undefined {
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value >= 0 ? Math.round(value) : undefined;
-  }
-  if (typeof value === "string") {
-    const num = Number(value);
-    if (Number.isFinite(num)) return durationToSeconds(num);
-  }
-  return undefined;
-}
-
-function fileResolution(file: AliyunOpenFile): string | undefined {
-  const width = file.video_media_metadata?.width;
-  const height = file.video_media_metadata?.height;
-  return width && height ? `${width}x${height}` : undefined;
-}
-
-async function loadCatalogOverrides(catalogFile: AliyunOpenFile | undefined) {
-  if (!catalogFile) return new Map<string, CatalogOverride>();
-
-  try {
-    const { url } = await getAliyunDownloadUrl(catalogFile.file_id);
-    const res = await fetch(url, { cache: "no-store" });
-    if (!res.ok) return new Map<string, CatalogOverride>();
-    const json = (await res.json()) as unknown;
-    const list = Array.isArray(json)
-      ? json
-      : typeof json === "object" && json !== null && Array.isArray((json as { videos?: unknown }).videos)
-        ? (json as { videos: unknown[] }).videos
-        : [];
-
-    const overrides = new Map<string, CatalogOverride>();
-    for (const item of list) {
-      if (typeof item !== "object" || item === null) continue;
-      const override = item as CatalogOverride;
-      const key = override.id ?? override.file ?? override.name;
-      if (key) overrides.set(key, override);
-    }
-    return overrides;
-  } catch {
-    return new Map<string, CatalogOverride>();
-  }
-}
-
-async function posterUrlFor(video: AliyunOpenFile, poster: AliyunOpenFile | undefined) {
-  if (poster?.thumbnail) return poster.thumbnail;
-  if (poster) {
-    try {
-      return (await getAliyunDownloadUrl(poster.file_id)).url;
-    } catch {
-      return undefined;
+/** Run async work with a fixed worker pool so we never burst the upstream rate limit. */
+async function mapWithConcurrency<T, R>(
+  items: readonly T[],
+  limit: number,
+  worker: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let cursor = 0;
+  async function run(): Promise<void> {
+    while (cursor < items.length) {
+      const index = cursor++;
+      results[index] = await worker(items[index]);
     }
   }
-  return video.thumbnail;
+  await Promise.all(
+    Array.from({ length: Math.min(limit, items.length) }, () => run()),
+  );
+  return results;
 }
 
-function compareVideoItems(a: VideoItem, b: VideoItem): number {
-  if (a.order !== b.order) return a.order - b.order;
-  return a.title.localeCompare(b.title, "zh-CN");
+/** Pinyin (full + initials) so the client can match e.g. "dhdy" → 动画电影. */
+function buildSearchKey(title: string, categoryTitle: string): string {
+  const text = `${title} ${categoryTitle}`;
+  const full = pinyin(text, { toneType: "none", type: "array" }).join("");
+  const initials = pinyin(text, { pattern: "first", toneType: "none", type: "array" }).join("");
+  return `${full} ${initials}`.toLowerCase();
+}
+
+function publicItem(entry: OpenListVideoEntry): VideoItem {
+  const hasPoster = Boolean(entry.posterPath || entry.thumbUrl);
+  return {
+    id: entry.id,
+    title: entry.title,
+    posterUrl: hasPoster ? `/api/videos/${encodeURIComponent(entry.id)}/poster` : undefined,
+    durationSec: entry.durationSec,
+    resolution: entry.resolution,
+    ageBand: entry.ageBand,
+    subject: entry.subject,
+    summary: entry.summary,
+    order: entry.order,
+    cost: entry.cost,
+    category: entry.category,
+    categoryTitle: entry.categoryTitle,
+    categoryOrder: entry.categoryOrder,
+    searchKey: buildSearchKey(entry.title, entry.categoryTitle),
+  };
+}
+
+async function loadCatalog(): Promise<OpenListVideoEntry[]> {
+  const client = getOpenListClient();
+  const videoRoot = required("OPENLIST_VIDEO_ROOT", "/");
+  const catalogName = baseName(process.env.OPENLIST_CATALOG_FILE?.trim() || "catalog.json");
+
+  const rootFiles = await client.list(videoRoot);
+  const categoryFolders = rootFiles.filter((file) => file.isDir).map((file) => file.name);
+
+  // Bounded concurrency keeps us under the upstream list quota; a folder that fails
+  // to list (e.g. transient rate limit) is treated as empty and recovers next refresh.
+  const listings: CategoryListing[] = await mapWithConcurrency(
+    categoryFolders,
+    4,
+    async (category) => {
+      try {
+        return { category, files: await client.list(joinPath(videoRoot, category)) };
+      } catch {
+        return { category, files: [] };
+      }
+    },
+  );
+
+  // catalog.json is optional: only read it when it exists at the video root.
+  const hasCatalog = rootFiles.some((file) => !file.isDir && file.name === catalogName);
+  const overridesContent = hasCatalog
+    ? await client.getText(joinPath(videoRoot, catalogName))
+    : undefined;
+
+  const entries = buildVideoCatalog(videoRoot, listings, overridesContent);
+  cachedCatalog = { expiresAt: Date.now() + ttlMs(), entries };
+  return entries;
+}
+
+async function getCatalogEntries(forceRefresh = false): Promise<OpenListVideoEntry[]> {
+  if (!forceRefresh && cachedCatalog && cachedCatalog.expiresAt > Date.now()) {
+    return cachedCatalog.entries;
+  }
+  catalogPromise ??= loadCatalog().finally(() => {
+    catalogPromise = null;
+  });
+  return catalogPromise;
 }
 
 export async function getVideoCatalog(forceRefresh = false): Promise<VideoItem[]> {
-  if (!forceRefresh && cachedCatalog && cachedCatalog.expiresAt > Date.now()) {
-    return cachedCatalog.items;
+  return (await getCatalogEntries(forceRefresh)).map(publicItem);
+}
+
+export async function getVideoSource(id: string): Promise<OpenListVideoEntry | undefined> {
+  return (await getCatalogEntries()).find((entry) => entry.id === id);
+}
+
+// --- Fresh per-folder thumbnails ---------------------------------------------
+// Aliyun thumb URLs are OSS-signed and live only ~15 min, and OpenList's cached
+// listing (refresh:false, used to build the catalog structure) routinely returns
+// an ALREADY-expired thumb. So poster requests resolve the thumb from a forced
+// refresh:true listing instead, cached briefly per folder so a page full of
+// tiles in one category triggers a single re-list (lazy loading spreads the rest).
+interface FolderThumbs {
+  expiresAt: number;
+  thumbs: Map<string, string>;
+}
+const folderThumbCache = new Map<string, FolderThumbs>();
+const folderThumbPromise = new Map<string, Promise<Map<string, string>>>();
+
+function thumbTtlMs(): number {
+  const value = Number(process.env.OPENLIST_THUMB_TTL_SEC || 180);
+  return Number.isFinite(value) && value > 0 ? value * 1000 : 180_000;
+}
+
+async function freshFolderThumbs(dir: string): Promise<Map<string, string>> {
+  const cached = folderThumbCache.get(dir);
+  if (cached && cached.expiresAt > Date.now()) return cached.thumbs;
+  let pending = folderThumbPromise.get(dir);
+  if (!pending) {
+    pending = (async () => {
+      const files = await getOpenListClient().list(dir, true);
+      const thumbs = new Map<string, string>();
+      for (const file of files) {
+        if (!file.isDir && file.thumb) thumbs.set(file.name, file.thumb);
+      }
+      folderThumbCache.set(dir, { expiresAt: Date.now() + thumbTtlMs(), thumbs });
+      return thumbs;
+    })().finally(() => folderThumbPromise.delete(dir));
+    folderThumbPromise.set(dir, pending);
   }
+  return pending;
+}
 
-  const files = await listAliyunFiles(getFolderId());
-  const catalogFile = files.find((file) => file.name.toLowerCase() === "catalog.json");
-  const overrides = await loadCatalogOverrides(catalogFile);
-  const postersByBase = new Map(
-    files.filter(isPosterFile).map((file) => [getBaseName(file.name).toLowerCase(), file]),
-  );
-
-  const videoFiles = files.filter(isVideoFile);
-  const items = await Promise.all(
-    videoFiles.map(async (file, index): Promise<VideoItem> => {
-      const baseName = getBaseName(file.name);
-      const override =
-        overrides.get(file.file_id) ?? overrides.get(file.name) ?? overrides.get(baseName);
-      const poster = override?.poster
-        ? files.find((candidate) => candidate.name === override.poster)
-        : postersByBase.get(baseName.toLowerCase());
-
-      return {
-        id: file.file_id,
-        title: override?.title ?? baseName,
-        posterUrl: await posterUrlFor(file, poster),
-        durationSec: durationToSeconds(file.video_media_metadata?.duration),
-        resolution: fileResolution(file),
-        ageBand: override?.ageBand ?? override?.age_band,
-        subject: override?.subject,
-        summary: override?.summary,
-        order: override?.order ?? index + 1,
-        cost: resolveVideoCost(override?.cost),
-      };
-    }),
-  );
-
-  const sortedItems = items.toSorted(compareVideoItems);
-  cachedCatalog = {
-    expiresAt: Date.now() + CATALOG_TTL_MS,
-    items: sortedItems,
-  };
-
-  return sortedItems;
+/** Re-sign a live thumbnail URL for one video; the catalog thumbUrl is only a presence hint. */
+export async function getFreshThumbUrl(entry: OpenListVideoEntry): Promise<string | undefined> {
+  const slash = entry.sourcePath.lastIndexOf("/");
+  if (slash <= 0) return undefined;
+  const dir = entry.sourcePath.slice(0, slash);
+  const name = entry.sourcePath.slice(slash + 1);
+  const thumbs = await freshFolderThumbs(dir);
+  return thumbs.get(name);
 }

@@ -14,6 +14,11 @@ const kidFont = ZCOOL_KuaiLe({
 export const metadata: Metadata = {
   title: "魔法学习王国 · 3-10 岁儿童学习乐园",
   description: "AI 精灵陪伴的中文/英语/数学/写字/故事闯关学习平台",
+  // 阿里云盘 video-preview CDN 对带页面 Referer 的请求做防盗链（403）。
+  // hls.js 默认走 XhrLoader，XHR 无法按请求剥离 Referer（fetchSetup/referrerPolicy
+  // 仅对 FetchLoader 生效），因此必须在文档级声明 no-referrer，让 XHR / fetch / 原生
+  // <video> 的取流请求都不带 Referer。这是让默认加载器生效的唯一机制。
+  referrer: "no-referrer",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

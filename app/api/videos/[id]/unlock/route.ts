@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
-import { AliyunApiError, AliyunConfigError } from "@/lib/aliyun/client";
+import { OpenListApiError, OpenListConfigError } from "@/lib/openlist/client";
 import { prisma } from "@/lib/db";
-import { getVideoCatalog } from "@/lib/video/catalog";
+import { getVideoCatalog, OpenListCatalogError } from "@/lib/video/catalog";
 import { InsufficientStarsError } from "@/lib/rewards/errors";
 import { upsertVideoResource } from "@/lib/rewards/management";
 import { redeemResource } from "@/lib/rewards/service";
 
 function unlockErrorResponse(error: unknown) {
-  if (error instanceof AliyunConfigError) {
+  if (error instanceof OpenListConfigError || error instanceof OpenListCatalogError) {
     return NextResponse.json({ error: "video_unconfigured" }, { status: 503 });
   }
-  if (error instanceof AliyunApiError) {
+  if (error instanceof OpenListApiError) {
     const status = error.status === 404 ? 404 : error.status === 503 ? 503 : 502;
     return NextResponse.json({ error: "video_service_unavailable" }, { status });
   }

@@ -8,7 +8,8 @@
     "start": "next start",
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
-    "db:generate": "prisma generate"
+    "db:generate": "prisma generate",
+    "videos:verify-openlist": "node scripts/verify-openlist-video.mjs"
   },
   "prisma": {
     "schema": "prisma/schema.prisma"
@@ -24,6 +25,7 @@
     "hls.js": "^1.6.16",
     "next": "16.2.6",
     "next-auth": "^5.0.0-beta.31",
+    "pinyin-pro": "^3.28.1",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "server-only": "^0.0.1",
