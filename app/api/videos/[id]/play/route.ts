@@ -20,6 +20,9 @@ function playErrorResponse(error: unknown) {
         { status: 202, headers: { "Retry-After": "5" } },
       );
     }
+    if (error.status === 422) {
+      return NextResponse.json({ error: "video_transcode_failed" }, { status: 422 });
+    }
     if (error.status === 404) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }

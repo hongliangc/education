@@ -1,123 +1,68 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
-import { BackButton } from "@/components/BackButton";
-import {
-  TheaterCatalog,
-  type TheaterVideoItem,
-} from "@/components/video/TheaterCatalog";
+import type { TheaterVideoItem } from "@/components/video/TheaterCatalog";
+import { TheaterBrowse } from "@/components/video/TheaterBrowse";
+import { TheaterTopBar } from "@/components/video/TheaterTopBar";
+import { BackToTop } from "@/components/video/BackToTop";
 import { TheaterUnlockModal } from "@/components/video/TheaterUnlockModal";
 import { VideoPlayer } from "@/components/video/VideoPlayer";
 import { useTheaterCatalog } from "@/components/video/useTheaterCatalog";
+import { useTheaterPlayback } from "@/components/video/useTheaterPlayback";
 import { useSFX } from "@/components/audio/useSFX";
 import { useGameStore } from "@/store/gameStore";
-import { playRetryDelayMs } from "@/lib/video/playback";
-
-interface PlayInfo {
-  url: string;
-  quality?: string;
-}
+import {
+  DEFAULT_THEATER_THEME,
+  readTheaterThemeId,
+  rememberTheaterThemeId,
+  themeById,
+} from "@/lib/video/theater-theme";
 
 export default function TheaterPage() {
   const router = useRouter();
   const child = useGameStore((state) => state.activeChild);
   const setStars = useGameStore((state) => state.setStars);
   const { sfx } = useSFX();
+  const { categories, setVideos, loading, error: catalogError } = useTheaterCatalog(child?.id);
   const {
-    sortedVideos,
-    setVideos,
-    loading,
-    error: catalogError,
-  } = useTheaterCatalog(child?.id);
-  const [activeVideo, setActiveVideo] = useState<TheaterVideoItem | null>(null);
+    activeVideo,
+    playInfo,
+    playLoading,
+    playError,
+    resumeAtSec,
+    startPlayback,
+    refreshSource,
+    stopPlayback,
+  } = useTheaterPlayback(child?.id);
   const [pendingUnlock, setPendingUnlock] = useState<TheaterVideoItem | null>(null);
   const [unlockLoading, setUnlockLoading] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
-  const [playInfo, setPlayInfo] = useState<PlayInfo | null>(null);
-  const [playLoading, setPlayLoading] = useState(false);
-  const [playError, setPlayError] = useState<string | null>(null);
-  const [resumeAtSec, setResumeAtSec] = useState(0);
-  const playAbortRef = useRef<AbortController | null>(null);
-  const sourceRefreshCountRef = useRef(0);
+  const [query, setQuery] = useState("");
+  const [themeId, setThemeId] = useState(DEFAULT_THEATER_THEME.id);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+
+  useEffect(() => {
+    const saved = readTheaterThemeId();
+    if (saved) setThemeId(saved);
+  }, []);
+
+  const changeTheme = useCallback((id: string) => {
+    setThemeId(id);
+    rememberTheaterThemeId(id);
+  }, []);
+
+  // Drilling into / out of a category starts the new surface at the top.
+  const changeCategory = useCallback((key: string | null) => {
+    setActiveCategory(key);
+    window.scrollTo({ top: 0 });
+  }, []);
 
   useEffect(() => {
     if (!child) {
       router.replace("/child-select");
     }
   }, [child, router]);
-
-  useEffect(
-    () => () => {
-      playAbortRef.current?.abort();
-    },
-    [],
-  );
-
-  const startPlayback = useCallback(async (
-    video: TheaterVideoItem,
-    resumeAt = 0,
-    refreshSource = false,
-  ) => {
-    if (!child) return;
-    const activeChild = child;
-    playAbortRef.current?.abort();
-    const controller = new AbortController();
-    playAbortRef.current = controller;
-    if (!refreshSource) sourceRefreshCountRef.current = 0;
-    setActiveVideo(video);
-    setPlayInfo(null);
-    setResumeAtSec(resumeAt);
-    setPlayError(null);
-    setPlayLoading(true);
-
-    try {
-      for (let attempt = 0; attempt < 6; attempt++) {
-        const res = await fetch(
-          `/api/videos/${encodeURIComponent(video.id)}/play?childId=${encodeURIComponent(activeChild.id)}${refreshSource ? "&refresh=1" : ""}`,
-          { signal: controller.signal },
-        );
-        if (res.status === 403) throw new Error("locked");
-        const json = (await res.json().catch(() => ({}))) as {
-          play?: PlayInfo;
-          error?: string;
-          retryAfterSec?: number;
-        };
-        if (res.status === 202 && json.error === "video_preparing") {
-          await new Promise<void>((resolve, reject) => {
-            const timeout = window.setTimeout(resolve, playRetryDelayMs(attempt, json.retryAfterSec));
-            controller.signal.addEventListener(
-              "abort",
-              () => {
-                window.clearTimeout(timeout);
-                reject(new DOMException("Aborted", "AbortError"));
-              },
-              { once: true },
-            );
-          });
-          continue;
-        }
-        if (!res.ok) throw new Error("play_failed");
-        if (!json.play?.url) throw new Error("play_missing");
-        setPlayInfo(json.play);
-        return;
-      }
-      throw new Error("video_preparing");
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") return;
-      setPlayError(
-        error instanceof Error && error.message === "locked"
-          ? "先用小星星解锁吧。"
-          : error instanceof Error && error.message === "video_preparing"
-            ? "视频还在准备中，稍后再试。"
-          : "这个视频暂时打不开。",
-      );
-    } finally {
-      if (playAbortRef.current === controller) {
-        setPlayLoading(false);
-      }
-    }
-  }, [child]);
 
   const openVideo = (video: TheaterVideoItem) => {
     sfx.click();
@@ -171,55 +116,52 @@ export default function TheaterPage() {
 
   if (!child) return null;
 
-  return (
-    <main className="min-h-screen px-4 pb-12 pt-20">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-5 flex flex-wrap items-center gap-3">
-          <BackButton label="返回世界" onClick={() => router.push("/world")} />
-          <div className="min-w-0 flex-1">
-            <h1 className="text-3xl font-black text-white drop-shadow sm:text-4xl">
-              🎬 视频影院
-            </h1>
-            <p className="mt-1 text-sm font-bold text-white/90 drop-shadow">
-              {child.name}，挑一个动画片或知识科普视频吧
-            </p>
-          </div>
-        </header>
+  const theme = themeById(themeId);
+  // Background lives on <main>'s own box (not a -z-10 layer) so nothing can paint
+  // over it; the accent var rides along for themed labels.
+  const mainStyle = {
+    "--theater-accent": theme.accent,
+    background: theme.background,
+  } as CSSProperties;
+  const activeCategoryTitle = activeCategory
+    ? categories.find((c) => c.key === activeCategory)?.title ?? null
+    : null;
 
-        <TheaterCatalog
-          videos={sortedVideos}
+  return (
+    <main className="relative min-h-screen px-4 pb-12 pt-16" style={mainStyle}>
+      <div className="mx-auto max-w-6xl">
+        <TheaterTopBar
+          query={query}
+          onQueryChange={setQuery}
+          onBack={() => router.push("/world")}
+          activeCategoryTitle={activeCategoryTitle}
+          onExitCategory={() => changeCategory(null)}
+          themeId={themeId}
+          onThemeChange={changeTheme}
+        />
+        <TheaterBrowse
+          categories={categories}
           loading={loading}
           error={catalogError}
+          query={query}
+          activeCategory={activeCategory}
+          onActiveCategoryChange={changeCategory}
           onOpen={openVideo}
         />
       </div>
+      <BackToTop />
 
       {activeVideo && (
         <VideoPlayer
           title={activeVideo.title}
           posterUrl={activeVideo.posterUrl}
           src={playInfo?.url}
+          variants={playInfo?.variants}
           loading={playLoading}
           error={playError ?? undefined}
           resumeAtSec={resumeAtSec}
-          onRefreshSource={(currentTime) => {
-            if (sourceRefreshCountRef.current >= 2) {
-              setPlayInfo(null);
-              setPlayLoading(false);
-              setPlayError("视频连接不稳定，稍后再试。");
-              return;
-            }
-            sourceRefreshCountRef.current++;
-            void startPlayback(activeVideo, currentTime, true);
-          }}
-          onBack={() => {
-            playAbortRef.current?.abort();
-            setActiveVideo(null);
-            setPlayInfo(null);
-            setPlayError(null);
-            setPlayLoading(false);
-            setResumeAtSec(0);
-          }}
+          onRefreshSource={refreshSource}
+          onBack={stopPlayback}
         />
       )}
 

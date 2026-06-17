@@ -75,7 +75,6 @@ services:
       # 大模型音色（扣大模型预付费包）：601009 爱小芊(童趣女声,9情感) / 501009 WeWinny(英文女声)
       TTS_VOICE_ZH: "${TTS_VOICE_ZH:-601009}"
       TTS_VOICE_EN: "${TTS_VOICE_EN:-501009}"
-      VIDEO_SOURCE: "${VIDEO_SOURCE:-openlist}"
       OPENLIST_BASE_URL: "${OPENLIST_BASE_URL:-http://openlist:5244}"
       OPENLIST_USERNAME: "${OPENLIST_USERNAME:-}"
       OPENLIST_PASSWORD: "${OPENLIST_PASSWORD:-}"

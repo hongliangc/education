@@ -1,10 +1,13 @@
 {
   "version": 1,
-  "videos": [
-    {
+  "categories": {
+    "动画": { "title": "动画乐园", "order": 1 },
+    "英语": { "title": "英语启蒙", "order": 2 },
+    "科普": { "title": "科普世界", "order": 3 }
+  },
+  "videos": {
+    "科普/A.Perfect.Planet.2021.S01E02_阳光.mp4": {
       "id": "perfect-planet-s01e02",
-      "path": "A.Perfect.Planet.2021.S01E02_阳光.mp4",
-      "poster": "A.Perfect.Planet.2021.S01E02_阳光.jpg",
       "title": "完美星球：阳光",
       "summary": "了解阳光如何塑造地球上的生命。",
       "subject": "自然科学",
@@ -12,7 +15,8 @@
       "durationSec": 3000,
       "resolution": "1920x1080",
       "order": 1,
-      "cost": 20
+      "cost": 20,
+      "poster": "科普/A.Perfect.Planet.2021.S01E02_阳光.jpg"
     }
-  ]
+  }
 }

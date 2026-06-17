@@ -5,7 +5,7 @@ import {
   OpenListApiError,
   OpenListConfigError,
 } from "@/lib/openlist/client";
-import { getVideoSource, OpenListCatalogError } from "@/lib/video/catalog";
+import { getFreshThumbUrl, getVideoSource, OpenListCatalogError } from "@/lib/video/catalog";
 
 function posterErrorResponse(error: unknown): NextResponse {
   if (error instanceof OpenListConfigError || error instanceof OpenListCatalogError) {
@@ -32,11 +32,26 @@ export async function GET(
   try {
     const { id } = await params;
     const video = await getVideoSource(id);
-    if (!video?.posterPath) {
+    if (!video) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
-    const upstream = await getOpenListClient().getRawResponse(video.posterPath);
+    // Poster source falls back: same-name image -> Aliyun video thumbnail -> 404.
+    // The thumbnail is re-signed per request (thumbUrl only signals the file has one);
+    // Aliyun thumb URLs expire after ~15 min, so a cached one would 403 → blank tile.
+    const client = getOpenListClient();
+    let upstream: Response;
+    if (video.posterPath) {
+      upstream = await client.getRawResponse(video.posterPath);
+    } else if (video.thumbUrl) {
+      const freshThumb = await getFreshThumbUrl(video);
+      if (!freshThumb) {
+        return NextResponse.json({ error: "Not found" }, { status: 404 });
+      }
+      upstream = await client.getExternalImage(freshThumb);
+    } else {
+      return NextResponse.json({ error: "Not found" }, { status: 404 });
+    }
     const contentType = upstream.headers.get("content-type") || "application/octet-stream";
     if (!contentType.startsWith("image/")) {
       await upstream.body?.cancel();

@@ -7,7 +7,11 @@ import {
 } from "@/lib/openlist/client-core";
 
 export { OpenListApiError, OpenListConfigError };
-export type { OpenListFile, OpenListPlayInfo } from "@/lib/openlist/client-core";
+export type {
+  OpenListFile,
+  OpenListPlayInfo,
+  OpenListVariant,
+} from "@/lib/openlist/client-core";
 
 let client: OpenListClient | null = null;
 

@@ -14,9 +14,16 @@ export interface OpenListFile {
   type?: number;
 }
 
+export interface OpenListVariant {
+  quality: string;
+  url: string;
+}
+
 export interface OpenListPlayInfo {
   url: string;
   quality?: string;
+  /** All finished renditions within the quality cap, ordered highest → lowest. */
+  variants: OpenListVariant[];
 }
 
 interface OpenListEnvelope {
@@ -111,19 +118,33 @@ function collectPreviewTasks(value: unknown, result: PreviewTask[] = []): Previe
   return result;
 }
 
-function selectPreviewTask(value: unknown, maxQuality: string): OpenListPlayInfo | undefined {
+export function selectPreviewTask(value: unknown, maxQuality: string): OpenListPlayInfo | undefined {
   const maxIndex = QUALITY_ORDER.indexOf(maxQuality.toUpperCase());
   const allowed = maxIndex >= 0 ? QUALITY_ORDER.slice(maxIndex) : QUALITY_ORDER;
   const tasks = collectPreviewTasks(value).filter(
     (task) => task.status === "finished" && task.url?.includes(".m3u8"),
   );
 
+  // Collect every finished rendition within the cap, highest quality first, so the
+  // client can offer a manual resolution switch without another upstream call.
+  const variants: OpenListVariant[] = [];
   for (const quality of allowed) {
     const task = tasks.find((candidate) => candidate.templateId === quality);
-    if (task?.url) return { url: task.url, quality };
+    if (task?.url) variants.push({ quality, url: task.url });
   }
+  if (variants.length > 0) {
+    return { url: variants[0].url, quality: variants[0].quality, variants };
+  }
+
   const fallback = tasks.find((task) => task.url);
-  return fallback?.url ? { url: fallback.url, quality: fallback.templateId } : undefined;
+  if (fallback?.url) {
+    return {
+      url: fallback.url,
+      quality: fallback.templateId,
+      variants: [{ quality: fallback.templateId ?? "SD", url: fallback.url }],
+    };
+  }
+  return undefined;
 }
 
 export class OpenListClient {
@@ -222,7 +243,7 @@ export class OpenListClient {
     return envelope.data;
   }
 
-  async list(path: string): Promise<OpenListFile[]> {
+  async list(path: string, refresh = false): Promise<OpenListFile[]> {
     const files: OpenListFile[] = [];
     let page = 1;
     const perPage = 200;
@@ -232,7 +253,7 @@ export class OpenListClient {
         path,
         page,
         per_page: perPage,
-        refresh: false,
+        refresh,
       });
       const record = isRecord(data) ? data : {};
       const content = Array.isArray(record.content) ? record.content : [];
@@ -281,6 +302,20 @@ export class OpenListClient {
     return (await this.getRawResponse(path)).text();
   }
 
+  /** Fetch an already-resolved external URL (e.g. an Aliyun thumbnail) to proxy it. */
+  async getExternalImage(url: string): Promise<Response> {
+    const response = await this.fetchWithTimeout(url, {
+      method: "GET",
+      redirect: "follow",
+      cache: "no-store",
+    });
+    if (!response.ok) {
+      await response.body?.cancel();
+      throw new OpenListApiError("OpenList thumbnail fetch failed", response.status);
+    }
+    return response;
+  }
+
   async getVideoPreview(path: string, maxQuality = "FHD"): Promise<OpenListPlayInfo> {
     const data = await this.post("/api/fs/other", {
       path,
@@ -288,7 +323,16 @@ export class OpenListClient {
       data: {},
     });
     const play = selectPreviewTask(data, maxQuality);
-    if (!play) throw new OpenListApiError("OpenList video is still preparing", 202);
-    return play;
+    if (play) return play;
+
+    // No finished, playable task yet: tell a permanent transcode failure apart
+    // from work still in progress, so the client stops retrying a dead video.
+    const tasks = collectPreviewTasks(data);
+    const stillRunning = tasks.some((task) => task.status === "running");
+    const anyFailed = tasks.some((task) => task.status === "failed");
+    if (anyFailed && !stillRunning) {
+      throw new OpenListApiError("OpenList video transcoding failed", 422);
+    }
+    throw new OpenListApiError("OpenList video is still preparing", 202);
   }
 }

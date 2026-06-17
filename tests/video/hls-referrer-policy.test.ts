@@ -21,8 +21,9 @@ test("hls.js requests suppress the page Referer", () => {
 });
 
 test("native HLS suppresses the page Referer before assigning the source", async () => {
+  // The HLS load path lives in the useHlsVideo hook (split out of VideoPlayer).
   const source = await readFile(
-    new URL("../../components/video/VideoPlayer.tsx", import.meta.url),
+    new URL("../../components/video/useHlsVideo.ts", import.meta.url),
     "utf8",
   );
 
@@ -32,4 +33,19 @@ test("native HLS suppresses the page Referer before assigning the source", async
   const sourceIndex = source.indexOf("video.src = src");
   assert.ok(policyIndex >= 0, "native HLS video is missing the no-referrer policy");
   assert.ok(policyIndex < sourceIndex, "referrer policy must be set before loading the source");
+});
+
+// hls.js defaults to XhrLoader, where fetchSetup never runs and XHR cannot strip
+// Referer per request. The document-level policy is the only mechanism that drops
+// Referer on that default path, so it must stay declared in the root layout.
+test("the root layout declares a document-level no-referrer policy", async () => {
+  const source = await readFile(
+    new URL("../../app/layout.tsx", import.meta.url),
+    "utf8",
+  );
+  assert.match(
+    source,
+    /referrer:\s*["']no-referrer["']/,
+    "app/layout.tsx must set metadata.referrer to no-referrer",
+  );
 });
