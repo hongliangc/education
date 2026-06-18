@@ -27,7 +27,9 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
 - **`dev-status.sh`** — 只读现状：dev 日志尾 + `:3000` 端口占用 + curl 可用性。dev 起不来/异常时先跑它看现场。
 - **`docker-recreate.sh`** — `docker compose up -d` 后轮询 `education-web-1` 健康状态直到 healthy（约 30s 超时）。容器模式重启栈用。
 - **`publish-image.sh`** — 将当前工作树构建为 `linux/amd64` 镜像，并推送版本标签与 `latest` 到 Docker Hub 私有仓库 `hlc2012/mlk`。运行前执行 `docker login -u hlc2012` 并在密码提示处输入 PAT。
-- **`deploy.sh`** — 上传生产 Compose/Nginx 配置并重启 Lighthouse 服务，最后验证 `/api/health`。默认通过 SSH 直传本地镜像，规避大陆服务器访问 Docker Hub 私有 Registry 超时；服务器网络可用时可设置 `DEPLOY_MODE=pull`。
+- **`deploy-stack.sh`** — 复用的栈启动脚本，不构建、不上传、不判断 local/prod；只读取 `PROJECT_NAME`、`DEPLOY_DIR`、`ENV_FILE`、`APP_ENV_FILE`、`COMPOSE_SUDO` 等参数，启动 `db/openlist/web/nginx` 并验证健康。
+- **`deploy.sh`** — 生产上传阶段：上传生产 Compose/Nginx/`deploy-stack.sh`，按 `DEPLOY_MODE` 直传或拉取镜像，然后在 Lighthouse 上传入生产参数执行 `deploy-stack.sh`。
+- **`release.sh`** — 显式目标的一键发布入口：本地构建步骤完全复用；`local` 构建后传入本地参数直接执行 `deploy-stack.sh`，`prod` 构建后进入 `deploy.sh` 上传并远端执行同一个 `deploy-stack.sh`。
 - **`check-agent-context.sh`** — 检查 Agent 入口文件大小、外部 wiki 路径及废弃的工作流/二级索引是否残留。修改 `AGENTS.md`、`CLAUDE.md` 或 Skills 后运行。
 - **`verify-openlist-video.mjs`** — 登录 OpenList，验证阿里云盘 `video_preview` 的 M3U8、首个媒体分片和 CORS；不会打印签名 URL。运行：`npm run videos:verify-openlist`。
   - 首次配置流程及稳定目录格式见 `docs/video/openlist-setup.md`。

@@ -10,18 +10,18 @@
 | 域名 | `kidora.cn`、`www.kidora.cn` |
 | 部署目录 | `/opt/kidora` |
 | 镜像仓库 | Docker Hub 私有仓库 `hlc2012/mlk` |
-| 容器 | PostgreSQL、Next.js、Nginx |
+| 容器 | PostgreSQL、Next.js、OpenList、Nginx |
 
-生产数据库保存在 Docker 卷 `kidora_pgdata`。更新 Web 镜像不会删除数据库。
+生产数据库保存在 Docker 卷 `kidora_pgdata`。视频影院后端 OpenList 的存储配置（阿里云盘 OAuth token）保存在 Docker 卷 `kidora_openlistdata`。更新 Web 镜像不会删除任一数据卷。
 
 ## 部署文件
 
 - `Dockerfile`：构建 Next.js 生产镜像。
 - `deploy/docker-compose.production.yml`：生产容器栈。
 - `deploy/nginx.production.conf`：HTTP 反向代理。
-- `scripts/release.sh`：一键发布（构建 linux/amd64 + 直传部署，见场景 D）。
+- `scripts/release.sh`：一键发布（显式选择本地验证或现网发布，见场景 D）。
 - `scripts/publish-image.sh`：本地构建并推送 Docker Hub。
-- `scripts/deploy.sh`：将指定镜像部署到 Lighthouse。
+- `scripts/deploy.sh`：统一部署脚本（`local` 在本机起栈 / `prod` 上传并部署到 Lighthouse）。
 - `app/api/health/route.ts`：健康检查接口。
 
 ## 一、首次安装服务器
@@ -90,11 +90,13 @@ TENCENT_SECRETKEY=
 TENCENT_APPID=
 TTS_VOICE_ZH=601009
 TTS_VOICE_EN=501009
-ALIYUN_APP_ID=
-ALIYUN_APP_SECRET=
-ALIYUN_REFRESH_TOKEN=
-ALIYUN_VIDEO_FOLDER_ID=
-ALIYUN_DRIVE_ID=
+# 视频影院（OpenList 代理阿里云盘）：仅需 OpenList 后台管理员账号。
+# 阿里云盘 OAuth token 在 OpenList 后台配置、存进 openlistdata 卷，不在此填写（见 §一·5）。
+# OPENLIST_BASE_URL 由 compose 固定为内网 http://openlist:5244，无需在此设置。
+OPENLIST_USERNAME=
+OPENLIST_PASSWORD=
+# 可选：影院视频在 OpenList 中的根路径（默认 /，即整个挂载根）。
+# OPENLIST_VIDEO_ROOT=/
 EOF
 chmod 600 /opt/kidora/.env.production
 ```
@@ -166,6 +168,48 @@ docker image inspect "hlc2012/mlk:$IMAGE_TAG"
 
 `deploy.sh` 默认通过 SSH 将本地镜像直传服务器，因为广州
 Lighthouse 直连 Docker Hub 私有 Registry 已验证会超时。
+
+### 5. 配置视频影院后端（OpenList）
+
+视频影院（`/api/videos`）通过同栈的 OpenList 容器代理阿里云盘。首次部署把
+OpenList 容器拉起后，需一次性在其后台配置阿里云盘存储；之后 OAuth token 持久化在
+Docker 卷 `kidora_openlistdata`，**不进 `.env.production`、镜像或 Git**。
+
+OpenList 仅监听 `127.0.0.1:5244`（公网不可达），通过 SSH 隧道进入后台：
+
+```bash
+ssh -L 5244:127.0.0.1:5244 ubuntu@119.91.153.49
+```
+
+保持该 SSH 会话，本地浏览器打开 `http://127.0.0.1:5244`。
+
+初始管理员账号在 OpenList 首次启动时随机生成并打印到日志，用户名默认 `admin`：
+
+```bash
+sudo docker logs kidora-openlist-1 2>&1 | grep -iE "admin|password"
+```
+
+（非首次启动、日志已无初始密码时，可在容器内用 OpenList CLI 重置管理员密码，
+见 OpenList 文档。）登录后台后：
+
+1. 「管理 → 存储 → 添加」，驱动选「阿里云盘 Open」，按提示完成 OAuth 授权并挂载
+   （例如挂到 `/alipan`）。授权 token 由 OpenList 写入 `openlistdata` 卷，无需手动管理。
+2. 把该管理员用户名/密码写入 `/opt/kidora/.env.production`：
+
+   ```text
+   OPENLIST_USERNAME=admin
+   OPENLIST_PASSWORD=<后台管理员密码>
+   ```
+
+3. 若视频不在挂载根，设 `OPENLIST_VIDEO_ROOT`（如 `/alipan`）。
+4. 重新部署或重启 web，使其读取新账号：
+
+   ```bash
+   IMAGE_TAG=<当前版本> bash scripts/deploy.sh
+   ```
+
+验证：`curl -fsS http://127.0.0.1:5244/ping` 确认 OpenList 自身健康；再登录 app 打开
+「影院」确认目录加载（影院接口需登录态，未登录直接 `curl /api/videos` 返回 401/302 属正常）。
 
 ## 二、日常一键更新
 
@@ -242,28 +286,35 @@ IMAGE_TAG=20260613-01 bash scripts/deploy.sh
 
 ### 场景 D：一键发布（推荐日常使用）
 
-`scripts/release.sh` 把「场景 B」的构建 + 直传部署串成一条命令，自动生成版本号，
-默认不依赖 Docker Hub：
+`scripts/release.sh` 必须显式选择目标，避免本地验证时误发布到现网。两个目标使用同一个
+`DOCKER_IMAGE:IMAGE_TAG` 和同一份 `deploy/docker-compose.production.yml`：
 
 ```bash
-bash scripts/release.sh
+bash scripts/release.sh local   # 本机用 production compose 跑完整栈
+bash scripts/release.sh prod    # 发布到 Lighthouse 现网
 ```
 
-它依次执行：
+流程分两段，`local` 与 `prod` 完全复用：
 
-1. 生成版本标签 `IMAGE_TAG=$(date +%Y%m%d-%H%M%S)`。
-2. 构建当前源码为 `linux/amd64` 镜像（含尚未提交的改动）。
-3. 调用 `deploy.sh` 以 `transfer` 模式 SSH 直传镜像、重建容器、等待健康。
+1. **构建**：`release.sh local` 和 `release.sh prod` 调用同一个 `build_image`，生成同一个 `DOCKER_IMAGE:IMAGE_TAG`。
+2. **部署**：两者都交给同一个 `scripts/deploy.sh <target>`。`deploy.sh` 按 `target` 渲染**同一组参数**（`PROJECT_NAME`、`DEPLOY_DIR`、`ENV_FILE`、`APP_ENV_FILE`、`PUBLIC_URL`、`HEALTH_URL`、`COMPOSE_SUDO`、`PULL_IF_MISSING`——键相同，仅取值不同），再跑同一个 `scripts/deploy-stack.sh`。`prod` 唯一多出的步骤：先把镜像与非密钥配置（compose / nginx / `deploy-stack.sh`）上传到服务器，并在服务器（而非本机）执行同一个 `deploy-stack.sh`。
+
+本地体验确认无误后，用同一个版本号发布现网：
+
+```bash
+IMAGE_TAG=<刚才本地验证的版本号> bash scripts/release.sh prod
+```
 
 常用覆盖：
 
 ```bash
-IMAGE_TAG=20260617-01 bash scripts/release.sh   # 指定版本号
-PUSH_HUB=1 bash scripts/release.sh              # 额外推送 Docker Hub（需先 docker login）
-DEPLOY_MODE=pull PUSH_HUB=1 bash scripts/release.sh   # 推 Hub 后服务器直接拉取
+IMAGE_TAG=20260617-01 bash scripts/release.sh local   # 指定版本号做本地验证
+IMAGE_TAG=20260617-01 bash scripts/release.sh prod    # 发布同一版本到现网
+PUSH_HUB=1 bash scripts/release.sh prod               # 额外推送 Docker Hub（需先 docker login）
+DEPLOY_MODE=pull PUSH_HUB=1 bash scripts/release.sh prod   # 推 Hub 后服务器直接拉取
 ```
 
-底层仍是 `publish-image.sh` 和 `deploy.sh`，两者可继续单独使用（场景 A/B/C）。
+底层 `publish-image.sh` / `deploy.sh` / `deploy-stack.sh` 仍可按职责单独使用；想跳过构建只部署，直接 `bash scripts/deploy.sh {local|prod}`。
 
 ## 三、脚本参数
 
@@ -288,38 +339,68 @@ bash scripts/publish-image.sh
 
 ### `scripts/deploy.sh`
 
+统一部署脚本，`local` 与 `prod` 同一条路：`bash scripts/deploy.sh {local|prod}`（位置参数为目标，
+缺省 `prod`）。按 `target` 渲染同一组参数后跑同一个 `deploy-stack.sh`，`prod` 仅多一步上传。
+
 | 参数 | 默认值 | 说明 |
 | --- | --- | --- |
+| 位置参数 | `prod` | 目标：`local` / `--local` 或 `prod` / `production` / `--prod` / `--production` |
 | `DOCKER_IMAGE` | `hlc2012/mlk` | 要部署的镜像名称 |
-| `IMAGE_TAG` | `latest` | 要部署的镜像版本；推荐显式指定 |
-| `DEPLOY_MODE` | `transfer` | `transfer` 为 SSH 直传；`pull` 为服务器直接拉取 |
-| `DEPLOY_HOST` | `ubuntu@119.91.153.49` | SSH 登录地址 |
-| `DEPLOY_DIR` | `/opt/kidora` | 服务器部署目录 |
-| `HEALTH_URL` | `http://kidora.cn/api/health` | 部署后的公网健康检查地址 |
+| `IMAGE_TAG` | `latest` | 镜像版本；推荐显式指定（标签改用此环境变量，不再走位置参数） |
+| `DEPLOY_MODE` | `transfer` | 仅 `prod`：`transfer` 为 SSH 直传，`pull` 为服务器直接拉取 |
+| `DEPLOY_HOST` | `ubuntu@119.91.153.49` | 仅 `prod`：SSH 登录地址 |
+| `DEPLOY_DIR` | `prod=/opt/kidora`、`local=仓库根` | Compose project directory |
+| `PUBLIC_URL` | `prod=空`、`local=http://localhost` | 应用公开 URL（影响 NextAuth 跳转与健康检查地址） |
+| `LOCAL_ENV_FILE` 等 | 见脚本 | 仅 `local`：覆盖本地渲染的 env 文件 / 项目名 / 公开地址 / dev 密钥 |
 | `DOCKER_CMD` | `docker` | 本地读取镜像时使用的 Docker 命令 |
 
-也可以将标签作为第一个位置参数：
+推荐用环境变量写法：
 
 ```bash
-bash scripts/deploy.sh 20260613-02
+DEPLOY_MODE=transfer IMAGE_TAG=20260613-02 bash scripts/deploy.sh prod
 ```
 
-推荐使用环境变量写法，含义更清楚：
+`prod` + `DEPLOY_MODE=transfer` 的具体步骤（local 只有第 6 步，在本机执行）：
 
-```bash
-DEPLOY_MODE=transfer \
-IMAGE_TAG=20260613-02 \
-bash scripts/deploy.sh
-```
-
-`DEPLOY_MODE=transfer` 的具体步骤：
-
-1. 上传生产 Compose 和 Nginx 配置。
+1. 上传生产 Compose、Nginx 配置和 `scripts/deploy-stack.sh`。
 2. 执行本地 `docker image save`。
 3. 使用 `gzip` 压缩并通过 SSH 传输。
 4. 服务器执行 `docker load`。
-5. 使用指定标签重建 Web 容器。
-6. 等待容器健康并请求公网健康检查。
+5. 在服务器传入生产参数并执行 `bash scripts/deploy-stack.sh`。
+6. `deploy-stack.sh` 使用指定标签重建 Web 容器，等待健康并请求公网健康检查。
+
+### `scripts/release.sh`
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| 位置参数 | 无 | 必填：`local` / `--local` 或 `prod` / `production` / `--prod` / `--production` |
+| `RELEASE_TARGET` | 无 | 可替代位置参数；仍建议命令行显式写目标 |
+| `PUSH_HUB` | `0` | 设 `1` 时构建阶段复用 `publish-image.sh` 推送 Docker Hub |
+| `DEPLOY_MODE` | `transfer` | 仅 `prod` 使用；传给 `deploy.sh` |
+
+### `scripts/deploy-stack.sh`
+
+| 参数 | 默认值 | 说明 |
+| --- | --- | --- |
+| `DOCKER_IMAGE` | `hlc2012/mlk` | 要启动的镜像名称 |
+| `IMAGE_TAG` | `latest` | 要启动的镜像标签 |
+| `PROJECT_NAME` | `kidora` | Compose project 名；本地由 `deploy.sh local` 传 `kidora-local-release` |
+| `DEPLOY_DIR` | 当前目录 | Compose project directory；本地是仓库根目录，现网是 `/opt/kidora` |
+| `ENV_FILE` | `$DEPLOY_DIR/.env` | Compose `--env-file`，用于 `${...}` 插值 |
+| `APP_ENV_FILE` | `$DEPLOY_DIR/.env.production` | Web 服务 `env_file`，注入应用运行时环境变量 |
+| `PUBLIC_URL` | 空 | 传给 compose 的应用公开 URL |
+| `HEALTH_URL` | `${PUBLIC_URL:-http://kidora.cn}/api/health` | 健康检查地址 |
+| `COMPOSE_SUDO` | `0` | 设 `1` 时用 `sudo docker compose`，现网由 `deploy.sh` 传入 |
+| `PULL_IF_MISSING` | `0` | 设 `1` 时镜像不存在则 `pull web`，现网由 `deploy.sh` 传入 |
+| `DOCKER_CMD` | `docker` | 本地执行 compose 时使用的 Docker 命令 |
+
+推荐发布节奏：
+
+```bash
+IMAGE_TAG="$(date +%Y%m%d-%H%M%S)"
+IMAGE_TAG="$IMAGE_TAG" bash scripts/release.sh local
+IMAGE_TAG="$IMAGE_TAG" bash scripts/release.sh prod
+```
 
 ## 四、服务器直接拉取
 
@@ -372,7 +453,11 @@ sudo docker compose \
 sudo docker inspect kidora-web-1 \
   --format 'image={{.Config.Image}} health={{.State.Health.Status}}'
 
+sudo docker inspect kidora-openlist-1 \
+  --format 'health={{.State.Health.Status}}'
+
 curl -fsS http://127.0.0.1/api/health
+curl -fsS http://127.0.0.1:5244/ping
 ```
 
 正常健康响应：
@@ -389,7 +474,19 @@ curl -fsS http://127.0.0.1/api/health
 
 不要公网开放 `3000` 和 `5432`。
 
-## 六、回滚
+## 六、数据库测试操作手册
+
+连库、加测试账号、改孩子星星数、按需把生产数据同步到本地等数据库运维操作，已迁出本部署手册，
+详见外部 wiki：`/mnt/e/workspace/knowledge-wiki/wiki/projects/mlk/db-ops-runbook.md`
+（Windows：`E:\workspace\knowledge-wiki\wiki\projects\mlk\db-ops-runbook.md`）。
+
+关键约束（迁出后仍需牢记）：
+
+- 本地用 `docker compose up -d db` + `npm run db:studio` 查看；生产只在 SSH 内用同栈 `docker compose ... exec db psql` 操作。
+- 改星星要同时更新 `Child.totalStars` 与 `StarLedger`（补一条 `ADMIN_ADJUST`），余额与流水才对得上。
+- 生产→本地数据同步是**单向**操作，只覆盖本地测试栈，切勿把本地数据回写生产。
+
+## 七、回滚
 
 查看服务器已有版本：
 
@@ -420,7 +517,7 @@ sudo env \
 
 回滚 Web 镜像不会回滚数据库 schema 或业务数据。涉及不兼容 schema 变更时，发布前必须单独制定数据库备份和回滚方案。
 
-## 七、日志与故障排查
+## 八、日志与故障排查
 
 查看日志：
 
@@ -442,11 +539,78 @@ sudo docker compose \
 | Web 一直 `starting` | 查看 Web 日志和数据库健康状态 |
 | `/api/health` 返回 503 | 检查 PostgreSQL 容器与 `DATABASE_URL` |
 | 域名不可访问 | 检查 DNS、Lighthouse 防火墙和 Nginx |
+| 影院 `/api/videos` 报错或目录为空 | 确认 `kidora-openlist-1` 为 `healthy`、`.env.production` 的 `OPENLIST_USERNAME/PASSWORD` 与 OpenList 后台一致、后台阿里云盘存储已挂载（见 §一·5） |
 | `http://kidora.cn` 被 302 跳到 `dnspod.qcloud.com/static/webblock.html` | 腾讯对**未备案域名**的 Host 拦截（webblock）。域名需完成 **ICP 备案**才能对外；备案前用公网 IP `http://119.91.153.49/` 直连绕过 |
-| 用 IP 访问被跳到 `http://kidora.cn/login`（再被 webblock） | compose 里 `NEXTAUTH_URL` 默认是 `http://kidora.cn`，NextAuth 用它拼**绝对**登录跳转。临时用 IP 体验：部署时设 `PUBLIC_URL`，如 `PUBLIC_URL=http://119.91.153.49 bash scripts/release.sh`（compose 用它覆盖 `NEXTAUTH_URL`/`NEXT_PUBLIC_APP_URL`）；备案后正常部署即恢复域名 |
+| 用 IP 访问被跳到 `http://kidora.cn/login`（再被 webblock） | compose 里 `NEXTAUTH_URL` 默认是 `http://kidora.cn`，NextAuth 用它拼**绝对**登录跳转。临时用 IP 体验：部署时设 `PUBLIC_URL`，如 `PUBLIC_URL=http://119.91.153.49 bash scripts/release.sh prod`（compose 用它覆盖 `NEXTAUTH_URL`/`NEXT_PUBLIC_APP_URL`）；备案后正常部署即恢复域名 |
 | 本地构建上下文过大 | 检查 `.dockerignore`，不要打包 `.next`、`node_modules`、worktree 或下载素材 |
 
-## 八、安全要求
+## 九、密钥流向（零接触）
+
+部署时密钥**不进 Git、不进镜像、不经过发布脚本传输**。密钥由运行环境本地文件注入：
+本地验证使用本地 `LOCAL_ENV_FILE`（默认 `.env.local`，没有则 `.env`），现网使用服务器
+`/opt/kidora/.env` 和 `/opt/kidora/.env.production`。
+
+| 文件 | 内容 | 怎么被消费 |
+| --- | --- | --- |
+| 本地 `.env.local` 或 `.env` | 本地 AI/语音/OpenList 等测试密钥；也可含本地 `DATABASE_URL` | `deploy.sh local` 将其渲染为 `ENV_FILE` / `APP_ENV_FILE` 传给 `deploy-stack.sh`；前者供 compose 变量解析，后者让 web 的 `env_file` 按绝对路径注入容器 |
+| `/opt/kidora/.env` | `POSTGRES_PASSWORD`、`AUTH_SECRET` | `deploy.sh` 远端执行 `docker compose --env-file .env`，只用于 `${POSTGRES_PASSWORD}`、`${AUTH_SECRET}` 等 compose 插值 |
+| `/opt/kidora/.env.production` | Web 运行时密钥：`DEEPSEEK_API_KEY`、`TENCENT_SECRETID/SECRETKEY/APPID`、`OPENLIST_*` 等 | production compose 的 `web.env_file` 默认读取 `.env.production`，把这些变量注入 web 容器进程环境 |
+
+### 注入链路
+
+```text
+本地验证:
+  .env.local / .env
+    ├─ deploy.sh local -> deploy-stack.sh: ENV_FILE=<本地 env 文件>
+    │    └─ compose 解析 ${...} 插值
+    └─ deploy.sh local -> deploy-stack.sh: APP_ENV_FILE=<本地 env 文件绝对路径>
+         └─ web.env_file
+              └─ web 容器 process.env
+                   └─ Next.js / Prisma / OpenList / AI SDK 读取
+
+现网发布:
+  本地源码 ──docker build──▶ 镜像(无密钥)
+  本地镜像 ──deploy.sh transfer──▶ 服务器 docker load
+  compose.yml + nginx.conf ──scp──▶ /opt/kidora/deploy/
+
+  /opt/kidora/.env
+    └─ deploy.sh -> deploy-stack.sh: ENV_FILE=/opt/kidora/.env
+         └─ compose 解析 POSTGRES_PASSWORD/AUTH_SECRET/PUBLIC_URL
+              └─ DATABASE_URL、AUTH_SECRET 注入 web 容器
+
+  /opt/kidora/.env.production
+    └─ deploy.sh -> deploy-stack.sh: APP_ENV_FILE=/opt/kidora/.env.production
+         └─ web.env_file
+         └─ DEEPSEEK_API_KEY / TENCENT_* / OPENLIST_* 注入 web 容器 process.env
+
+  OpenList 后台配置
+    └─ 阿里云盘 OAuth token 写入 kidora_openlistdata 卷
+         └─ 项目只用 OPENLIST_USERNAME/PASSWORD 调 OpenList API，不接触阿里 token
+```
+
+### 为什么分成 `.env` 和 `.env.production`
+
+- `.env` 只给 Compose 做基础设施插值：数据库密码用于拼容器内 `DATABASE_URL`，`AUTH_SECRET`
+  需要被 `environment:` 明确透传给 web。它不适合放大量应用密钥，因为 `deploy.sh` 和 compose
+  命令都会显式引用它。
+- `.env.production` 只给 web 进程使用：大模型、腾讯云、OpenList 账号由 `env_file` 注入，
+  不参与 compose 文件插值，避免把应用密钥写进 compose 或脚本。
+- `OPENLIST_BASE_URL` 固定在 compose 的 `environment:` 中，因为它是同栈内网地址
+  `http://openlist:5244`，不是密钥，且本地和现网都应一致。
+- 阿里云盘 OAuth token 由 OpenList 驱动管理。项目不保存 refresh token，是为了避免 Web 镜像、
+  Next.js 日志、Prisma 数据库或发布脚本接触云盘长期凭证。
+
+### 发布工作流中的密钥行为
+
+- `deploy.sh local` 只使用本地文件注入本地容器，不上传、不 SSH、不读取服务器密钥。
+- `release.sh prod` 先构建镜像，再调用 `deploy.sh prod`。构建阶段不读取生产 `.env*`。
+- `deploy.sh prod` 只 `scp` 三个非密钥文件（`docker-compose.production.yml` + `nginx.production.conf`
+  + `deploy-stack.sh`）、传镜像，再在服务器执行 `deploy-stack.sh`。它不读、不传、不写任何 `.env*` 内容。
+- `deploy-stack.sh` 启动前显式检查 `ENV_FILE` / `APP_ENV_FILE` 是否存在，缺了直接报错退出
+  （`scripts/deploy-stack.sh`），从不创建密钥文件。
+- 密钥只在首次安装时手动建一次（§一·3），之后归管理员维护；§十 明令禁止入库。
+
+## 十、安全要求
 
 - Docker Hub 仓库保持 Private。
 - PAT 不写入脚本、Compose、Dockerfile 或 Git。
@@ -457,7 +621,7 @@ sudo docker compose \
 - `.env` 和 `.env.production` 权限保持 `600`。
 - 配置 HTTPS 后，将 `NEXTAUTH_URL` 和 `NEXT_PUBLIC_APP_URL` 改为 `https://kidora.cn`。
 
-## 九、当前限制
+## 十一、当前限制
 
 - 当前 Nginx 仅配置 HTTP，HTTPS 尚待接入。
 - Dockerfile 启动时使用 `prisma db push --accept-data-loss`，正式生产迁移体系完善后应改为 Prisma migrations。
