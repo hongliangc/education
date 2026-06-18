@@ -14,11 +14,43 @@ services:
       timeout: 3s
       retries: 12
 
+  # OpenList 代理阿里云盘，作为视频影院后端。阿里云盘 OAuth（client/secret/refresh_token）
+  # 在 OpenList 后台一次性配置，数据存 openlistdata 卷 —— token 不进 .env.production / 镜像 / Git。
+  # 仅 127.0.0.1:5244 回环暴露（公网不可达），方便 SSH 隧道进后台配置存储；web 走内网 openlist:5244。
+  openlist-init:
+    image: alpine:3.22
+    user: "0:0"
+    command: ["sh", "-c", "chown -R 1001:1001 /opt/openlist/data"]
+    volumes:
+      - openlistdata:/opt/openlist/data
+    restart: "no"
+
+  openlist:
+    image: "${OPENLIST_IMAGE:-openlistteam/openlist:v4.2.2}"
+    restart: unless-stopped
+    environment:
+      UMASK: "022"
+    volumes:
+      - openlistdata:/opt/openlist/data
+    expose:
+      - "5244"
+    ports:
+      - "127.0.0.1:5244:5244"
+    depends_on:
+      openlist-init:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:5244/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
   web:
     image: "${DOCKER_IMAGE:-hlc2012/mlk}:${IMAGE_TAG:-latest}"
     restart: unless-stopped
     env_file:
-      - .env.production
+      - "${APP_ENV_FILE:-.env.production}"
     environment:
       DATABASE_URL: "postgresql://mlk:${POSTGRES_PASSWORD}@db:5432/mlk?schema=public"
       AUTH_SECRET: "${AUTH_SECRET}"
@@ -26,6 +58,9 @@ services:
       NEXT_PUBLIC_APP_URL: "${PUBLIC_URL:-http://kidora.cn}"
       NODE_ENV: "production"
       TTS_CACHE_DIR: "/app/.cache/tts"
+      # 视频影院后端：走内网访问同栈 OpenList 容器。管理员账号在 .env.production
+      # 设 OPENLIST_USERNAME/PASSWORD；BASE_URL 是内网常量，固定在此、不进 .env.production。
+      OPENLIST_BASE_URL: "http://openlist:5244"
     expose:
       - "3000"
     volumes:
@@ -59,4 +94,5 @@ services:
 
 volumes:
   pgdata:
+  openlistdata:
   ttscache:
