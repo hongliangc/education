@@ -173,6 +173,12 @@ model VideoUnlock {
   @@index([childId])
 }
 
+model VideoCatalogCache {
+  id        String   @id @default("default")
+  payload   String
+  updatedAt DateTime @updatedAt
+}
+
 model RewardResource {
   id           String             @id @default(cuid())
   ownerType    String // PLATFORM | FAMILY
