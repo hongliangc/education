@@ -97,6 +97,7 @@ export default function WorldMapPage() {
 
   // 全屏阅读类模块走独立路由，其余走通用 /play/[module]
   const ROUTE_OVERRIDE: Partial<Record<ModuleId, string>> = {
+    ALPHABET: "/english",
     STORY: "/story",
     LITERATURE: "/literature",
   };

@@ -20,7 +20,7 @@ export type ModuleId = (typeof MODULES)[number];
 
 export const MODULE_META: Record<ModuleId, { label: string; emoji: string; color: string }> = {
   WRITING:    { label: "写字练习", emoji: "✏️", color: "#f472b6" },
-  ALPHABET:   { label: "英文字母", emoji: "🔤", color: "#60a5fa" },
+  ALPHABET:   { label: "英语岛", emoji: "🔤", color: "#60a5fa" },
   WORDS:      { label: "单词配对", emoji: "📖", color: "#34d399" },
   MATH:       { label: "趣味算术", emoji: "🔢", color: "#fbbf24" },
   STORY:      { label: "故事智慧", emoji: "📜", color: "#a78bfa" },
