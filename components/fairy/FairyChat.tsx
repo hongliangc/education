@@ -32,6 +32,20 @@ const HINT: Record<Status, string> = {
 
 const HISTORY_TURNS = 6; // 最近 6 条 = 3 轮
 
+function microphonePreflightMessage(): string | null {
+  if (!window.isSecureContext) {
+    return "当前不是安全连接，需要 https 才能使用麦克风，已切到打字。";
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return "这个浏览器暂不支持麦克风，已切到打字。";
+  }
+  return null;
+}
+
+function errorName(error: unknown): string {
+  return error instanceof Error ? error.name : "";
+}
+
 export function FairyChat({
   child,
   onClose,
@@ -49,6 +63,7 @@ export function FairyChat({
   const [messages, setMessages] = useState<Turn[]>([]);
   const [typing, setTyping] = useState(false);
   const [draft, setDraft] = useState("");
+  const [voiceHint, setVoiceHint] = useState<string | null>(null);
   const holdSessionRef = useRef<ReturnType<typeof createHoldToTalkSession> | null>(null);
   const speakRef = useRef<SpeechController | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -123,14 +138,34 @@ export function FairyChat({
     speakRef.current?.stop();
     stopSpeaking();
     recordingAudio.interrupt();
+    setVoiceHint(null);
+    const preflightMessage = microphonePreflightMessage();
+    if (preflightMessage) {
+      console.warn("Fairy voice input unavailable:", preflightMessage);
+      recordingAudio.restore();
+      setVoiceHint(preflightMessage);
+      setTyping(true);
+      setStatus("idle");
+      return;
+    }
     try {
       const listening = await holdSessionRef.current!.begin();
       if (!listening) return;
       setStatus("listening");
-    } catch {
+    } catch (error) {
+      console.warn("Fairy voice input failed:", error);
       recordingAudio.restore();
-      // 无麦克风权限 → 自动切打字
-      setTyping(true);
+      const name = errorName(error);
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        setVoiceHint("请在地址栏允许麦克风后重试。");
+        setTyping(false);
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        setVoiceHint("没找到麦克风，已切到打字。");
+        setTyping(true);
+      } else {
+        setVoiceHint("麦克风暂时用不了，已切到打字。");
+        setTyping(true);
+      }
       setStatus("idle");
     }
   };
@@ -189,7 +224,9 @@ export function FairyChat({
         <div onClick={interrupt} className="cursor-pointer">
           <FairySprite mood={MOOD[status]} size={120} />
         </div>
-        <div className="text-sm text-slate-500 h-5">{HINT[status]}</div>
+        <div className="min-h-5 text-center text-sm text-slate-500">
+          {voiceHint ?? HINT[status]}
+        </div>
 
         <div
           ref={scrollRef}

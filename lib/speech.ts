@@ -894,6 +894,16 @@ function arrayBufferToBase64(buf: ArrayBuffer): string {
 // 所以这里用 Web Audio 抓 16k 单声道 PCM，自己封 WAV，发 format=wav（16k_zh 引擎要 16k）。
 const TARGET_RATE = 16000;
 
+type AudioContextConstructor = new (contextOptions?: AudioContextOptions) => AudioContext;
+
+function getAudioContextConstructor(): AudioContextConstructor | undefined {
+  if (typeof window === "undefined") return undefined;
+  const windowWithWebKit = window as Window & {
+    webkitAudioContext?: AudioContextConstructor;
+  };
+  return window.AudioContext ?? windowWithWebKit.webkitAudioContext;
+}
+
 /** 把若干段 Float32 采样降到 16k 后封成 16-bit PCM WAV。 */
 function encodeWav(buffers: Float32Array[], inRate: number): ArrayBuffer {
   const total = buffers.reduce((n, b) => n + b.length, 0);
@@ -987,7 +997,12 @@ export function createRecorder(): {
       stream = await navigator.mediaDevices.getUserMedia({
         audio: { channelCount: 1, echoCancellation: true, noiseSuppression: true },
       });
-      ctx = new AudioContext({ sampleRate: TARGET_RATE });
+      const AudioContextCtor = getAudioContextConstructor();
+      if (!AudioContextCtor) {
+        teardown();
+        throw new Error("AudioContext is not supported");
+      }
+      ctx = new AudioContextCtor({ sampleRate: TARGET_RATE });
       inRate = ctx.sampleRate; // 浏览器可能忽略请求的采样率，记真实值用于降采样
       source = ctx.createMediaStreamSource(stream);
       processor = ctx.createScriptProcessor(4096, 1, 1);
