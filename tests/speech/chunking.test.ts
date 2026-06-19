@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chunkCap, splitForTts } from "../../lib/speech/chunking";
+// @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
+import { chunkCap, splitForTts } from "../../lib/speech/chunking.ts";
 
 function assertValidChunks(text: string, chunks: string[], maxLen: number): void {
   assert.equal(chunks.join(""), text);
