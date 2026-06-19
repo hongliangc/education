@@ -6,6 +6,7 @@ import {
   ALPHABET_SONG_LINES,
   ALPHABET_SONG_OUTRO,
 } from "@/content/english/alphabet";
+import { Btn } from "@/components/Btn";
 import { speakText, stopSpeaking, type SpeechController } from "@/lib/speech";
 
 type SongStatus = "idle" | "playing" | "paused" | "complete";
@@ -112,13 +113,9 @@ export function AlphabetSong({ onExit }: { onExit: () => void }) {
   return (
     <div>
       <div className="flex items-center justify-between">
-        <button
-          type="button"
-          onClick={onExit}
-          className="rounded-full bg-white px-3 py-1.5 text-sm font-bold text-slate-500 ring-1 ring-slate-200"
-        >
+        <Btn variant="ghost" onClick={onExit}>
           ← 字母表
-        </button>
+        </Btn>
         <span className="text-sm font-black text-fuchsia-500">🎵 字母歌</span>
       </div>
 

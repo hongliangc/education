@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useSFX } from "@/components/audio/useSFX";
+import { BackButton } from "@/components/BackButton";
 import { PARABLES, QUOTE_DECKS } from "@/content/classics";
 
 export default function LiteratureHomePage() {
@@ -44,12 +45,17 @@ export default function LiteratureHomePage() {
   return (
     <main className="min-h-screen pt-20 px-4 pb-10">
       <div className="max-w-5xl mx-auto">
-        <h1 className="text-2xl font-bold text-white drop-shadow mb-1">
-          🪷 诸子智慧
-        </h1>
-        <p className="text-sm text-white/90 drop-shadow mb-5">
-          听一听古人的小故事，读一读了不起的名句～
-        </p>
+        <header className="mb-4 flex flex-wrap items-center gap-3">
+          <BackButton label="返回世界" onClick={() => { sfx.click(); router.push("/world"); }} />
+          <div>
+            <h1 className="text-2xl font-bold text-white drop-shadow">
+              🪷 诸子智慧
+            </h1>
+            <p className="mt-1 text-sm text-white/90 drop-shadow">
+              听一听古人的小故事，读一读了不起的名句～
+            </p>
+          </div>
+        </header>
 
         {/* 寓言故事 */}
         <div className="mb-2 px-1 text-sm font-bold text-white/90 drop-shadow">

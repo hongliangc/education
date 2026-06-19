@@ -5,6 +5,7 @@
 import { use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
+import { BackButton } from "@/components/BackButton";
 import { Btn } from "@/components/Btn";
 import { getDeck } from "@/content/classics";
 import type { SessionResult } from "@/components/games/types";
@@ -61,20 +62,14 @@ export default function DeckPage({
   return (
     <main className="min-h-screen pt-20 px-4 pb-10">
       <div className="max-w-2xl mx-auto">
-        <button
+        <BackButton
+          label="诸子智慧"
+          className="mb-3"
           onClick={() => router.push("/literature")}
-          className="text-white/90 text-sm mb-3"
-        >
-          ← 诸子智慧
-        </button>
+        />
         <div className="rounded-3xl bg-white/90 backdrop-blur p-5 shadow-xl ring-1 ring-white/60">
           <QuoteDeckPlayer
             deck={deck}
-            child={{
-              name: child.name,
-              age: child.age,
-              totalStars: child.totalStars,
-            }}
             onComplete={onComplete}
           />
         </div>
