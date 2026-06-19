@@ -12,15 +12,17 @@ export interface AlphabetEntry {
   soundSay: string;
 }
 
+// 仅用于 TTS 朗读的字母名近似拼写（界面显示用 letter，不显示这里）。
+// 个别拼写按腾讯英文音色「合成→再识别」实测校准：ay/aitch/ar 会念错，改用下方拼写。
 const LETTER_NAMES: readonly string[] = [
-  "ay",
+  "eigh", // A：原 "ay" 被念成 "A y"
   "bee",
   "see",
   "dee",
   "ee",
   "eff",
   "jee",
-  "aitch",
+  "aytch", // H：原 "aitch" 被念成 "I"
   "eye",
   "jay",
   "kay",
@@ -30,7 +32,7 @@ const LETTER_NAMES: readonly string[] = [
   "oh",
   "pee",
   "cue",
-  "ar",
+  "are", // R：原 "ar" 被念成 "AR"
   "ess",
   "tee",
   "you",
