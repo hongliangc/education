@@ -541,7 +541,7 @@ sudo docker compose \
 | 域名不可访问 | 检查 DNS、Lighthouse 防火墙和 Nginx |
 | 影院 `/api/videos` 报错或目录为空 | 确认 `kidora-openlist-1` 为 `healthy`、`.env.production` 的 `OPENLIST_USERNAME/PASSWORD` 与 OpenList 后台一致、后台阿里云盘存储已挂载（见 §一·5） |
 | `http://kidora.cn` 被 302 跳到 `dnspod.qcloud.com/static/webblock.html` | 腾讯对**未备案域名**的 Host 拦截（webblock）。域名需完成 **ICP 备案**才能对外；备案前用公网 IP `http://119.91.153.49/` 直连绕过 |
-| 用 IP 访问被跳到 `http://kidora.cn/login`（再被 webblock） | compose 里 `NEXTAUTH_URL` 默认是 `http://kidora.cn`，NextAuth 用它拼**绝对**登录跳转。临时用 IP 体验：部署时设 `PUBLIC_URL`，如 `PUBLIC_URL=http://119.91.153.49 bash scripts/release.sh prod`（compose 用它覆盖 `NEXTAUTH_URL`/`NEXT_PUBLIC_APP_URL`）；备案后正常部署即恢复域名 |
+| 用 IP 访问被跳到 `http://kidora.cn/login`（再被 webblock） | NextAuth 用 `NEXTAUTH_URL` 拼**绝对**登录跳转。备案前 `scripts/deploy.sh` 的 prod 分支已默认把 `PUBLIC_URL` 回落到服务器公网 IP（取自 `DEPLOY_HOST`，即 `http://119.91.153.49`），覆盖 compose 的 `NEXTAUTH_URL`/`NEXT_PUBLIC_APP_URL`，IP 访问即正常。备案完成后显式覆盖恢复域名：`PUBLIC_URL=http://kidora.cn bash scripts/release.sh prod`（或 https） |
 | 本地构建上下文过大 | 检查 `.dockerignore`，不要打包 `.next`、`node_modules`、worktree 或下载素材 |
 
 ## 九、密钥流向（零接触）

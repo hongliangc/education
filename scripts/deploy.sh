@@ -46,7 +46,9 @@ else
   DEPLOY_DIR="${DEPLOY_DIR:-/opt/kidora}"
   ENV_FILE="$DEPLOY_DIR/.env"
   APP_ENV_FILE="$DEPLOY_DIR/.env.production"
-  PUBLIC_URL="${PUBLIC_URL:-}"
+  # 域名 kidora.cn 未备案、被 webblock 拦截，绝对跳转到它会打不开。备案完成前默认回落到
+  # 服务器公网 IP（取自 DEPLOY_HOST），让 IP 访问能正常拼跳转；备案后显式覆盖 PUBLIC_URL 即可。
+  PUBLIC_URL="${PUBLIC_URL:-http://${DEPLOY_HOST#*@}}"
   COMPOSE_SUDO=1
   PULL_IF_MISSING=1
 fi
