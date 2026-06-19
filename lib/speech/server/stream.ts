@@ -1,7 +1,7 @@
 import "server-only";
 import { createHmac, randomUUID } from "crypto";
 import { isSpeechConfigured } from "./client";
-import { isValidVoice, DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN } from "../voices";
+import { voiceMatchesLang, DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN } from "../voices";
 import { ttsCacheKey, readTtsCache, writeTtsCache } from "../cache";
 
 // 流式文本语音合成（边合成边播）：腾讯云 WebSocket stream_wsv2，大模型音色支持。
@@ -20,7 +20,8 @@ const VOICE_EN = Number(process.env.TTS_VOICE_EN ?? DEFAULT_VOICE_EN);
 // 音色解析（路由查缓存键 与 synthesizeStream 合成/写缓存 必须用同一份 → 同一段文必然同一 key）。
 export function resolveStreamVoice(lang: string, voice?: number): number {
   const isZh = (lang ?? "zh-CN").startsWith("zh");
-  return voice && isValidVoice(voice) ? voice : isZh ? VOICE_ZH : VOICE_EN;
+  // 音色语言与朗读语言匹配才用，否则回落该语言默认（避免中文音色念英文，反之亦然）
+  return voice && voiceMatchesLang(voice, lang ?? "zh-CN") ? voice : isZh ? VOICE_ZH : VOICE_EN;
 }
 
 // 路由「缓存优先」用：命中则返回整段 mp3（带 Content-Length，浏览器即知时长），不必开 WS。

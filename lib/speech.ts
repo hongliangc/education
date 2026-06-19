@@ -2,7 +2,7 @@
 // STT 走云端「一句话识别」。对外导出签名保持稳定，games / StoryPlayer 仅需用新的 controller。
 "use client";
 
-import { DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN } from "./speech/voices";
+import { DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN, voiceMatchesLang } from "./speech/voices";
 import { TTS_MAX_CHARS, splitForTts } from "./speech/chunking";
 
 export interface SpeakOptions {
@@ -35,9 +35,11 @@ export function setVoicePref(id: number): void {
 }
 
 function resolveVoice(lang: string, explicit?: number): number {
-  if (explicit) return explicit;
+  // 显式音色 / 用户偏好都必须语言匹配才采用，否则回落该语言默认音色——
+  // 否则在 HUD 选了中文音色后，英文内容也会被中文音色念错（音色偏好按 origin 隔离）。
+  if (explicit && voiceMatchesLang(explicit, lang)) return explicit;
   const pref = getVoicePref();
-  if (pref) return pref;
+  if (pref && voiceMatchesLang(pref, lang)) return pref;
   return lang.startsWith("zh") ? DEFAULT_VOICE_ZH : DEFAULT_VOICE_EN;
 }
 

@@ -24,3 +24,14 @@ export const DEFAULT_VOICE_EN = 501009;
 export function isValidVoice(id: number): boolean {
   return TTS_VOICES.some((v) => v.id === id);
 }
+
+/**
+ * 音色语言是否匹配朗读语言。用于避免「中文音色念英文」这类串用：
+ * 朗读 en-* 必须用 en 音色，朗读 zh-* 必须用 zh 音色，否则发音错乱。
+ * 未知音色返回 false（调用方应回落到该语言默认音色）。
+ */
+export function voiceMatchesLang(id: number, lang: string): boolean {
+  const v = TTS_VOICES.find((x) => x.id === id);
+  if (!v) return false;
+  return lang.startsWith("zh") ? v.lang === "zh" : v.lang === "en";
+}

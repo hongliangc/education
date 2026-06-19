@@ -2,7 +2,7 @@ import "server-only";
 import { randomUUID } from "crypto";
 import { ttsClient, isSpeechConfigured } from "./client";
 import { ttsCacheKey, readTtsCache, writeTtsCache } from "../cache";
-import { isValidVoice, DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN } from "../voices";
+import { voiceMatchesLang, DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN } from "../voices";
 
 // 默认音色（大模型音色，扣大模型预付费包）；可被 env 覆盖，或被请求里的 voice 覆盖。
 const VOICE_ZH = Number(process.env.TTS_VOICE_ZH ?? DEFAULT_VOICE_ZH);
@@ -20,9 +20,9 @@ export async function synthesize(
   if (!isSpeechConfigured()) throw new Error("speech not configured");
   const lang = opts.lang ?? "zh-CN";
   const isZh = lang.startsWith("zh");
-  // 请求指定且在白名单内才用；否则按语言取默认音色
+  // 请求指定且音色语言与朗读语言匹配才用；否则按语言取默认音色（避免中文音色念英文）
   const voice =
-    opts.voice && isValidVoice(opts.voice) ? opts.voice : isZh ? VOICE_ZH : VOICE_EN;
+    opts.voice && voiceMatchesLang(opts.voice, lang) ? opts.voice : isZh ? VOICE_ZH : VOICE_EN;
   const key = ttsCacheKey(text, String(voice), lang);
 
   const cached = await readTtsCache(key);
