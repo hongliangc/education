@@ -214,6 +214,12 @@ function CreateChildModal({
         body: JSON.stringify({ name: name.trim(), age, avatar }),
       });
       if (!res.ok) {
+        if (res.status === 401) {
+          // 陈旧会话（家长已不在库中）：清掉残留登录再回登录页；直接跳 /login 会被中间件
+          // 因 cookie 仍有效弹回 /child-select，形成死循环。
+          await signOut({ callbackUrl: "/login" });
+          return;
+        }
         const j = await res.json().catch(() => ({}));
         setError(j.error ?? "创建失败");
         return;
