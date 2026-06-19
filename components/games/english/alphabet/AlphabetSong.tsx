@@ -7,7 +7,7 @@ import {
   ALPHABET_SONG_OUTRO,
 } from "@/content/english/alphabet";
 import { Btn } from "@/components/Btn";
-import { speakText, stopSpeaking, type SpeechController } from "@/lib/speech";
+import { speakEnglish, stopSpeaking, type SpeechController } from "@/lib/speech";
 
 type SongStatus = "idle" | "playing" | "paused" | "complete";
 
@@ -50,8 +50,7 @@ export function AlphabetSong({ onExit }: { onExit: () => void }) {
   const finishSong = (run: number) => {
     if (runRef.current !== run) return;
     setActiveIndex(null);
-    speechRef.current = speakText(ALPHABET_SONG_OUTRO, {
-      lang: "en-US",
+    speechRef.current = speakEnglish(ALPHABET_SONG_OUTRO, {
       rate: 0.85,
       onEnd: () => {
         if (runRef.current !== run) return;
@@ -70,8 +69,7 @@ export function AlphabetSong({ onExit }: { onExit: () => void }) {
 
     setActiveIndex(index);
     setStatus("playing");
-    speechRef.current = speakText(letterName(FLAT_LETTERS[index]), {
-      lang: "en-US",
+    speechRef.current = speakEnglish(letterName(FLAT_LETTERS[index]), {
       rate: 0.82,
       onEnd: () => {
         if (runRef.current !== run) return;

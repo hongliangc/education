@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   speakText,
+  speakEnglish,
   stopSpeaking,
   createRecorder,
   recognizeBlob,
@@ -50,7 +51,11 @@ export function SpeakPanel({
 
   const listen = () => {
     speakRef.current?.stop();
-    speakRef.current = onListen ? onListen() : speakText(say, { lang, rate: 0.85 });
+    speakRef.current = onListen
+      ? onListen()
+      : lang.startsWith("en")
+        ? speakEnglish(say, { rate: 0.85 })
+        : speakText(say, { lang, rate: 0.85 });
   };
 
   const press = async () => {

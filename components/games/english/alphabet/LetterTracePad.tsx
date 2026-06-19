@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
-import { speakSequence, type SpeechController } from "@/lib/speech";
+import { speakEnglishSequence, type SpeechController } from "@/lib/speech";
 import type { AlphabetEntry } from "@/content/english/alphabet";
 
 // 字母描红手写板：四线三格 + 浅蓝色样字，孩子用手指/鼠标沿着描。沿用 WritingGame 的指针捕获画线手法，
@@ -26,12 +26,12 @@ export function LetterTracePad({ entry }: { entry: AlphabetEntry }) {
 
   const listen = () => {
     speechRef.current?.stop();
-    speechRef.current = speakSequence(
+    speechRef.current = speakEnglishSequence(
       [
         { text: entry.name, rate: 0.85 },
         { text: entry.word, rate: 0.85 },
       ],
-      { lang: "en-US", gapMs: 340 },
+      { gapMs: 340 },
     );
   };
 

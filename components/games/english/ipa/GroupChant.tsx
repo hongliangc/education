@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { speakText, stopSpeaking, type SpeechController } from "@/lib/speech";
+import { speakEnglishSequence, stopSpeaking, type SpeechController } from "@/lib/speech";
 
 export function ExampleChainButton({ words }: { words: readonly string[] }) {
   const speechRef = useRef<SpeechController | null>(null);
@@ -16,7 +16,10 @@ export function ExampleChainButton({ words }: { words: readonly string[] }) {
 
   const speakWords = () => {
     speechRef.current?.stop();
-    speechRef.current = speakText(words.join(", "), { lang: "en-US", rate: 0.82 });
+    speechRef.current = speakEnglishSequence(
+      words.map((w) => ({ text: w })),
+      { rate: 0.82, gapMs: 260 },
+    );
   };
 
   return (

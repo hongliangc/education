@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ALPHABET, type AlphabetEntry } from "@/content/english/alphabet";
-import { speakSequence, stopSpeaking, type SpeechController } from "@/lib/speech";
+import { speakEnglishSequence, stopSpeaking, type SpeechController } from "@/lib/speech";
 import { useSFX } from "@/components/audio/useSFX";
 import { gradeAttempt } from "@/content/english/encourage";
 import { matchSpokenWord } from "@/content/english/match";
@@ -31,12 +31,12 @@ export function AlphabetBoard() {
 
   const playLetter = (entry: AlphabetEntry): SpeechController => {
     speechRef.current?.stop();
-    const controller = speakSequence(
+    const controller = speakEnglishSequence(
       [
         { text: entry.name, rate: 0.85 },
         { text: entry.word, rate: 0.85 },
       ],
-      { lang: "en-US", gapMs: 340 },
+      { gapMs: 340 },
     );
     speechRef.current = controller;
     return controller;

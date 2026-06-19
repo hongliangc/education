@@ -10,7 +10,7 @@ import {
   type Phoneme,
   type PhonemeGroup,
 } from "@/content/english/ipa";
-import { speakText, stopSpeaking, type SpeechController } from "@/lib/speech";
+import { speakEnglish, playClip, stopSpeaking, type SpeechController } from "@/lib/speech";
 import { useSFX } from "@/components/audio/useSFX";
 import { gradeAttempt } from "@/content/english/encourage";
 import { matchSpokenWord } from "@/content/english/match";
@@ -52,14 +52,15 @@ export function IpaBoard() {
 
   const playSound = (phoneme: Phoneme): SpeechController => {
     speechRef.current?.stop();
-    const controller = speakText(phoneme.say, { lang: "en-US", rate: 0.7 });
+    // 预生成的美式音标音频（AWS Polly，<phoneme ipa>）；TTS 无法可靠合成孤立音素。
+    const controller = playClip(`/audio/phonemes/${phoneme.id}.mp3`);
     speechRef.current = controller;
     return controller;
   };
 
   const playWord = (word: string) => {
     speechRef.current?.stop();
-    speechRef.current = speakText(word, { lang: "en-US", rate: 0.85 });
+    speechRef.current = speakEnglish(word, { rate: 0.85 });
   };
 
   const open = openIndex == null ? null : IPA_PHONEMES[openIndex];

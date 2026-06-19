@@ -1,0 +1,627 @@
+[
+  {
+    "slug": "eigh",
+    "kind": "chars",
+    "value": "A"
+  },
+  {
+    "slug": "at",
+    "kind": "ipa",
+    "value": "æ"
+  },
+  {
+    "slug": "apple",
+    "kind": "word",
+    "value": "apple"
+  },
+  {
+    "slug": "bee",
+    "kind": "chars",
+    "value": "B"
+  },
+  {
+    "slug": "buh",
+    "kind": "ipa",
+    "value": "b"
+  },
+  {
+    "slug": "ball",
+    "kind": "word",
+    "value": "ball"
+  },
+  {
+    "slug": "see",
+    "kind": "chars",
+    "value": "C"
+  },
+  {
+    "slug": "kuh",
+    "kind": "ipa",
+    "value": "k"
+  },
+  {
+    "slug": "cat",
+    "kind": "word",
+    "value": "cat"
+  },
+  {
+    "slug": "dee",
+    "kind": "chars",
+    "value": "D"
+  },
+  {
+    "slug": "duh",
+    "kind": "ipa",
+    "value": "d"
+  },
+  {
+    "slug": "dog",
+    "kind": "word",
+    "value": "dog"
+  },
+  {
+    "slug": "ee",
+    "kind": "chars",
+    "value": "E"
+  },
+  {
+    "slug": "eh",
+    "kind": "ipa",
+    "value": "ɛ"
+  },
+  {
+    "slug": "egg",
+    "kind": "word",
+    "value": "egg"
+  },
+  {
+    "slug": "eff",
+    "kind": "chars",
+    "value": "F"
+  },
+  {
+    "slug": "fuh",
+    "kind": "ipa",
+    "value": "f"
+  },
+  {
+    "slug": "fish",
+    "kind": "word",
+    "value": "fish"
+  },
+  {
+    "slug": "jee",
+    "kind": "chars",
+    "value": "G"
+  },
+  {
+    "slug": "guh",
+    "kind": "ipa",
+    "value": "g"
+  },
+  {
+    "slug": "goat",
+    "kind": "word",
+    "value": "goat"
+  },
+  {
+    "slug": "aitch",
+    "kind": "chars",
+    "value": "H"
+  },
+  {
+    "slug": "huh",
+    "kind": "ipa",
+    "value": "h"
+  },
+  {
+    "slug": "hat",
+    "kind": "word",
+    "value": "hat"
+  },
+  {
+    "slug": "eye",
+    "kind": "chars",
+    "value": "I"
+  },
+  {
+    "slug": "it",
+    "kind": "ipa",
+    "value": "ɪ"
+  },
+  {
+    "slug": "igloo",
+    "kind": "word",
+    "value": "igloo"
+  },
+  {
+    "slug": "jay",
+    "kind": "chars",
+    "value": "J"
+  },
+  {
+    "slug": "juh",
+    "kind": "ipa",
+    "value": "dʒ"
+  },
+  {
+    "slug": "juice",
+    "kind": "word",
+    "value": "juice"
+  },
+  {
+    "slug": "kay",
+    "kind": "chars",
+    "value": "K"
+  },
+  {
+    "slug": "kite",
+    "kind": "word",
+    "value": "kite"
+  },
+  {
+    "slug": "el",
+    "kind": "chars",
+    "value": "L"
+  },
+  {
+    "slug": "luh",
+    "kind": "ipa",
+    "value": "l"
+  },
+  {
+    "slug": "lion",
+    "kind": "word",
+    "value": "lion"
+  },
+  {
+    "slug": "em",
+    "kind": "chars",
+    "value": "M"
+  },
+  {
+    "slug": "muh",
+    "kind": "ipa",
+    "value": "m"
+  },
+  {
+    "slug": "moon",
+    "kind": "word",
+    "value": "moon"
+  },
+  {
+    "slug": "en",
+    "kind": "chars",
+    "value": "N"
+  },
+  {
+    "slug": "nuh",
+    "kind": "ipa",
+    "value": "n"
+  },
+  {
+    "slug": "nest",
+    "kind": "word",
+    "value": "nest"
+  },
+  {
+    "slug": "oh",
+    "kind": "chars",
+    "value": "O"
+  },
+  {
+    "slug": "ah",
+    "kind": "ipa",
+    "value": "ɑ"
+  },
+  {
+    "slug": "orange",
+    "kind": "word",
+    "value": "orange"
+  },
+  {
+    "slug": "pee",
+    "kind": "chars",
+    "value": "P"
+  },
+  {
+    "slug": "puh",
+    "kind": "ipa",
+    "value": "p"
+  },
+  {
+    "slug": "pig",
+    "kind": "word",
+    "value": "pig"
+  },
+  {
+    "slug": "cue",
+    "kind": "chars",
+    "value": "Q"
+  },
+  {
+    "slug": "kwuh",
+    "kind": "ipa",
+    "value": "kw"
+  },
+  {
+    "slug": "queen",
+    "kind": "word",
+    "value": "queen"
+  },
+  {
+    "slug": "are",
+    "kind": "chars",
+    "value": "R"
+  },
+  {
+    "slug": "ruh",
+    "kind": "ipa",
+    "value": "ɹ"
+  },
+  {
+    "slug": "rabbit",
+    "kind": "word",
+    "value": "rabbit"
+  },
+  {
+    "slug": "ess",
+    "kind": "chars",
+    "value": "S"
+  },
+  {
+    "slug": "suh",
+    "kind": "ipa",
+    "value": "s"
+  },
+  {
+    "slug": "sun",
+    "kind": "word",
+    "value": "sun"
+  },
+  {
+    "slug": "tee",
+    "kind": "chars",
+    "value": "T"
+  },
+  {
+    "slug": "tuh",
+    "kind": "ipa",
+    "value": "t"
+  },
+  {
+    "slug": "tiger",
+    "kind": "word",
+    "value": "tiger"
+  },
+  {
+    "slug": "you",
+    "kind": "chars",
+    "value": "U"
+  },
+  {
+    "slug": "uh",
+    "kind": "ipa",
+    "value": "ʌ"
+  },
+  {
+    "slug": "umbrella",
+    "kind": "word",
+    "value": "umbrella"
+  },
+  {
+    "slug": "vee",
+    "kind": "chars",
+    "value": "V"
+  },
+  {
+    "slug": "vuh",
+    "kind": "ipa",
+    "value": "v"
+  },
+  {
+    "slug": "van",
+    "kind": "word",
+    "value": "van"
+  },
+  {
+    "slug": "double-u",
+    "kind": "chars",
+    "value": "W"
+  },
+  {
+    "slug": "wuh",
+    "kind": "ipa",
+    "value": "w"
+  },
+  {
+    "slug": "whale",
+    "kind": "word",
+    "value": "whale"
+  },
+  {
+    "slug": "ex",
+    "kind": "chars",
+    "value": "X"
+  },
+  {
+    "slug": "ks",
+    "kind": "ipa",
+    "value": "ks"
+  },
+  {
+    "slug": "xylophone",
+    "kind": "word",
+    "value": "xylophone"
+  },
+  {
+    "slug": "why",
+    "kind": "chars",
+    "value": "Y"
+  },
+  {
+    "slug": "yuh",
+    "kind": "ipa",
+    "value": "j"
+  },
+  {
+    "slug": "yarn",
+    "kind": "word",
+    "value": "yarn"
+  },
+  {
+    "slug": "zee",
+    "kind": "chars",
+    "value": "Z"
+  },
+  {
+    "slug": "zuh",
+    "kind": "ipa",
+    "value": "z"
+  },
+  {
+    "slug": "zebra",
+    "kind": "word",
+    "value": "zebra"
+  },
+  {
+    "slug": "tea",
+    "kind": "word",
+    "value": "tea"
+  },
+  {
+    "slug": "bird",
+    "kind": "word",
+    "value": "bird"
+  },
+  {
+    "slug": "girl",
+    "kind": "word",
+    "value": "girl"
+  },
+  {
+    "slug": "car",
+    "kind": "word",
+    "value": "car"
+  },
+  {
+    "slug": "arm",
+    "kind": "word",
+    "value": "arm"
+  },
+  {
+    "slug": "door",
+    "kind": "word",
+    "value": "door"
+  },
+  {
+    "slug": "blue",
+    "kind": "word",
+    "value": "blue"
+  },
+  {
+    "slug": "sit",
+    "kind": "word",
+    "value": "sit"
+  },
+  {
+    "slug": "bed",
+    "kind": "word",
+    "value": "bed"
+  },
+  {
+    "slug": "banana",
+    "kind": "word",
+    "value": "banana"
+  },
+  {
+    "slug": "sofa",
+    "kind": "word",
+    "value": "sofa"
+  },
+  {
+    "slug": "cup",
+    "kind": "word",
+    "value": "cup"
+  },
+  {
+    "slug": "box",
+    "kind": "word",
+    "value": "box"
+  },
+  {
+    "slug": "book",
+    "kind": "word",
+    "value": "book"
+  },
+  {
+    "slug": "foot",
+    "kind": "word",
+    "value": "foot"
+  },
+  {
+    "slug": "cake",
+    "kind": "word",
+    "value": "cake"
+  },
+  {
+    "slug": "rain",
+    "kind": "word",
+    "value": "rain"
+  },
+  {
+    "slug": "ice",
+    "kind": "word",
+    "value": "ice"
+  },
+  {
+    "slug": "boy",
+    "kind": "word",
+    "value": "boy"
+  },
+  {
+    "slug": "toy",
+    "kind": "word",
+    "value": "toy"
+  },
+  {
+    "slug": "ear",
+    "kind": "word",
+    "value": "ear"
+  },
+  {
+    "slug": "deer",
+    "kind": "word",
+    "value": "deer"
+  },
+  {
+    "slug": "hair",
+    "kind": "word",
+    "value": "hair"
+  },
+  {
+    "slug": "bear",
+    "kind": "word",
+    "value": "bear"
+  },
+  {
+    "slug": "tour",
+    "kind": "word",
+    "value": "tour"
+  },
+  {
+    "slug": "sure",
+    "kind": "word",
+    "value": "sure"
+  },
+  {
+    "slug": "nose",
+    "kind": "word",
+    "value": "nose"
+  },
+  {
+    "slug": "boat",
+    "kind": "word",
+    "value": "boat"
+  },
+  {
+    "slug": "cow",
+    "kind": "word",
+    "value": "cow"
+  },
+  {
+    "slug": "house",
+    "kind": "word",
+    "value": "house"
+  },
+  {
+    "slug": "thumb",
+    "kind": "word",
+    "value": "thumb"
+  },
+  {
+    "slug": "three",
+    "kind": "word",
+    "value": "three"
+  },
+  {
+    "slug": "this",
+    "kind": "word",
+    "value": "this"
+  },
+  {
+    "slug": "mother",
+    "kind": "word",
+    "value": "mother"
+  },
+  {
+    "slug": "ship",
+    "kind": "word",
+    "value": "ship"
+  },
+  {
+    "slug": "television",
+    "kind": "word",
+    "value": "television"
+  },
+  {
+    "slug": "chair",
+    "kind": "word",
+    "value": "chair"
+  },
+  {
+    "slug": "jam",
+    "kind": "word",
+    "value": "jam"
+  },
+  {
+    "slug": "tree",
+    "kind": "word",
+    "value": "tree"
+  },
+  {
+    "slug": "drum",
+    "kind": "word",
+    "value": "drum"
+  },
+  {
+    "slug": "cats",
+    "kind": "word",
+    "value": "cats"
+  },
+  {
+    "slug": "birds",
+    "kind": "word",
+    "value": "birds"
+  },
+  {
+    "slug": "king",
+    "kind": "word",
+    "value": "king"
+  },
+  {
+    "slug": "sing",
+    "kind": "word",
+    "value": "sing"
+  },
+  {
+    "slug": "yes",
+    "kind": "word",
+    "value": "yes"
+  },
+  {
+    "slug": "yo-yo",
+    "kind": "word",
+    "value": "yo-yo"
+  },
+  {
+    "slug": "water",
+    "kind": "word",
+    "value": "water"
+  },
+  {
+    "slug": "now-i-know-my-abcs",
+    "kind": "word",
+    "value": "Now I know my ABCs!"
+  }
+]

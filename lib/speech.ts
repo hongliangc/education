@@ -1,5 +1,6 @@
-// 语音封装：朗读优先走腾讯云大模型 TTS（真实童声），失败优雅回退 Web Speech；
-// STT 走云端「一句话识别」。对外导出签名保持稳定，games / StoryPlayer 仅需用新的 controller。
+// 语音封装：中文朗读走腾讯云大模型 TTS（真实童声），失败优雅回退 Web Speech；
+// 英文朗读一律走浏览器原生 Web Speech——腾讯唯一英文音色(WeWinny)念孤立字母/音标偏差大，
+// 原生英文音色更准。STT 走云端「一句话识别」。对外导出签名保持稳定，games/StoryPlayer 无需改。
 "use client";
 
 import { DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN, voiceMatchesLang } from "./speech/voices";
@@ -183,8 +184,9 @@ export function speakText(text: string, opts: SpeakOptions = {}): SpeechControll
   }
 
   // 启动（异步获取音频；可被 stop() 在合成期间中止）
+  // 英文跳过腾讯、直接用浏览器原生音色（更准；见文件头说明）；中文走云 TTS。
   (async () => {
-    if (!cloudTtsUnavailable) {
+    if (!lang.startsWith("en") && !cloudTtsUnavailable) {
       try {
         const res = await fetch("/api/speech/tts", {
           method: "POST",
@@ -282,6 +284,141 @@ export function stopSpeaking(): void {
   if (isSpeechSupported()) window.speechSynthesis.cancel();
 }
 
+/**
+ * 播放一段预生成的静态音频文件（如英语音标 mp3），返回与 speakText 同形的控制器。
+ * 用于 TTS 无法可靠合成的孤立音素——直接播真实录制/离线合成好的片段，发音稳定准确。
+ */
+export function playClip(url: string): SpeechController {
+  stopSpeaking(); // 停掉其它正在播的
+  const a = new Audio(url);
+  currentAudio = a;
+  const clear = () => {
+    if (currentAudio === a) currentAudio = null;
+  };
+  a.onended = clear;
+  a.onerror = clear;
+  void a.play().catch(clear); // 自动播放被拦也不卡住
+  return {
+    pause() {
+      a.pause();
+    },
+    resume() {
+      void a.play().catch(() => {});
+    },
+    stop() {
+      a.pause();
+      clear();
+    },
+  };
+}
+
+// ---------- 英文预生成音频（字母名/音/例词，AWS Polly 美式童声，离线生成、静态文件） ----------
+// 必须与 scripts/dump-en-audio-items.ts 的 slug() 保持一致。
+export function enAudioSlug(text: string): string {
+  return text
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+/**
+ * 朗读英文：优先播预生成的 Polly 美式音频（public/audio/en/<slug>.mp3），
+ * 缺失/被拦则优雅回退浏览器 Web Speech。与 speakText 同形，可直接替换英文 speakText 调用。
+ */
+export function speakEnglish(text: string, opts: SpeakOptions = {}): SpeechController {
+  const slug = enAudioSlug(text);
+  if (!slug || typeof window === "undefined") return speakText(text, { ...opts, lang: "en-US" });
+
+  let aborted = false;
+  let done = false;
+  let inner: SpeechController | null = null;
+  stopSpeaking();
+  const a = new Audio(`/audio/en/${slug}.mp3`);
+  currentAudio = a;
+  const clear = () => {
+    if (currentAudio === a) currentAudio = null;
+  };
+  const finish = () => {
+    if (done) return;
+    done = true;
+    clear();
+    opts.onEnd?.();
+  };
+  const fallback = () => {
+    if (aborted || done) return;
+    done = true; // a 的后续事件不再相关
+    clear();
+    inner = speakText(text, { ...opts, lang: "en-US" }); // onEnd 由 inner 触发
+  };
+  if (opts.rate && opts.rate !== 1) a.playbackRate = opts.rate;
+  a.onended = finish;
+  a.onerror = fallback; // 该 slug 没有 clip → 回退浏览器朗读
+  void a.play().catch(fallback); // 自动播放被拦 → 回退
+  return {
+    pause() {
+      if (inner) inner.pause();
+      else a.pause();
+    },
+    resume() {
+      if (inner) inner.resume();
+      else void a.play().catch(() => {});
+    },
+    stop() {
+      aborted = true;
+      if (inner) {
+        inner.stop();
+        return;
+      }
+      a.pause();
+      clear();
+    },
+  };
+}
+
+/** 依次朗读多段英文（字母名→例词 / 整组连读），逐段走 speakEnglish（clip→Web Speech 回退）。 */
+export function speakEnglishSequence(
+  segments: readonly SpeechSegment[],
+  opts: { rate?: number; gapMs?: number } = {},
+): SpeechController {
+  const gapMs = opts.gapMs ?? 420;
+  let stopped = false;
+  let current: SpeechController | null = null;
+  let timer: ReturnType<typeof setTimeout> | null = null;
+
+  const playFrom = (i: number) => {
+    if (stopped || i >= segments.length) return;
+    const seg = segments[i];
+    current = speakEnglish(seg.text, {
+      rate: seg.rate ?? opts.rate ?? 0.85,
+      onEnd: () => {
+        if (stopped) return;
+        timer = setTimeout(() => playFrom(i + 1), seg.gapAfterMs ?? gapMs);
+      },
+    });
+  };
+
+  stopSpeaking();
+  playFrom(0);
+
+  return {
+    pause() {
+      current?.pause();
+    },
+    resume() {
+      current?.resume();
+    },
+    stop() {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      current?.stop();
+      current = null;
+    },
+  };
+}
+
 // ---------- 分段连读（字母名→拼读音→例词 / 单独示范音素用） ----------
 export interface SpeechSegment {
   text: string;
@@ -347,7 +484,9 @@ export function speakSequence(
  */
 export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechController {
   const lang = opts.lang ?? "zh-CN";
-  if (cloudTtsUnavailable || typeof window === "undefined") return speakText(text, opts);
+  // 英文走浏览器原生音色（见文件头说明）；中文继续用腾讯流式。
+  if (cloudTtsUnavailable || typeof window === "undefined" || lang.startsWith("en"))
+    return speakText(text, opts);
 
   const url = `/api/speech/tts-stream?${new URLSearchParams({
     text,
@@ -570,6 +709,8 @@ export function speakChunks(
   opts: SpeakOptions & { maxLen?: number } = {},
 ): SpeechController {
   const lang = opts.lang ?? "zh-CN";
+  // 英文走浏览器原生音色（见文件头说明）；分段流式仅用于中文长文。
+  if (lang.startsWith("en")) return speakText(text, opts);
   const chunks = splitForTts(text, opts.maxLen ?? TTS_MAX_CHARS);
   const voice = resolveVoice(lang, opts.voice);
 

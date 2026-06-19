@@ -43,27 +43,29 @@ export const IPA_GROUPS: readonly PhonemeGroup[] = [
   "半元音",
 ];
 
-// 「单独示范音素」的 TTS 近似念法（en-US），按音素 id 查。元音用近似元音词，辅音用
-// 「子音+schwa」或常见组合。这些是 TTS 能稳定念出的近似、非精准 IPA，可按真人听感逐个微调。
+// 「单独示范音素」的 TTS 念法（美式英语 en-US），按音素 id 查，由浏览器原生英文音色朗读。
+// 原则：能用近似拼读稳定念出的（多数辅音「子音+schwa」、清晰长元音）用近似；TTS 无法孤立
+// 念准的松元音/双元音/破擦音（/ɪ/ /ʊ/ /æ/ /eɪ/ /ʊə/ /ʒ/ /ts/ /dz/）改用清晰的美式关键词
+// （真实单词必然念对，且明显含该音）。可按真人听感继续微调。
 const PHONEME_SAY: Record<string, string> = {
   "long-i": "ee",
   "long-er": "er",
-  "long-a": "ah",
+  "long-a": "are", // /ɑr/（美式 r 化，如 car/arm；与字母 R 同音）
   "long-or": "or",
   "long-u": "oo",
-  "short-i": "ih",
+  "short-i": "it", // /ɪ/（原 "ih" 念不准）
   "short-e": "eh",
-  "short-a": "ah",
+  "short-a": "at", // /æ/（原 "ah" 与长元音 /ɑː/ 混同，念成"啊"）
   schwa: "uh",
   "short-u": "uh",
-  "short-o": "aw",
-  "short-oo": "uu",
-  "diphthong-ai": "ay",
+  "short-o": "ah", // /ɑ/（美式短 o，如 box/dog）
+  "short-oo": "book", // /ʊ/（原 "uu" 念不准；/ʊ/ 不单独出现在词首）
+  "diphthong-ai": "eigh", // /eɪ/（原 "ay" 念不准，与字母 A 同改）
   "diphthong-eye": "eye",
   "diphthong-oy": "oy",
   "diphthong-ear": "ear",
   "diphthong-air": "air",
-  "diphthong-tour": "oor",
+  "diphthong-tour": "tour", // /ʊə/（原 "oor" 念不准）
   "diphthong-oh": "oh",
   "diphthong-ow": "ow",
   p: "puh",
@@ -79,15 +81,15 @@ const PHONEME_SAY: Record<string, string> = {
   theta: "thuh",
   eth: "thuh",
   sh: "sh",
-  zh: "zhuh",
+  zh: "vision", // /ʒ/（原 "zhuh" 念不准；/ʒ/ 多出现在词中）
   h: "huh",
   r: "ruh",
   ch: "chuh",
   j: "juh",
   tr: "truh",
   dr: "druh",
-  ts: "tsuh",
-  dz: "dzuh",
+  ts: "cats", // /ts/（原 "tsuh" 念不准；/ts/ 多在词尾，如 cats）
+  dz: "kids", // /dz/（原 "dzuh" 念不准；/dz/ 多在词尾，如 kids）
   m: "muh",
   n: "nuh",
   ng: "ung",
@@ -112,27 +114,27 @@ const example = (word: string, emoji: string, zh: string): PhonemeExample => ({
 });
 
 export const IPA_PHONEMES: readonly Phoneme[] = [
-  phoneme("long-i", "/iː/", "vowel", "长元音", [example("see", "👀", "看见"), example("tea", "🫖", "茶")], "See the green tree"),
-  phoneme("long-er", "/ɜː/", "vowel", "长元音", [example("bird", "🐦", "鸟"), example("girl", "👧", "女孩")], "Birds turn in circles"),
-  phoneme("long-a", "/ɑː/", "vowel", "长元音", [example("car", "🚗", "汽车"), example("arm", "💪", "手臂")], "Cars park by barns"),
-  phoneme("long-or", "/ɔː/", "vowel", "长元音", [example("ball", "⚽", "球"), example("door", "🚪", "门")], "Small horses draw chalk"),
-  phoneme("long-u", "/uː/", "vowel", "长元音", [example("moon", "🌙", "月亮"), example("blue", "🔵", "蓝色")], "Blue moons move smoothly"),
+  phoneme("long-i", "/i/", "vowel", "长元音", [example("see", "👀", "看见"), example("tea", "🫖", "茶")], "See the green tree"),
+  phoneme("long-er", "/ɝ/", "vowel", "长元音", [example("bird", "🐦", "鸟"), example("girl", "👧", "女孩")], "Birds turn in circles"),
+  phoneme("long-a", "/ɑr/", "vowel", "长元音", [example("car", "🚗", "汽车"), example("arm", "💪", "手臂")], "Cars park by barns"),
+  phoneme("long-or", "/ɔ/", "vowel", "长元音", [example("ball", "⚽", "球"), example("door", "🚪", "门")], "Small horses draw chalk"),
+  phoneme("long-u", "/u/", "vowel", "长元音", [example("moon", "🌙", "月亮"), example("blue", "🔵", "蓝色")], "Blue moons move smoothly"),
 
   phoneme("short-i", "/ɪ/", "vowel", "短元音", [example("sit", "🪑", "坐"), example("pig", "🐷", "猪")], "Little pigs sit still"),
-  phoneme("short-e", "/e/", "vowel", "短元音", [example("egg", "🥚", "鸡蛋"), example("bed", "🛏️", "床")], "Red hens get eggs"),
+  phoneme("short-e", "/ɛ/", "vowel", "短元音", [example("egg", "🥚", "鸡蛋"), example("bed", "🛏️", "床")], "Red hens get eggs"),
   phoneme("short-a", "/æ/", "vowel", "短元音", [example("apple", "🍎", "苹果"), example("cat", "🐱", "猫")], "Happy cats catch apples"),
   phoneme("schwa", "/ə/", "vowel", "短元音", [example("banana", "🍌", "香蕉"), example("sofa", "🛋️", "沙发")], "A banana and a panda"),
   phoneme("short-u", "/ʌ/", "vowel", "短元音", [example("cup", "☕", "杯子"), example("sun", "☀️", "太阳")], "Funny ducks jump up"),
-  phoneme("short-o", "/ɒ/", "vowel", "短元音", [example("dog", "🐶", "狗"), example("box", "📦", "盒子")], "Hot dogs hop on boxes"),
+  phoneme("short-o", "/ɑ/", "vowel", "短元音", [example("dog", "🐶", "狗"), example("box", "📦", "盒子")], "Hot dogs hop on boxes"),
   phoneme("short-oo", "/ʊ/", "vowel", "短元音", [example("book", "📖", "书"), example("foot", "🦶", "脚")], "Good cooks look at books"),
 
   phoneme("diphthong-ai", "/eɪ/", "vowel", "双元音", [example("cake", "🎂", "蛋糕"), example("rain", "🌧️", "雨")], "Gray snails play games"),
   phoneme("diphthong-eye", "/aɪ/", "vowel", "双元音", [example("kite", "🪁", "风筝"), example("ice", "🧊", "冰")], "My nice kite flies high"),
   phoneme("diphthong-oy", "/ɔɪ/", "vowel", "双元音", [example("boy", "👦", "男孩"), example("toy", "🧸", "玩具")], "Joyful boys enjoy toys"),
-  phoneme("diphthong-ear", "/ɪə/", "vowel", "双元音", [example("ear", "👂", "耳朵"), example("deer", "🦌", "鹿")], "Cheerful deer peer near"),
-  phoneme("diphthong-air", "/eə/", "vowel", "双元音", [example("hair", "💇", "头发"), example("bear", "🐻", "熊")], "Fair bears share pears"),
-  phoneme("diphthong-tour", "/ʊə/", "vowel", "双元音", [example("tour", "🧳", "旅行"), example("sure", "👍", "当然")], "Tourists tour a pure moor"),
-  phoneme("diphthong-oh", "/əʊ/", "vowel", "双元音", [example("nose", "👃", "鼻子"), example("boat", "⛵", "小船")], "Old goats row home"),
+  phoneme("diphthong-ear", "/ɪr/", "vowel", "双元音", [example("ear", "👂", "耳朵"), example("deer", "🦌", "鹿")], "Cheerful deer peer near"),
+  phoneme("diphthong-air", "/ɛr/", "vowel", "双元音", [example("hair", "💇", "头发"), example("bear", "🐻", "熊")], "Fair bears share pears"),
+  phoneme("diphthong-tour", "/ʊr/", "vowel", "双元音", [example("tour", "🧳", "旅行"), example("sure", "👍", "当然")], "Tourists tour a pure moor"),
+  phoneme("diphthong-oh", "/oʊ/", "vowel", "双元音", [example("nose", "👃", "鼻子"), example("boat", "⛵", "小船")], "Old goats row home"),
   phoneme("diphthong-ow", "/aʊ/", "vowel", "双元音", [example("cow", "🐄", "奶牛"), example("house", "🏠", "房子")], "Brown cows crowd houses"),
 
   phoneme("p", "/p/", "consonant", "爆破音", [example("pig", "🐷", "猪")], "Puppies play pink pianos"),
@@ -151,7 +153,7 @@ export const IPA_PHONEMES: readonly Phoneme[] = [
   phoneme("sh", "/ʃ/", "consonant", "摩擦音", [example("ship", "🚢", "轮船"), example("fish", "🐟", "鱼")], "Shy sheep share shoes"),
   phoneme("zh", "/ʒ/", "consonant", "摩擦音", [example("television", "📺", "电视")], "Television treasures measure pleasure"),
   phoneme("h", "/h/", "consonant", "摩擦音", [example("hat", "🎩", "帽子")], "Happy hippos hug hats"),
-  phoneme("r", "/r/", "consonant", "摩擦音", [example("rabbit", "🐰", "兔子")], "Red rabbits race round"),
+  phoneme("r", "/ɹ/", "consonant", "摩擦音", [example("rabbit", "🐰", "兔子")], "Red rabbits race round"),
 
   phoneme("ch", "/tʃ/", "consonant", "破擦音", [example("chair", "🪑", "椅子")], "Cheerful children chase chickens"),
   phoneme("j", "/dʒ/", "consonant", "破擦音", [example("juice", "🧃", "果汁"), example("jam", "🍓", "果酱")], "Jolly giants juggle juice"),

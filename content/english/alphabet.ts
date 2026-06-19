@@ -13,16 +13,16 @@ export interface AlphabetEntry {
 }
 
 // 仅用于 TTS 朗读的字母名近似拼写（界面显示用 letter，不显示这里）。
-// 个别拼写按腾讯英文音色「合成→再识别」实测校准：ay/aitch/ar 会念错，改用下方拼写。
+// 英文朗读走浏览器原生音色；原 "ay"(A)/"ar"(R) 念不准，改用 "eigh"/"are"。
 const LETTER_NAMES: readonly string[] = [
-  "eigh", // A：原 "ay" 被念成 "A y"
+  "eigh", // A（原 "ay" 念不准）
   "bee",
   "see",
   "dee",
   "ee",
   "eff",
   "jee",
-  "aytch", // H：原 "aitch" 被念成 "I"
+  "aitch",
   "eye",
   "jay",
   "kay",
@@ -32,7 +32,7 @@ const LETTER_NAMES: readonly string[] = [
   "oh",
   "pee",
   "cue",
-  "are", // R：原 "ar" 被念成 "AR"
+  "are", // R（原 "ar" 念不准）
   "ess",
   "tee",
   "you",
@@ -48,7 +48,7 @@ const LETTER_SOUNDS: readonly string[] = [
   "/b/",
   "/k/",
   "/d/",
-  "/e/",
+  "/ɛ/",
   "/f/",
   "/g/",
   "/h/",
@@ -58,10 +58,10 @@ const LETTER_SOUNDS: readonly string[] = [
   "/l/",
   "/m/",
   "/n/",
-  "/ɒ/",
+  "/ɑ/",
   "/p/",
   "/kw/",
-  "/r/",
+  "/ɹ/",
   "/s/",
   "/t/",
   "/ʌ/",
@@ -75,7 +75,7 @@ const LETTER_SOUNDS: readonly string[] = [
 // 自然拼读「字母音」的 TTS 近似念法（en-US）。元音用近似元音词，辅音用「子音+schwa」。
 // 这些是 TTS 能稳定念出的近似，不是精准 IPA——可按真人听感逐个微调。
 const LETTER_SOUNDS_SAY: readonly string[] = [
-  "ah", // A /æ/
+  "at", // A /æ/（原 "ah" 是 /ɑ/，念错）
   "buh", // B
   "kuh", // C
   "duh", // D
@@ -83,13 +83,13 @@ const LETTER_SOUNDS_SAY: readonly string[] = [
   "fuh", // F
   "guh", // G
   "huh", // H
-  "ih", // I /ɪ/
+  "it", // I /ɪ/（原 "ih" 念不准）
   "juh", // J
   "kuh", // K
   "luh", // L
   "muh", // M
   "nuh", // N
-  "aw", // O /ɒ/
+  "ah", // O /ɑ/（美式短 o）
   "puh", // P
   "kwuh", // Q
   "ruh", // R
