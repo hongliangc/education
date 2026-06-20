@@ -1,0 +1,13 @@
+# 现网 HTTPS overlay（Phase 2）。仅 prod 经 COMPOSE_OVERLAY 叠加在 docker-compose.production.yml 之上。
+# 用 !override 整体替换 nginx 的 ports / volumes：加开 443、换成 nginx.production-https.conf、
+# 挂载宿主 /opt/kidora/tls（证书，由 setup-prod-tls.sh 维护）与 /opt/kidora/acme-webroot（ACME 挑战）。
+# 不叠加本文件时，nginx 仍是 80-only 的 production.yml + nginx.production.conf（回滚即去掉 overlay）。
+services:
+  nginx:
+    ports: !override
+      - "80:80"
+      - "443:443"
+    volumes: !override
+      - ./deploy/nginx.production-https.conf:/etc/nginx/conf.d/default.conf:ro
+      - /opt/kidora/tls:/etc/nginx/tls:ro
+      - /opt/kidora/acme-webroot:/var/www/acme:ro

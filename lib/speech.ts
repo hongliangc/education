@@ -48,6 +48,50 @@ export function isSpeechSupported(): boolean {
   return typeof window !== "undefined" && "speechSynthesis" in window;
 }
 
+// iOS Safari 的两道坎：①只允许在用户手势同步栈内启动音频，脱离手势(录音→识别→对话→TTS 多次
+// await 后)再 play() 会被拦；②录音(getUserMedia)会把 speechSynthesis 打哑、并把输出锁到听筒。
+// 对策：保留一个【共享播放元素】，在按下手势里先播一小段静音把它「点亮」，之后中文云音频统一用
+// 这个已解锁元素播放——可编程 play、走媒体声道(不受录音影响)，于是语音提问的回复也能正常出声。
+// 同时点亮 speechSynthesis 作为云音频不可用时的回退。幂等。
+const SILENT_WAV =
+  "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
+let sharedAudio: HTMLAudioElement | null = null;
+// 共享播放元素：所有中文云 TTS 都复用它（顺序播放，本就一次只响一段）。SSR / 不支持时返回 null。
+export function getSharedAudio(): HTMLAudioElement | null {
+  if (typeof Audio === "undefined") return null;
+  if (!sharedAudio) sharedAudio = new Audio();
+  return sharedAudio;
+}
+let audioOutputPrimed = false;
+let speechOutputPrimed = false;
+export function primeSpeechOutput(): void {
+  // ① 手势内播一段静音，解锁共享播放元素（之后异步 play 不再被拦）
+  if (!audioOutputPrimed) {
+    const el = getSharedAudio();
+    if (el) {
+      try {
+        el.src = SILENT_WAV;
+        const p = el.play();
+        if (p) p.then(() => undefined).catch(() => undefined);
+        audioOutputPrimed = true;
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+  // ② 点亮 speechSynthesis（HTMLAudio 不可用时的回退）
+  if (!speechOutputPrimed && isSpeechSupported()) {
+    try {
+      const u = new SpeechSynthesisUtterance(" ");
+      u.volume = 0;
+      window.speechSynthesis.speak(u);
+      speechOutputPrimed = true;
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
 function tokenize(text: string, lang: string): string[] {
   return lang.startsWith("zh")
     ? Array.from(text)
@@ -199,10 +243,16 @@ export function speakText(text: string, opts: SpeakOptions = {}): SpeechControll
           const { audioBase64, format } = await res.json();
           if (aborted) return;
           stopSpeaking(); // 停掉其它正在播的
-          const a = new Audio(`data:audio/${format};base64,${audioBase64}`);
+          // 复用已在手势内解锁的共享播放元素：iOS 上录音后/脱离手势仍可编程 play，且走媒体声道
+          // 不被录音锁到听筒；拿不到(SSR/不支持)再退回新建。换源前清旧回调，避免串台。
+          const a = getSharedAudio() ?? new Audio();
+          a.onended = null;
+          a.onerror = null;
+          a.onplay = null;
+          a.src = `data:audio/${format};base64,${audioBase64}`;
           audio = a;
           currentAudio = a;
-          if (opts.rate && opts.rate !== 1) a.playbackRate = opts.rate; // 语速按钮对云音频也生效
+          a.playbackRate = opts.rate && opts.rate !== 1 ? opts.rate : 1; // 复用时重置语速
           const finish = () => {
             stopRaf();
             if (currentAudio === a) currentAudio = null;

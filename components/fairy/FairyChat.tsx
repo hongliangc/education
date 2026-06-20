@@ -7,6 +7,7 @@ import { FairySprite, type FairyMood } from "@/components/fairy/FairySprite";
 import {
   speakChunks,
   stopSpeaking,
+  primeSpeechOutput,
   createRecorder,
   recognizeBlob,
   type SpeechController,
@@ -134,6 +135,8 @@ export function FairyChat({
   // 按住说话：按下。允许在「说话中」直接打断并开始录音（避免万一卡在 speaking 时锁死入口）；
   // 仅在 listening / thinking 时忽略，防止重复录音或抢答。
   const startTalk = async () => {
+    // 趁按下这一手势「点亮」朗读输出，iOS Safari 才允许稍后异步出声（精灵回复）。
+    primeSpeechOutput();
     if (status === "listening" || status === "thinking") return;
     speakRef.current?.stop();
     stopSpeaking();
@@ -195,6 +198,7 @@ export function FairyChat({
   };
 
   const submitTyped = () => {
+    primeSpeechOutput(); // 同上：手势内点亮朗读，回复才出声
     const q = draft;
     setDraft("");
     void ask(q);
@@ -246,6 +250,7 @@ export function FairyChat({
               {m.role === "fairy" && (
                 <button
                   onClick={() => {
+                    primeSpeechOutput();
                     speakRef.current?.stop();
                     speakRef.current = speakChunks(m.content, { lang: "zh-CN" });
                   }}
@@ -264,7 +269,10 @@ export function FairyChat({
             {suggestions.map((s) => (
               <button
                 key={s}
-                onClick={() => void ask(s)}
+                onClick={() => {
+                  primeSpeechOutput();
+                  void ask(s);
+                }}
                 disabled={status === "thinking"}
                 className="rounded-full bg-pink-50 ring-1 ring-pink-200 px-3 py-1.5 text-sm text-pink-600 transition hover:bg-pink-100 disabled:opacity-50"
               >

@@ -57,6 +57,17 @@ compose+=(
   -f deploy/docker-compose.production.yml
 )
 
+# 可选叠加：本地 https 预览（COMPOSE_OVERLAY=deploy/docker-compose.https.yml）追加一层
+# overlay（加开 443 + 挂 mkcert 证书）。prod 不设此变量 → 现网栈不受影响。
+if [ -n "${COMPOSE_OVERLAY:-}" ]; then
+  if [ -f "$COMPOSE_OVERLAY" ]; then
+    compose+=(-f "$COMPOSE_OVERLAY")
+  else
+    echo "COMPOSE_OVERLAY 指定的文件不存在：$COMPOSE_OVERLAY" >&2
+    exit 1
+  fi
+fi
+
 if [ "$PULL_IF_MISSING" = "1" ] && ! "${inspect[@]}" "${DOCKER_IMAGE}:${IMAGE_TAG}" >/dev/null 2>&1; then
   "${compose[@]}" pull web
 fi

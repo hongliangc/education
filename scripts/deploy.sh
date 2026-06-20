@@ -48,9 +48,14 @@ else
   APP_ENV_FILE="$DEPLOY_DIR/.env.production"
   # 域名 kidora.cn 未备案、被 webblock 拦截，绝对跳转到它会打不开。备案完成前默认回落到
   # 服务器公网 IP（取自 DEPLOY_HOST），让 IP 访问能正常拼跳转；备案后显式覆盖 PUBLIC_URL 即可。
-  PUBLIC_URL="${PUBLIC_URL:-http://${DEPLOY_HOST#*@}}"
+  PUBLIC_URL="${PUBLIC_URL:-https://${DEPLOY_HOST#*@}}"
   COMPOSE_SUDO=1
   PULL_IF_MISSING=1
+  # 现网 HTTPS（麦克风需 secure context）：叠加 443 overlay；证书由 scripts/setup-prod-tls.sh
+  # 维护在 /opt/kidora/tls（Let's Encrypt IP 证书，自动续签）。回滚 https 就清空 COMPOSE_OVERLAY。
+  COMPOSE_OVERLAY="${COMPOSE_OVERLAY:-deploy/docker-compose.https.prod.yml}"
+  # 探活走服务器本机 http（不受证书状态影响，bootstrap 自签期间也能过）。
+  HEALTH_URL="${HEALTH_URL:-http://localhost/api/health}"
 fi
 HEALTH_URL="${HEALTH_URL:-${PUBLIC_URL:-http://kidora.cn}/api/health}"
 
@@ -66,6 +71,9 @@ stack_env=(
   "HEALTH_URL=$HEALTH_URL"
   "COMPOSE_SUDO=$COMPOSE_SUDO"
   "PULL_IF_MISSING=$PULL_IF_MISSING"
+  # 可选的额外 compose 叠加文件（仅本地 https 预览用：scripts/dev-https.sh 设它指向
+  # deploy/docker-compose.https.yml）。prod 不设 → 空值，deploy-stack.sh 会忽略。
+  "COMPOSE_OVERLAY=${COMPOSE_OVERLAY:-}"
 )
 
 # ── local：直接在本机用上面这组入参跑 deploy-stack.sh，不接触服务器（exec 后不会进入下方 prod 段）──
@@ -88,8 +96,9 @@ fi
 ssh "$DEPLOY_HOST" "mkdir -p '$DEPLOY_DIR/deploy' '$DEPLOY_DIR/scripts'"
 # 只上传非密钥配置（compose / nginx / 共用的 deploy-stack.sh）；密钥不在其中。
 scp deploy/docker-compose.production.yml deploy/nginx.production.conf \
+  deploy/docker-compose.https.prod.yml deploy/nginx.production-https.conf \
   "${DEPLOY_HOST}:${DEPLOY_DIR}/deploy/"
-scp scripts/deploy-stack.sh "${DEPLOY_HOST}:${DEPLOY_DIR}/scripts/"
+scp scripts/deploy-stack.sh scripts/setup-prod-tls.sh "${DEPLOY_HOST}:${DEPLOY_DIR}/scripts/"
 
 if [ "$DEPLOY_MODE" = "transfer" ]; then
   echo "Transferring ${DOCKER_IMAGE}:${IMAGE_TAG} to ${DEPLOY_HOST}"
