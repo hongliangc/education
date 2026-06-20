@@ -55,24 +55,39 @@ export function isSpeechSupported(): boolean {
 // 同时点亮 speechSynthesis 作为云音频不可用时的回退。幂等。
 const SILENT_WAV =
   "data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=";
-let sharedAudio: HTMLAudioElement | null = null;
-// 共享播放元素：所有中文云 TTS 都复用它（顺序播放，本就一次只响一段）。SSR / 不支持时返回 null。
+// iOS 只能编程播放「手势内解锁过」的元素。分段朗读若始终用同一个共享元素，每段都要换 src→reload→
+// 段间卡顿。改用一个小池：播第 k 段时把第 k+1 段预灌进【另一个】已解锁元素，段末直接 play()、无 reload。
+const AUDIO_POOL_SIZE = 2; // 预取深度=1，最多「在播 1 段 + 预灌 1 段」→ 2 个元素轮流即可，相邻段互不冲突
+let sharedAudioPool: HTMLAudioElement[] | null = null;
+function ensureAudioPool(): HTMLAudioElement[] {
+  if (typeof Audio === "undefined") return [];
+  if (!sharedAudioPool)
+    sharedAudioPool = Array.from({ length: AUDIO_POOL_SIZE }, () => new Audio());
+  return sharedAudioPool;
+}
+// 共享播放元素（池中第一个）：speakText / speakTextStream 的单段播放复用它。SSR / 不支持时返回 null。
 export function getSharedAudio(): HTMLAudioElement | null {
-  if (typeof Audio === "undefined") return null;
-  if (!sharedAudio) sharedAudio = new Audio();
-  return sharedAudio;
+  return ensureAudioPool()[0] ?? null;
+}
+// 分段朗读用：取池中第 i 个已解锁元素（按段序 % 池大小轮流），让相邻两段落在不同元素上。
+export function getPooledAudio(i: number): HTMLAudioElement | null {
+  const pool = ensureAudioPool();
+  return pool.length ? pool[i % pool.length] : null;
 }
 let audioOutputPrimed = false;
 let speechOutputPrimed = false;
 export function primeSpeechOutput(): void {
-  // ① 手势内播一段静音，解锁共享播放元素（之后异步 play 不再被拦）
+  // ① 手势内给【池中每个】播放元素播一段静音，全部解锁（之后异步 play 不再被拦）。
+  //    分段朗读会轮流用多个元素，每个都必须在手势里点亮——否则非首段会被拦回退、又退回段间 reload。
   if (!audioOutputPrimed) {
-    const el = getSharedAudio();
-    if (el) {
+    const pool = ensureAudioPool();
+    if (pool.length) {
       try {
-        el.src = SILENT_WAV;
-        const p = el.play();
-        if (p) p.then(() => undefined).catch(() => undefined);
+        for (const el of pool) {
+          el.src = SILENT_WAV;
+          const p = el.play();
+          if (p) p.then(() => undefined).catch(() => undefined);
+        }
         audioOutputPrimed = true;
       } catch {
         /* ignore */
@@ -799,6 +814,19 @@ export function speakChunks(
     }
   };
 
+  // 取第 k 段对应的池元素（已在手势内解锁），清掉上一段遗留回调，设好 src（blob/MSE objectURL）与语速。
+  // 相邻段落在不同池元素上：播当前段时把下一段预灌进另一个，段末直接 play() 无需换 src → 段间无缝。
+  // 拿不到池（SSR/不支持）则退回新建元素，功能不变，只是少了 iOS 预解锁优势。
+  const prepSlot = (k: number, src: string): HTMLAudioElement => {
+    const el = getPooledAudio(k) ?? new Audio();
+    el.onended = null;
+    el.onerror = null;
+    el.onplay = null;
+    el.src = src;
+    el.playbackRate = opts.rate && opts.rate !== 1 ? opts.rate : 1;
+    return el;
+  };
+
   // 预取第 k 段音频（只取不播）：走流式端点 /api/speech/tts-stream。
   // 命中缓存→整段 mp3（带 Content-Length，时长已知）；未命中→MSE 渐进追加(边收边播)，
   // 服务端在 final 时落缓存（重听免合成）。返回的 Promise 在「首帧就绪 / 整段就绪」时 resolve，
@@ -820,16 +848,13 @@ export function speakChunks(
           const blob = await res.blob();
           if (!blob.size) return null;
           objUrls[k] = URL.createObjectURL(blob);
-          const a = new Audio(objUrls[k]!);
-          if (opts.rate && opts.rate !== 1) a.playbackRate = opts.rate;
-          return a;
+          return prepSlot(k, objUrls[k]!);
         }
 
         // 未命中：MSE 渐进追加。首帧到达即 resolve（首声快），其余在后台继续灌入。
         const ms = new MediaSource();
         objUrls[k] = URL.createObjectURL(ms);
-        const a = new Audio(objUrls[k]!);
-        if (opts.rate && opts.rate !== 1) a.playbackRate = opts.rate;
+        const a = prepSlot(k, objUrls[k]!); // 把 MSE objectURL 设给池元素 → 触发 sourceopen
         const body = res.body;
         let firstResolve!: () => void;
         let firstReject!: (e: unknown) => void;
@@ -992,7 +1017,7 @@ export function speakChunks(
     curCtrl = null;
     const base = offsets[k];
     const toks = tokensPer[k];
-    // 给播放元素绑定本段的结束/出错/进度回调。el 既可能是取到的 a，也可能是 iOS 上改用的共享元素。
+    // 给播放元素（已是手势内解锁的池元素）绑定本段的结束/出错/进度回调。
     const bindSeg = (el: HTMLAudioElement) => {
       curAudio = el;
       currentAudio = el; // 让 stopSpeaking / 其它来源能停掉本段
@@ -1019,25 +1044,9 @@ export function speakChunks(
         await a.play();
       } catch {
         if (stopped) return;
-        // iOS 自动播放拦截：把这段【已取到的腾讯流式音频】改用「按手势解锁的共享元素」播放，
-        // 保持实时流式童声、免重新合成；拿不到共享元素再退回整段重合成（Web Speech）。
-        const shared = getSharedAudio();
-        if (shared && shared !== a && objUrls[k]) {
-          if (currentAudio === a) currentAudio = null;
-          shared.playbackRate = a.playbackRate;
-          bindSeg(shared);
-          shared.src = objUrls[k]!;
-          try {
-            await shared.play();
-          } catch {
-            if (stopped) return;
-            if (currentAudio === shared) currentAudio = null;
-            fallbackChunk(k);
-          }
-        } else {
-          if (currentAudio === a) currentAudio = null;
-          fallbackChunk(k);
-        }
+        // a 已是手势内解锁的池元素，正常可直接播；仍被拦（如整页从未交互）→ 回退整段重合成。
+        if (currentAudio === a) currentAudio = null;
+        fallbackChunk(k);
       }
     }
   }
