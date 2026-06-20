@@ -990,33 +990,54 @@ export function speakChunks(
       return;
     }
     curCtrl = null;
-    curAudio = a;
-    currentAudio = a; // 让 stopSpeaking / 其它来源能停掉本段
     const base = offsets[k];
     const toks = tokensPer[k];
-    a.onended = () => {
-      stopRaf();
-      revoke(k);
-      if (currentAudio === a) currentAudio = null;
-      advance(k + 1);
+    // 给播放元素绑定本段的结束/出错/进度回调。el 既可能是取到的 a，也可能是 iOS 上改用的共享元素。
+    const bindSeg = (el: HTMLAudioElement) => {
+      curAudio = el;
+      currentAudio = el; // 让 stopSpeaking / 其它来源能停掉本段
+      el.onended = () => {
+        stopRaf();
+        revoke(k);
+        if (currentAudio === el) currentAudio = null;
+        advance(k + 1);
+      };
+      el.onerror = () => {
+        stopRaf();
+        revoke(k);
+        if (currentAudio === el) currentAudio = null;
+        advance(k + 1);
+      };
+      el.onplay = () => {
+        stopRaf();
+        rafId = requestAnimationFrame(() => tick(el, base, toks));
+      };
     };
-    a.onerror = () => {
-      stopRaf();
-      revoke(k);
-      if (currentAudio === a) currentAudio = null;
-      advance(k + 1);
-    };
-    a.onplay = () => {
-      stopRaf();
-      rafId = requestAnimationFrame(() => tick(a, base, toks));
-    };
+    bindSeg(a);
     if (!paused) {
       try {
         await a.play();
       } catch {
         if (stopped) return;
-        if (currentAudio === a) currentAudio = null;
-        fallbackChunk(k); // 自动播放被拦 → 回退（对自动播放更宽松）
+        // iOS 自动播放拦截：把这段【已取到的腾讯流式音频】改用「按手势解锁的共享元素」播放，
+        // 保持实时流式童声、免重新合成；拿不到共享元素再退回整段重合成（Web Speech）。
+        const shared = getSharedAudio();
+        if (shared && shared !== a && objUrls[k]) {
+          if (currentAudio === a) currentAudio = null;
+          shared.playbackRate = a.playbackRate;
+          bindSeg(shared);
+          shared.src = objUrls[k]!;
+          try {
+            await shared.play();
+          } catch {
+            if (stopped) return;
+            if (currentAudio === shared) currentAudio = null;
+            fallbackChunk(k);
+          }
+        } else {
+          if (currentAudio === a) currentAudio = null;
+          fallbackChunk(k);
+        }
       }
     }
   }
