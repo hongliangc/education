@@ -58,6 +58,9 @@ services:
       NEXT_PUBLIC_APP_URL: "${PUBLIC_URL:-http://kidora.cn}"
       NODE_ENV: "production"
       TTS_CACHE_DIR: "/app/.cache/tts"
+      # 流式 TTS(stream_wsv2)握手需要 AppId（账号级公开标识，非密钥）；不设则精灵语音回退
+      # 非流式合成、每段先试流式再重合成 → 卡。账号 AppId=1307984055。
+      TENCENT_APPID: "${TENCENT_APPID:-1307984055}"
       # 视频影院后端：走内网访问同栈 OpenList 容器。管理员账号在 .env.production
       # 设 OPENLIST_USERNAME/PASSWORD；BASE_URL 是内网常量，固定在此、不进 .env.production。
       OPENLIST_BASE_URL: "http://openlist:5244"
