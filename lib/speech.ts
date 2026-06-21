@@ -343,8 +343,23 @@ export function speakText(text: string, opts: SpeakOptions = {}): SpeechControll
 /** 立即停掉所有朗读（云音频 + Web Speech）。用于切场景 / 单字点读前清场。 */
 export function stopSpeaking(): void {
   if (currentAudio) {
-    currentAudio.pause();
+    const a = currentAudio;
     currentAudio = null;
+    // 先摘回调再卸源：清空 src 会触发 emptied/error，若留着分段朗读的 onerror=advance 会被误判成
+    // 「本段出错」而自动跳播下一段，反而又出声。
+    a.onended = null;
+    a.onerror = null;
+    a.onplay = null;
+    a.pause();
+    // 只 pause() 会保留 src + 进度：被暂停的故事朗读元素，会被「iOS 录音中断结束后的音频会话恢复」
+    // 自动续播（暂停故事→开精灵→按住说话→西游记又响），任何对该元素的 stray play() 同理。
+    // 卸掉 src 让它真正停住、无法被恢复；下一次朗读都会重新设 src，对正常流程无副作用。
+    try {
+      a.removeAttribute("src");
+      a.load();
+    } catch {
+      /* ignore */
+    }
   }
   if (isSpeechSupported()) window.speechSynthesis.cancel();
 }
@@ -642,8 +657,44 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
     });
   };
 
+  // iOS：必须复用「手势内已解锁」的共享播放元素（脱离手势新建的 <audio> 会被 iOS 拦 → 回退整段
+  // REST，慢且可能截断）。换源前清旧回调、重置语速；拿不到池(SSR/不支持)再退回新建。
+  const prepShared = (src: string): HTMLAudioElement => {
+    const a = getSharedAudio() ?? new Audio();
+    a.onended = null;
+    a.onerror = null;
+    a.onplay = null;
+    a.src = src;
+    a.playbackRate = opts.rate && opts.rate !== 1 ? opts.rate : 1;
+    return a;
+  };
+
   void (async () => {
     try {
+      // 非 MSE（iPhone Safari 等无 MediaSource）：旧实现 await blob 整段下完再播 → 未命中的精灵回复
+      // 要等整段合成完才出声（首句严重延迟）。改用原生 <audio> 直接边下边播流式端点：首声快、整段
+      // 无 gap（PC 走下面的 MSE，效果一致）。pad=1 让服务端尾部补一小段静音，抵消 Safari 对无
+      // Content-Length 流「掐掉末尾几个字」的已知问题（被掐掉的是静音，而非真正的结尾）。
+      if (!canMse) {
+        stopSpeaking(); // 停掉其它正在播的
+        const a = prepShared(`${url}&pad=1`);
+        attach(a);
+        // attach 默认把 onerror 当正常结束；这里区分两种情况：
+        // ① 已经出过声（如尾部静音帧解码失败）→ 当作正常结束，绝不整段用 Web Speech 重读（否则双声）。
+        // ② 还没出声就失败（503 / 网络 / 取流失败）→ 回退整段 speakText（其内部再回退 Web Speech）。
+        a.onerror = () => {
+          if (ended) return;
+          if (audio === a && a.currentTime > 0) {
+            endNow();
+            return;
+          }
+          if (currentAudio === a) currentAudio = null;
+          audio = null;
+          fallbackWhole();
+        };
+        return;
+      }
+
       const res = await fetch(url, { signal: ac.signal });
       if (aborted) return;
       if (!res.ok || !res.body) {
@@ -652,21 +703,9 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
       }
       stopSpeaking(); // 停掉其它正在播的
 
-      if (!canMse) {
-        const blob = await res.blob(); // 整段下完再播：时长准确、不丢尾音
-        if (aborted) return;
-        if (!blob.size) {
-          fallbackWhole();
-          return;
-        }
-        objUrl = URL.createObjectURL(blob);
-        attach(new Audio(objUrl));
-        return;
-      }
-
       const ms = new MediaSource();
       objUrl = URL.createObjectURL(ms);
-      attach(new Audio(objUrl));
+      attach(prepShared(objUrl)); // 把 MSE objectURL 设给已解锁的共享元素 → 触发 sourceopen
       await new Promise<void>((resolve) =>
         ms.addEventListener("sourceopen", () => resolve(), { once: true }),
       );

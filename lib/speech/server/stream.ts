@@ -17,6 +17,24 @@ const APP_ID = process.env.TENCENT_APPID ?? "1307984055";
 const VOICE_ZH = Number(process.env.TTS_VOICE_ZH ?? DEFAULT_VOICE_ZH);
 const VOICE_EN = Number(process.env.TTS_VOICE_EN ?? DEFAULT_VOICE_EN);
 
+// ~0.5s 静音 MP3（MPEG-2 Layer III, 16kHz 单声道, 与腾讯流同格式）：帧头 FF F3 48 C0 + 全 0 的
+// 边信息/主数据（part2_3_length=0、big_values=0 → 解码即静音），每帧 144 字节 / 576 样本。
+// iPhone Safari 无 MediaSource，只能用原生 <audio> 边下边播；它对无 Content-Length 的流会「掐掉
+// 末尾几个字」。pad=1 时把这段静音拼到合成尾部，被掐掉的就是静音而非真正的最后几个字。
+const SILENCE_MP3 = (() => {
+  const FRAME = 144;
+  const FRAMES = 14; // ~0.5s
+  const buf = Buffer.alloc(FRAME * FRAMES);
+  for (let i = 0; i < FRAMES; i++) {
+    const o = i * FRAME;
+    buf[o] = 0xff;
+    buf[o + 1] = 0xf3;
+    buf[o + 2] = 0x48;
+    buf[o + 3] = 0xc0;
+  }
+  return buf;
+})();
+
 // 音色解析（路由查缓存键 与 synthesizeStream 合成/写缓存 必须用同一份 → 同一段文必然同一 key）。
 export function resolveStreamVoice(lang: string, voice?: number): number {
   const isZh = (lang ?? "zh-CN").startsWith("zh");
@@ -63,10 +81,11 @@ function buildSignedUrl(voice: number): { url: string; sessionId: string } {
   };
 }
 
-/** 返回一段 mp3 字节流（ReadableStream），由路由直接作为 audio/mpeg 响应体下发。 */
+/** 返回一段 mp3 字节流（ReadableStream），由路由直接作为 audio/mpeg 响应体下发。
+ *  pad=true 时在合成结束后追加一小段静音（仅给 iPhone 原生边下边播抵消掐尾用），不写入缓存。 */
 export function synthesizeStream(
   text: string,
-  opts: { lang?: string; voice?: number } = {},
+  opts: { lang?: string; voice?: number; pad?: boolean } = {},
 ): ReadableStream<Uint8Array> {
   if (!isSpeechConfigured()) throw new Error("speech not configured");
   const lang = opts.lang ?? "zh-CN";
@@ -129,8 +148,17 @@ export function synthesizeStream(
             );
           }
           if (msg.final === 1) {
-            // 完整结束：整段 mp3 落缓存（失败不影响播放），再关闭流
+            // 完整结束：整段 mp3 落缓存（失败不影响播放）。缓存只存真实语音(parts)、不含静音尾巴——
+            // 命中缓存走整段下发(带 Content-Length)本就不丢尾音。
             writeTtsCache(cacheKey, Buffer.concat(parts)).catch(() => {});
+            // 边下边播的客户端(pad=1)：拼一小段静音再收尾，抵消 Safari 掐尾。
+            if (opts.pad && !closed) {
+              try {
+                controller.enqueue(new Uint8Array(SILENCE_MP3));
+              } catch {
+                /* ignore */
+              }
+            }
             finish();
           }
           return;

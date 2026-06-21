@@ -21,6 +21,8 @@ export async function GET(req: Request) {
   const lang = searchParams.get("lang") ?? "zh-CN";
   const voiceRaw = Number(searchParams.get("voice"));
   const voice = Number.isFinite(voiceRaw) && voiceRaw > 0 ? voiceRaw : undefined;
+  // pad=1：无 MediaSource 的客户端（iPhone Safari）用原生 <audio> 边下边播，需在尾部补静音抵消掐尾。
+  const pad = searchParams.get("pad") === "1";
 
   try {
     // 缓存优先：命中则直接整段下发（带 Content-Length，浏览器即知时长→高亮准、无尾音截断），
@@ -38,7 +40,7 @@ export async function GET(req: Request) {
       });
     }
     // 未命中：流式合成边收边发，合成完整(final=1)时由 synthesizeStream 落缓存。
-    const stream = synthesizeStream(text, { lang, voice });
+    const stream = synthesizeStream(text, { lang, voice, pad });
     return new Response(stream, {
       headers: {
         "Content-Type": "audio/mpeg",

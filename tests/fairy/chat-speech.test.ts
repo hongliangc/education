@@ -2,14 +2,17 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-test("uses chunked speech for fairy replies so long answers continue to the end", async () => {
+test("uses single-stream speech for fairy replies so unique answers play gaplessly", async () => {
   const source = await readFile(
     new URL("../../components/fairy/FairyChat.tsx", import.meta.url),
     "utf8",
   );
 
-  assert.match(source, /speakRef\.current = speakChunks\(text,/);
-  assert.doesNotMatch(source, /speakRef\.current = speakTextStream\(text,/);
+  // 回复每次唯一、永不命中缓存：分段会在每个段边界各等一次实时合成 → 段间卡顿。
+  // 必须用单条连续流式（speakTextStream），未命中延迟只付一次、之后无段边界。
+  // 见 bugfix/2026-06-21-fairy-uncached-chunk-gap.md。
+  assert.match(source, /speakRef\.current = speakTextStream\(text,/);
+  assert.doesNotMatch(source, /speakRef\.current = speakChunks\(text,/);
 });
 
 test("voice input failures show a concrete hint and keep permission errors retryable", async () => {
