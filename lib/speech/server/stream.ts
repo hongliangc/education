@@ -17,23 +17,32 @@ const APP_ID = process.env.TENCENT_APPID ?? "1307984055";
 const VOICE_ZH = Number(process.env.TTS_VOICE_ZH ?? DEFAULT_VOICE_ZH);
 const VOICE_EN = Number(process.env.TTS_VOICE_EN ?? DEFAULT_VOICE_EN);
 
-// ~0.5s 静音 MP3（MPEG-2 Layer III, 16kHz 单声道, 与腾讯流同格式）：帧头 FF F3 48 C0 + 全 0 的
-// 边信息/主数据（part2_3_length=0、big_values=0 → 解码即静音），每帧 144 字节 / 576 样本。
-// iPhone Safari 无 MediaSource，只能用原生 <audio> 边下边播；它对无 Content-Length 的流会「掐掉
-// 末尾几个字」。pad=1 时把这段静音拼到合成尾部，被掐掉的就是静音而非真正的最后几个字。
-const SILENCE_MP3 = (() => {
-  const FRAME = 144;
-  const FRAMES = 14; // ~0.5s
-  const buf = Buffer.alloc(FRAME * FRAMES);
-  for (let i = 0; i < FRAMES; i++) {
-    const o = i * FRAME;
+// 静音 MP3 帧（MPEG-2 Layer III, 16kHz 单声道, 与腾讯流同格式）：帧头 FF F3 48 C0 + 全 0 的
+// 边信息/主数据（part2_3_length=0、big_values=0 → 解码即静音），每帧 144 字节 / 576 样本 ≈ 36ms。
+const SILENCE_FRAME = 144;
+function silentFrames(n: number): Buffer {
+  const buf = Buffer.alloc(SILENCE_FRAME * n);
+  for (let i = 0; i < n; i++) {
+    const o = i * SILENCE_FRAME;
     buf[o] = 0xff;
     buf[o + 1] = 0xf3;
     buf[o + 2] = 0x48;
     buf[o + 3] = 0xc0;
   }
   return buf;
-})();
+}
+// ~0.5s 尾部静音：iPhone Safari 无 MediaSource，只能用原生 <audio> 边下边播；它对无 Content-Length
+// 的流会「掐掉末尾几个字」。pad=1 时把这段静音拼到合成尾部，被掐掉的就是静音而非真正的最后几个字。
+const SILENCE_MP3 = silentFrames(14);
+
+// 首段「暖管线」前导静音：iPhone 原生 <audio> 在真实首帧到达前收不到任何字节，管线 ~0.8s 后才冷启动，
+// 额外叠加 ~0.3-0.5s 原生启动缓冲（这就是「PC 快、iPhone 首段慢」的差值）。pad=1 时从 WS ready 起
+// 持续下发小段静音「喂活」管线，真实首帧一到即无缝切真声 → 省掉 iOS 冷启动那一截、消除「卡死」感。
+// 仅 pad（iOS 原生）路径；前导静音同样不写缓存。起点选 ready（握手已成）而非建流：握手前失败时
+// currentTime 仍为 0 → 客户端 onerror 可正常回退 Web Speech，不被前导静音误判成「已出声」。
+const LEAD_IN_TICK_MS = 120; // 每 120ms 补一口
+const LEAD_IN_TICK_FRAMES = 4; // 每口 ~144ms 音频：略快于实时，留薄余量防欠载、又不堆积过多延时
+const LEAD_IN_CHUNK = silentFrames(LEAD_IN_TICK_FRAMES);
 
 // 音色解析（路由查缓存键 与 synthesizeStream 合成/写缓存 必须用同一份 → 同一段文必然同一 key）。
 export function resolveStreamVoice(lang: string, voice?: number): number {
@@ -95,6 +104,14 @@ export function synthesizeStream(
 
   let ws: WebSocket | null = null;
   let closed = false;
+  let firstReal = false; // 是否已收到第一帧真实音频（用于停掉前导静音）
+  let leadIn: ReturnType<typeof setInterval> | null = null;
+  const stopLeadIn = () => {
+    if (leadIn) {
+      clearInterval(leadIn);
+      leadIn = null;
+    }
+  };
   // 累积所有 mp3 帧：仅在收到 final=1（完整结束）时整段落缓存；
   // 出错 / ws 异常关闭 / 客户端中断(cancel) 都不写 → 绝不缓存半段。
   const parts: Uint8Array[] = [];
@@ -107,6 +124,7 @@ export function synthesizeStream(
       const finish = (err?: unknown) => {
         if (closed) return;
         closed = true;
+        stopLeadIn();
         try {
           ws?.close();
         } catch {
@@ -146,6 +164,23 @@ export function synthesizeStream(
                 data: "",
               }),
             );
+            // 暖管线：握手已成、合成已请求 → 从现在起持续下发前导静音喂活 iOS 原生播放管线，
+            // 真实首帧一到即停（见下方二进制分支）。仅 pad（iOS 原生边下边播）路径需要。
+            if (opts.pad && !leadIn && !firstReal) {
+              const pump = () => {
+                if (closed || firstReal) {
+                  stopLeadIn();
+                  return;
+                }
+                try {
+                  controller.enqueue(new Uint8Array(LEAD_IN_CHUNK)); // 不进 parts → 不污染缓存
+                } catch {
+                  stopLeadIn();
+                }
+              };
+              pump(); // 立刻喂第一口，元素尽快起播
+              leadIn = setInterval(pump, LEAD_IN_TICK_MS);
+            }
           }
           if (msg.final === 1) {
             // 完整结束：整段 mp3 落缓存（失败不影响播放）。缓存只存真实语音(parts)、不含静音尾巴——
@@ -165,6 +200,11 @@ export function synthesizeStream(
         }
         // 二进制帧：mp3 音频（既下发浏览器，也累积以便 final 时落缓存）
         if (!closed) {
+          // 第一帧真声 → 停掉前导静音，真声紧跟其后无缝衔接（不会在真声之间夹静音）。
+          if (!firstReal) {
+            firstReal = true;
+            stopLeadIn();
+          }
           const bytes = new Uint8Array(ev.data as ArrayBuffer);
           parts.push(bytes);
           controller.enqueue(bytes);
@@ -177,6 +217,7 @@ export function synthesizeStream(
     cancel() {
       // 客户端断开（换下一句 / 关闭弹层）→ 关掉上游 WS，停止计费。
       closed = true;
+      stopLeadIn();
       try {
         ws?.close();
       } catch {

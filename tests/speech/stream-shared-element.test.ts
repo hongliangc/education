@@ -47,3 +47,23 @@ test("tts-stream route forwards the pad flag to the synthesizer", async () => {
   assert.match(source, /pad = searchParams\.get\("pad"\) === "1"/);
   assert.match(source, /synthesizeStream\(text, \{ lang, voice, pad \}\)/);
 });
+
+test("tts-stream server warms the iOS pipeline with lead-in silence, only when pad is requested", async () => {
+  // 见 bugfix/2026-06-22-fairy-ios-first-segment-latency.md：iPhone 首段慢 = 腾讯首帧硬地板
+  // + iOS 原生 <audio> 冷启动缓冲。pad=1 时从 ready 起下发前导静音喂活管线、真实首帧到达即停。
+  const source = await readFile(
+    new URL("../../lib/speech/server/stream.ts", import.meta.url),
+    "utf8",
+  );
+
+  // 前导静音与尾部静音复用同一套静音帧生成器（帧头 FF F3 48 C0）。
+  assert.match(source, /function silentFrames\(/);
+  assert.match(source, /const LEAD_IN_CHUNK = silentFrames\(/);
+  // 仅 pad（iOS 原生边下边播）路径、首帧前、ready 之后才下发前导静音，且不进 parts（不污染缓存）。
+  assert.match(source, /opts\.pad && !leadIn && !firstReal/);
+  assert.match(source, /controller\.enqueue\(new Uint8Array\(LEAD_IN_CHUNK\)\)/);
+  // 真实首帧一到即停掉前导静音（真声之间绝不夹静音）。
+  assert.match(source, /firstReal = true;\s+stopLeadIn\(\);/);
+  // 客户端断开时清掉定时器，避免泄漏。
+  assert.match(source, /cancel\(\)[\s\S]*?stopLeadIn\(\);/);
+});
