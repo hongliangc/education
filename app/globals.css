@@ -19,12 +19,23 @@
 html, body {
   background: linear-gradient(180deg, #bae6fd 0%, #7dd3fc 40%, #86efac 100%);
   color: var(--color-ink);
-  min-height: 100%;
+  /* 100dvh：随 iOS Safari 工具栏伸缩取“动态视口高度”，避免 100vh 在移动端的高度跳动/裁切 */
+  min-height: 100dvh;
 }
 
 body {
   font-family: var(--font-sans);
   -webkit-tap-highlight-color: transparent;
+  /* 防止移动端横向溢出导致的“排版乱/可横向滑动” */
+  overflow-x: hidden;
+}
+
+/* ===== 移动端安全区（刘海 / 底部手势条），配合 layout 的 viewportFit:"cover" ===== */
+.safe-t { padding-top: env(safe-area-inset-top); }
+.safe-b { padding-bottom: env(safe-area-inset-bottom); }
+.safe-x {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 /* ===== Keyframes (移植自原型) ===== */

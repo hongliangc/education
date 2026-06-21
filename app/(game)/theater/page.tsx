@@ -127,6 +127,17 @@ export default function TheaterPage() {
     ? categories.find((c) => c.key === activeCategory)?.title ?? null
     : null;
 
+  // Episodes = the playing video's collection siblings (already episode-sorted in the catalog),
+  // powering 下一集 / 选集 for multi-video folders. openVideo keeps the star-unlock gating.
+  const episodeSiblings = activeVideo
+    ? categories.find((c) => c.key === activeVideo.category)?.videos ?? []
+    : [];
+  const currentEpisodeIndex = activeVideo
+    ? episodeSiblings.findIndex((video) => video.id === activeVideo.id)
+    : -1;
+  const nextEpisode =
+    currentEpisodeIndex >= 0 ? episodeSiblings[currentEpisodeIndex + 1] : undefined;
+
   return (
     <main className="relative min-h-screen px-4 pb-12 pt-16" style={mainStyle}>
       <div className="mx-auto max-w-6xl">
@@ -160,8 +171,15 @@ export default function TheaterPage() {
           loading={playLoading}
           error={playError ?? undefined}
           resumeAtSec={resumeAtSec}
+          episodes={episodeSiblings.map((video) => ({ id: video.id, title: video.title }))}
+          currentEpisodeId={activeVideo.id}
           onRefreshSource={refreshSource}
           onBack={stopPlayback}
+          onNext={nextEpisode ? () => openVideo(nextEpisode) : undefined}
+          onSelectEpisode={(id) => {
+            const target = episodeSiblings.find((video) => video.id === id);
+            if (target) openVideo(target);
+          }}
         />
       )}
 

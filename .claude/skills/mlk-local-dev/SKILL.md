@@ -20,6 +20,11 @@ cmd.exe /c start http://localhost/  # 打开 Windows 浏览器（改完代码记
 docker compose ps                   # 看状态     docker compose down  # 停栈
 ```
 
+## 多端预览（移动端排版）
+- 像手机一样交互：`npx playwright open --device="iPhone 13" http://localhost/`（真 WebKit）。
+- 多视口批量截图：`node scripts/preview-devices.mjs [url]` → `tmp/preview/`。
+- 首次需 `npx playwright install webkit chromium`。⚠️ 全屏/音量/自动播放等 iOS 系统级行为以真机为准（发现网后 iPhone 验）。
+
 ## 验证
 `curl -s http://localhost/api/health` 返回 `"database":true`、`http://localhost/` 能打开 = 通过。
 

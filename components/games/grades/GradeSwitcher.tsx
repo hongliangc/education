@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { GRADE_LABELS, type Grade } from "@/lib/grades";
+import { GRADE_SHORT_LABELS, type Grade } from "@/lib/grades";
 import { GradePicker } from "./GradePicker";
 
 // Compact in-game control showing the active grade; tapping it opens the full picker so a
@@ -25,7 +25,7 @@ export function GradeSwitcher({
         aria-expanded={open}
         className="inline-flex items-center gap-1 rounded-full bg-white/80 px-3 py-1 text-sm font-bold text-slate-700 ring-1 ring-slate-200 transition active:scale-95"
       >
-        🎓 {GRADE_LABELS[value]}
+        🎓 {GRADE_SHORT_LABELS[value]}
         <span className="text-slate-400">{open ? "▴" : "▾"}</span>
       </button>
 

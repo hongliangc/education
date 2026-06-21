@@ -37,6 +37,7 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
   - 预演：`node scripts/sync-reward-resources.mjs --dry-run`
   - 应用：`node scripts/sync-reward-resources.mjs`
 - **`ts-resolve-hooks.mjs`** — ESM resolve 钩子：把无扩展名的相对导入重试为 `.ts`，让离线 node 脚本能 import 走 Turbopack 打包的内容模块（被 `sync-reward-resources.mjs` 用）。
+- **`preview-devices.mjs`** — 多端预览截图：Playwright 真 WebKit + Chromium 把 URL 在 iPhone/横屏/Pixel/PC 视口各截一张到 `tmp/preview/`，核对移动端排版。`node scripts/preview-devices.mjs [url]`（默认 `http://localhost/`）。首次需 `npx playwright install webkit chromium`。交互体验：`npx playwright open --device="iPhone 13" http://localhost/`。⚠️ 全屏/音量/自动播放等 iOS 系统级行为以真机为准。
 
 ## 待补（下次需要时直接写成本目录脚本，别再写 `/tmp`）
 

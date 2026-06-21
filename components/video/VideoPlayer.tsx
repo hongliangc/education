@@ -9,6 +9,9 @@ import { VideoControls } from "@/components/video/VideoControls";
 import { useHlsVideo } from "@/components/video/useHlsVideo";
 import { useVideoHotkeys } from "@/components/video/useVideoHotkeys";
 import { useVideoMediaState } from "@/components/video/useVideoMediaState";
+import { useLandscapeFullscreen } from "@/components/video/useLandscapeFullscreen";
+import type { EpisodeItem } from "@/components/video/EpisodeMenu";
+import { BackIcon, LockIcon } from "@/components/video/icons";
 import { readRememberedQuality, rememberQuality } from "@/lib/video/quality-storage";
 
 interface VideoPlayerProps {
@@ -19,8 +22,12 @@ interface VideoPlayerProps {
   loading?: boolean;
   error?: string;
   resumeAtSec?: number;
+  episodes?: EpisodeItem[];
+  currentEpisodeId?: string;
   onRefreshSource?: (resumeAtSec: number) => void;
   onBack: () => void;
+  onNext?: () => void;
+  onSelectEpisode?: (id: string) => void;
 }
 
 const EMPTY_VARIANTS: OpenListVariant[] = [];
@@ -33,8 +40,12 @@ export function VideoPlayer({
   loading = false,
   error,
   resumeAtSec = 0,
+  episodes,
+  currentEpisodeId,
   onRefreshSource,
   onBack,
+  onNext,
+  onSelectEpisode,
 }: VideoPlayerProps) {
   const variantList = variants && variants.length > 0 ? variants : EMPTY_VARIANTS;
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -49,7 +60,9 @@ export function VideoPlayer({
 
   const [activeQuality, setActiveQuality] = useState<string | undefined>(undefined);
   const [controlsVisible, setControlsVisible] = useState(true);
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [rate, setRate] = useState(1);
+  const { isFullscreen, toggle: toggleFullscreen } = useLandscapeFullscreen(containerRef, videoRef);
 
   const { playing, muted, volume, currentTime, duration, bufferedEnd } = useVideoMediaState(
     videoRef,
@@ -76,11 +89,11 @@ export function VideoPlayer({
     onRefreshRef.current?.(videoRef.current?.currentTime ?? 0);
   });
 
+  // 应用播放速度；切清晰度/换源会把 video.playbackRate 重置回 1，故依赖 activeSrc 重新施加。
   useEffect(() => {
-    const onFsChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
-    document.addEventListener("fullscreenchange", onFsChange);
-    return () => document.removeEventListener("fullscreenchange", onFsChange);
-  }, []);
+    const video = videoRef.current;
+    if (video) video.playbackRate = rate;
+  }, [rate, activeSrc]);
 
   useEffect(
     () => () => {
@@ -136,10 +149,6 @@ export function VideoPlayer({
     const video = videoRef.current;
     if (video) video.muted = !video.muted;
   };
-  const toggleFullscreen = () => {
-    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
-    else void containerRef.current?.requestFullscreen().catch(() => undefined);
-  };
   const selectQuality = (quality: string) => {
     const video = videoRef.current;
     pendingResumeRef.current = video?.currentTime ?? 0;
@@ -177,9 +186,10 @@ export function VideoPlayer({
         poster={posterUrl}
         playsInline
         controls={false}
-        onClick={togglePlay}
+        onClick={locked ? undefined : togglePlay}
       />
 
+      {!locked && (
       <div
         className={cn(
           "pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 via-black/30 to-transparent px-4 py-4 transition-all duration-300 sm:px-6",
@@ -191,17 +201,18 @@ export function VideoPlayer({
             type="button"
             onClick={onBack}
             aria-label="返回片库"
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-white/10 text-2xl font-bold ring-1 ring-white/20 backdrop-blur transition hover:bg-white/20"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/15 hover:text-white"
           >
-            ‹
+            <BackIcon className="h-6 w-6 sm:h-7 sm:w-7" />
           </button>
           <h1 className="min-w-0 flex-1 truncate text-lg font-bold drop-shadow sm:text-2xl">
             {title}
           </h1>
         </div>
       </div>
+      )}
 
-      {!showOverlay && (
+      {!showOverlay && !locked && (
         <div
           className={cn(
             "absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent px-3 pb-4 pt-24 transition-all duration-300 sm:px-6",
@@ -216,17 +227,36 @@ export function VideoPlayer({
             muted={muted}
             volume={volume}
             isFullscreen={isFullscreen}
+            rate={rate}
             variants={variantList}
             activeQuality={activeQuality}
+            hasNext={Boolean(onNext)}
+            episodes={episodes}
+            currentEpisodeId={currentEpisodeId}
             onSeek={seekTo}
             onSeekBy={seekBy}
             onTogglePlay={togglePlay}
             onToggleMute={toggleMute}
             onVolume={setVolumeValue}
+            onRate={setRate}
             onSelectQuality={selectQuality}
             onToggleFullscreen={toggleFullscreen}
+            onLock={() => setLocked(true)}
+            onNext={onNext}
+            onSelectEpisode={onSelectEpisode}
           />
         </div>
+      )}
+
+      {locked && (
+        <button
+          type="button"
+          onClick={() => setLocked(false)}
+          aria-label="解锁屏幕"
+          className="absolute left-3 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-black/40 text-white ring-1 ring-white/25 backdrop-blur transition hover:bg-black/60"
+        >
+          <LockIcon className="h-5 w-5" />
+        </button>
       )}
 
       {showOverlay && (

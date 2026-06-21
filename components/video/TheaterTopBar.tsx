@@ -35,7 +35,7 @@ export function TheaterTopBar({
   const inCategory = activeCategoryTitle !== null;
 
   return (
-    <div className="sticky top-16 z-20 mb-6">
+    <div className="sticky top-[calc(env(safe-area-inset-top)_+_4rem)] z-20 mb-6">
       <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-black/45 px-3 py-3 ring-1 ring-white/10 backdrop-blur-xl">
         {inCategory ? (
           <>

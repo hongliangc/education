@@ -16,6 +16,17 @@ export const GRADE_LABELS: Record<Grade, string> = {
   G3: "三年级",
 };
 
+// Short labels for compact controls (e.g. the in-HUD GradeSwitcher button) where the full
+// "幼儿园大班" would crowd the top bar on phones. The full label still shows in the dropdown.
+export const GRADE_SHORT_LABELS: Record<Grade, string> = {
+  K1: "小班",
+  K2: "中班",
+  K3: "大班",
+  G1: "一年级",
+  G2: "二年级",
+  G3: "三年级",
+};
+
 export function isGrade(value: unknown): value is Grade {
   return typeof value === "string" && (GRADES as readonly string[]).includes(value);
 }
