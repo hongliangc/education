@@ -5,6 +5,7 @@
 
 import { DEFAULT_VOICE_ZH, DEFAULT_VOICE_EN, voiceMatchesLang } from "./speech/voices";
 import { TTS_MAX_CHARS, splitForTts } from "./speech/chunking";
+import { perfEnabled, startMarks, newRid, mark, sendPerf, type PerfMarks } from "./speech/perf";
 
 export interface SpeakOptions {
   lang?: string;
@@ -13,6 +14,7 @@ export interface SpeakOptions {
   voice?: number; // 腾讯云大模型音色 id；不传则用用户偏好/默认
   onWord?: (index: number, word: string) => void;
   onEnd?: () => void;
+  onFirstAudio?: () => void; // 首个有声样本（真正听到声音）时回调一次，用于端到端总等待埋点
 }
 
 /** 一次朗读的控制器：支持暂停/继续/停止（暂停保留进度，可从原处继续）。 */
@@ -111,6 +113,18 @@ function tokenize(text: string, lang: string): string[] {
   return lang.startsWith("zh")
     ? Array.from(text)
     : text.split(/(\s+|[.,!?；。！？])/).filter((s) => s.trim().length);
+}
+
+// 送给浏览器原生 Web Speech 的文本先剔除 emoji——否则它会把「✨🤔」念成 "sparkles / thinking face"，
+// 很出戏（机械音读 emoji 的根因）。剔 emoji / 变体选择符 / ZWJ / keycap / 区域指示符，与服务端
+// sanitizeForTts 一致；只净化「要朗读的副本」，气泡展示文本不变。云 TTS 由服务端净化，这里只管回退。
+function sanitizeForSpeech(text: string): string {
+  return text
+    .replace(/\p{Extended_Pictographic}/gu, "")
+    .replace(/[\u{FE00}-\u{FE0F}\u{200D}\u{20E3}]/gu, "")
+    .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 // ---------- Web Speech 回退 ----------
@@ -223,7 +237,13 @@ export function speakText(text: string, opts: SpeakOptions = {}): SpeechControll
     }
     await ensureVoicesLoaded();
     if (aborted) return;
-    const utter = new SpeechSynthesisUtterance(text);
+    const spoken = sanitizeForSpeech(text);
+    if (!spoken) {
+      // 纯 emoji（极罕见）：无可朗读内容，直接收尾，别让 UI 卡在「说话中」。
+      opts.onEnd?.();
+      return;
+    }
+    const utter = new SpeechSynthesisUtterance(spoken);
     utter.lang = lang;
     utter.rate = opts.rate ?? 1;
     utter.pitch = opts.pitch ?? 1.05;
@@ -568,13 +588,17 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
   if (cloudTtsUnavailable || typeof window === "undefined" || lang.startsWith("en"))
     return speakText(text, opts);
 
+  const canMse =
+    typeof MediaSource !== "undefined" && MediaSource.isTypeSupported("audio/mpeg");
+  // 首段延时诊断埋点（默认关闭，?ttsperf=1 开启）：rid 串起服务端 [tts-timing] 与客户端 [tts-perf]。
+  const perf: PerfMarks | null = perfEnabled() ? startMarks(newRid(), canMse ? "mse" : "native") : null;
   const url = `/api/speech/tts-stream?${new URLSearchParams({
     text,
     lang,
     voice: String(resolveVoice(lang, opts.voice)),
+    ...(perf ? { rid: perf.rid } : {}),
   }).toString()}`;
-  const canMse =
-    typeof MediaSource !== "undefined" && MediaSource.isTypeSupported("audio/mpeg");
+  const perfUrl = canMse ? url : `${url}&pad=1`; // 与实际请求 URL 一致，供 Resource Timing 匹配
 
   let aborted = false;
   let ended = false;
@@ -625,6 +649,7 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
     stopRaf();
     if (audio && currentAudio === audio) currentAudio = null;
     cleanup();
+    sendPerf(perf, perfUrl);
     opts.onEnd?.();
   };
   const fallbackWhole = () => {
@@ -643,6 +668,18 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
       stopRaf();
       rafId = requestAnimationFrame(() => tick(a));
     };
+    if (perf || opts.onFirstAudio) {
+      // 起播事件 + 首个有声样本（currentTime>0）→ 与 TTFB/字节合起来定位「PC vs iOS 慢在播放还是取流」，
+      // 并向调用方回调首个有声时刻（端到端总等待埋点）。
+      a.onplaying = () => mark(perf, "playing");
+      a.ontimeupdate = () => {
+        if (a.currentTime > 0) {
+          mark(perf, "audible");
+          opts.onFirstAudio?.();
+          a.ontimeupdate = null;
+        }
+      };
+    }
     if (paused) return; // 缓冲期间已被暂停：接好音频但先不播，等 resume() 再 play()
     a.play().catch(() => {
       // 自动播放被拦 → 放弃流式，回退整段（其内部再回退 Web Speech）
@@ -664,6 +701,8 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
     a.onended = null;
     a.onerror = null;
     a.onplay = null;
+    a.onplaying = null; // 清掉上一次诊断埋点，避免共享元素上残留回调
+    a.ontimeupdate = null;
     a.src = src;
     a.playbackRate = opts.rate && opts.rate !== 1 ? opts.rate : 1;
     return a;
@@ -696,6 +735,7 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
       }
 
       const res = await fetch(url, { signal: ac.signal });
+      mark(perf, "headers");
       if (aborted) return;
       if (!res.ok || !res.body) {
         fallbackWhole();
@@ -744,7 +784,13 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
           return;
         }
         if (done) break;
-        if (value) await appendChunk(value);
+        if (value) {
+          if (perf) {
+            mark(perf, "ttfb"); // 首个数据块到达（首字节）
+            perf.bytes += value.byteLength;
+          }
+          await appendChunk(value);
+        }
       }
       // 关键：流结束时收尾，duration 才定得下来，尾音才会播完
       if (!aborted && ms.readyState === "open") {
@@ -792,6 +838,7 @@ export function speakTextStream(text: string, opts: SpeakOptions = {}): SpeechCo
         audio = null;
       }
       cleanup();
+      sendPerf(perf, perfUrl); // 中断也上报已采到的段（sent 去重，不会与 endNow 重复）
     },
   };
 }

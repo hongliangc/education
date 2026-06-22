@@ -23,6 +23,11 @@ export async function GET(req: Request) {
   const voice = Number.isFinite(voiceRaw) && voiceRaw > 0 ? voiceRaw : undefined;
   // pad=1：无 MediaSource 的客户端（iPhone Safari）用原生 <audio> 边下边播，需在尾部补静音抵消掐尾。
   const pad = searchParams.get("pad") === "1";
+  // 首段延时诊断：按 UA 区分 PC / iOS（pad 亦可佐证 iOS 原生路径），rid 与客户端 [tts-perf] 同 id 串起全链路。
+  const ua = req.headers.get("user-agent") ?? "";
+  const dev = /iPhone|iPad|iPod/i.test(ua) ? "ios" : /Android/i.test(ua) ? "android" : "pc";
+  const rid = searchParams.get("rid") ?? "-";
+  const tag = `dev=${dev} rid=${rid}`;
 
   try {
     // 缓存优先：命中则直接整段下发（带 Content-Length，浏览器即知时长→高亮准、无尾音截断），
@@ -31,6 +36,7 @@ export async function GET(req: Request) {
     if (cached) {
       // 拷进独立 Uint8Array<ArrayBuffer>：Node 的 Buffer<ArrayBufferLike> 不满足 BodyInit
       const body = new Uint8Array(cached);
+      console.log(`[tts-timing] CACHE bytes=${body.byteLength} pad=${pad ? 1 : 0} len=${text.length} ${tag}`);
       return new Response(body, {
         headers: {
           "Content-Type": "audio/mpeg",
@@ -40,7 +46,7 @@ export async function GET(req: Request) {
       });
     }
     // 未命中：流式合成边收边发，合成完整(final=1)时由 synthesizeStream 落缓存。
-    const stream = synthesizeStream(text, { lang, voice, pad });
+    const stream = synthesizeStream(text, { lang, voice, pad, tag });
     return new Response(stream, {
       headers: {
         "Content-Type": "audio/mpeg",

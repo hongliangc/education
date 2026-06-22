@@ -12,6 +12,7 @@ import {
   recognizeBlob,
   type SpeechController,
 } from "@/lib/speech";
+import { perfEnabled, beaconTurn } from "@/lib/speech/perf";
 import { createHoldToTalkSession } from "./holdToTalk";
 import { useRecordingAudioGuard } from "./useRecordingAudioGuard";
 
@@ -91,9 +92,10 @@ export function FairyChat({
 
   // 一轮问答（语音 / 打字共用）：带最近 N 条历史。
   // opts.silent：把 question 当作给精灵的指令发出去，但不渲染「用户提问」气泡（用于「语句解读」开场自动讲解）。
-  const ask = async (question: string, opts?: { silent?: boolean }) => {
+  const ask = async (question: string, opts?: { silent?: boolean; sttMs?: number }) => {
     const q = question.trim();
     if (!q) return;
+    const tAsk = Date.now(); // 端到端总等待埋点起点（语音另计 STT，见 opts.sttMs）
     const history = messages.slice(-HISTORY_TURNS);
     if (!opts?.silent) {
       setMessages((m) => [...m, { role: "user", content: q }]);
@@ -113,6 +115,7 @@ export function FairyChat({
         }),
       });
       const { reply } = await res.json();
+      const tLlm = Date.now(); // 回复文本到手（LLM 段结束）
       // ?? 不拦空串：reply 为 "" 时会渲染空气泡（多轮空回复的前端表象）。
       // 这里兜底成友好提示，配合后端「空内容按失败」双重防护。
       const text = String(reply ?? "").trim() || "我想想哦，等下再问我一次好吗？✨";
@@ -123,6 +126,18 @@ export function FairyChat({
       speakRef.current = speakTextStream(text, {
         lang: "zh-CN",
         onEnd: () => setStatus("idle"),
+        // 听到第一声 → 上报端到端总等待：STT（语音）+ LLM + TTS 取流到播放。仅 ?ttsperf=1 时发。
+        onFirstAudio: perfEnabled()
+          ? () => {
+              const stt = opts?.sttMs ?? 0;
+              beaconTurn({
+                stt,
+                llm: tLlm - tAsk,
+                play: Date.now() - tLlm,
+                total: stt + (Date.now() - tAsk),
+              });
+            }
+          : undefined,
       });
     } catch {
       setMessages((m) => [
@@ -176,6 +191,7 @@ export function FairyChat({
 
   // 按住说话：松手
   const endTalk = async () => {
+    const tRelease = Date.now(); // 语音「松手→出文字」整段（含停录延迟 + 识别），计入总等待
     try {
       const blob = await holdSessionRef.current!.end();
       if (!blob) return;
@@ -190,7 +206,7 @@ export function FairyChat({
         setStatus("idle");
         return;
       }
-      await ask(text);
+      await ask(text, { sttMs: Date.now() - tRelease });
     } catch {
       setStatus("idle");
     } finally {
@@ -311,6 +327,7 @@ export function FairyChat({
               onPointerDown={startTalk}
               onPointerUp={endTalk}
               onPointerLeave={endTalk}
+              onPointerCancel={endTalk}
               disabled={status === "thinking"}
               className={`select-none touch-none rounded-full w-44 h-16 font-bold text-white text-lg shadow-lg transition active:scale-95 disabled:opacity-50 ${
                 status === "listening" ? "bg-rose-500 animate-pulse" : "bg-pink-500"

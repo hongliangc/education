@@ -40,9 +40,39 @@
   下发、`enqueue(new Uint8Array(LEAD_IN_CHUNK))`、首帧到达即 `firstReal = true; stopLeadIn();`、`cancel()` 清定时器。
 - 既有 `SILENCE_MP3` 尾部静音断言（帧头 0xf3/0xc0、仅 pad、不进缓存）仍绿——确认 `silentFrames` 重构未破坏尾部静音。
 
+## 首段延时拆解（实测，warm pipeline 之后仍慢的二次排查）
+- 加了服务端 `[tts-timing]` 日志（`stream.ts`：记录建流起 open/ready/first/synth→first 各段 ms），
+  并用一次性脚本 `/tmp/tts-probe.mjs`（与 `buildSignedUrl`/协议逐字一致）从本地直连腾讯 WS 实测 5 次：
+  ```
+  run1(冷) open=718 ready=751 first=1256 synth->first=505   ← 进程首连：DNS+全新 TLS
+  run2     open=237 ready=291 first=455  synth->first=164
+  run3     open=274 ready=316 first=534  synth->first=218
+  run4     open=281 ready=321 first=535  synth->first=214
+  run5     open=270 ready=314 first=490  synth->first=176
+  ```
+- 结论：**瓶颈在「腾讯获取延时」的连接握手段，不是 iOS 播放。**
+  - 模型真实首帧 `synth→first` 仅 ~190ms（warm），是不可压的地板。
+  - 到首帧的大头是**建连**：`open`（TCP+TLS+WS 升级）~270ms（warm）/ ~720ms（冷首连），`ready` 再 +~45ms。
+  - 每次小精灵回复都 `new WebSocket()`（无连接复用）→ 每次都付一次完整握手。iOS 端因暖管线已在播，
+    真实首帧一到即出声，不是延时来源。
+- **关键局限**：本地是 WSL/家庭网络直连腾讯公网；现网服务器是腾讯云 Lighthouse（同云内网到 `tts.cloud.tencent.com`），
+  握手大概率显著更低。真实现网数字须看部署后的 `[tts-timing]` 日志（`docker compose -p education logs --since=3m web | grep tts-timing`）。
+- 优化方向（待现网数字确认后实施）：把建连移出关键路径——在小精灵这一轮**生成回复文本期间预热 WS 到 ready**，
+  文本就绪即发 ACTION_SYNTHESIS，只剩 ~190ms 模型地板 + 网络。预期首声从 ~1s+ 降到 ~300-400ms。
+
+## 端到端「总等待」拆解（提问→听到声音）
+- 首句出声前的真正大头是 **LLM 生成回复**（`/api/fairy/chat`），不是 TTS（TTS 首帧 ~500ms 已是地板）。
+- 新增埋点把整条链拆开：
+  - 服务端 **`[fairy-chat] llm=… total=…`**（`app/api/fairy/chat/route.ts`）——LLM 生成耗时与整段处理耗时，**常开**，无需开关。
+  - 服务端 `[tts-timing]`——TTS 取流/首帧（已有）。
+  - 客户端 **`[tts-perf] {kind:"turn", stt, llm, play, total}`**——`FairyChat` 在「首个有声样本」时上报
+    端到端总等待及各段（STT 语音转文字 / LLM / TTS 取流到播放）。经 `speakTextStream` 新增的 `onFirstAudio`
+    回调触发，仅 `?ttsperf=1` 时发。
+- 总等待 ≈ STT（仅语音）+ LLM + TTS 首字节(~500ms) + 播放启动；据现网日志可逐项坐实瓶颈。
+
 ## 验证
-- `npx tsc --noEmit`：No errors found。
-- `node --test tests/speech/*.test.ts tests/fairy/*.test.ts`：32 通过、0 失败。
+- `npx tsc --noEmit`：No errors found（含本次 `[tts-timing]`/`[fairy-chat]` 日志与 onFirstAudio 埋点）。
+- `node --test tests/speech/*.test.ts`：17 通过、0 失败（`firstReal = true; stopLeadIn();` 邻接断言未破坏）。
 - iPhone 实机复测（现网 https 向小精灵提问，确认首段比之前更快出声、首帧前无「卡死」、真声前后无杂音/欠载停顿）：
   待用户在现网确认。若首段仍有欠载停顿（静音喂不上），调小 `LEAD_IN_TICK_MS` 或调大 `LEAD_IN_TICK_FRAMES`；
   若真声前残留静音偏长（延时反而增加），反向微调。

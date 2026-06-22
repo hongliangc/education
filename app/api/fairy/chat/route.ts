@@ -23,6 +23,10 @@ import {
 // 精灵对话：模型网关按可用 Key 选 provider（DeepSeek / Claude / mock），
 // 调用前先做两段式内容安全检查。零配置时全程走 mock，开发体验不变。
 export async function POST(req: Request) {
+  // 总等待诊断：LLM 生成回复是首句出声前最大的一段（远超 TTS 首帧 ~500ms）。记录其耗时与整段处理耗时。
+  const t0 = Date.now();
+  const ua = req.headers.get("user-agent") ?? "";
+  const dev = /iPhone|iPad|iPod/i.test(ua) ? "ios" : /Android/i.test(ua) ? "android" : "pc";
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -64,14 +68,7 @@ export async function POST(req: Request) {
   }
 
   const weatherQuestion = parseWeatherQuestion(userMessage);
-  if (weatherQuestion.isWeatherQuestion) {
-    if (!weatherQuestion.city) {
-      return NextResponse.json({
-        reply: "你想查哪个城市的天气呢？可以说“北京今天天气怎么样”哦！🌤️",
-        source: "weather-city-required",
-      });
-    }
-
+  if (weatherQuestion.isWeatherQuestion && weatherQuestion.city) {
     try {
       const weather = await fetchCurrentWeather(weatherQuestion.city);
       return NextResponse.json({
@@ -119,12 +116,17 @@ export async function POST(req: Request) {
     stars,
     context: safeContext,
   });
+  const tGen = Date.now();
   const { reply, source } = await generateFairyReply({
     system,
     userMessage,
     history: safeHistory,
     maxTokens: 200,
   });
+  console.log(
+    `[fairy-chat] llm=${Date.now() - tGen} total=${Date.now() - t0} ` +
+      `source=${source} dev=${dev} qlen=${userMessage.length} rlen=${String(reply ?? "").length}`,
+  );
 
   return NextResponse.json({ reply, source });
 }

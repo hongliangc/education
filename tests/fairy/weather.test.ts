@@ -18,9 +18,30 @@ test("extracts an explicitly named city from common weather questions", () => {
   });
 });
 
-test("asks for a city when a weather question does not name one", () => {
-  assert.deepEqual(parseWeatherQuestion("今天天气怎么样？"), {
+test("strips time words and still extracts the city", () => {
+  assert.deepEqual(parseWeatherQuestion("深圳明天会下雨吗？"), {
     isWeatherQuestion: true,
+    city: "深圳",
+  });
+});
+
+test("falls through to the model when no clean city is named", () => {
+  // 不再追问城市，也不会把句子残余当城市——交 LLM 自然回应。
+  assert.deepEqual(parseWeatherQuestion("今天天气怎么样？"), {
+    isWeatherQuestion: false,
+  });
+  assert.deepEqual(parseWeatherQuestion("会下雨吗"), {
+    isWeatherQuestion: false,
+  });
+});
+
+test("does not intercept explanatory questions that mention weather words", () => {
+  // 回归：含天气词的「为什么/怎么形成」类问题曾被当成城市查询，回出「找不到城市」。
+  assert.deepEqual(parseWeatherQuestion("为什么会下雨？"), {
+    isWeatherQuestion: false,
+  });
+  assert.deepEqual(parseWeatherQuestion("温度是怎么来的？"), {
+    isWeatherQuestion: false,
   });
 });
 

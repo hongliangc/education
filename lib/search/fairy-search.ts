@@ -1,7 +1,19 @@
+// 解释/原理类问题护栏（与 lib/weather/fairy-weather.ts 同名护栏保持一致）：知识问题交 LLM，
+// 别被实时搜索关键词劫持。故意不含「怎么去」——它是地点查询的正常说法。
+const EXPLANATORY =
+  /为什么|为啥|为何|怎么形成|怎么来的|怎么回事|怎么产生|什么原理|原理是|解释一下|科学道理|形成|造成/;
+function isExplanatoryQuestion(text: string): boolean {
+  return EXPLANATORY.test(text);
+}
+
 const LOCAL_REALTIME_TERMS =
   /(附近|周边|营业时间|营业到|几点开门|几点关门|开门吗|关门吗|开放吗|地址|在哪里|怎么去|门票|票价|预约|排队|最新活动|今天.*活动|现在.*开放)/;
 
-const GENERAL_REALTIME_TERMS = /(最新|最近|新闻|本周|今年|刚刚|实时)/;
+// 通用实时问题：时间近指词单独出现（最近/最新…）极易误伤普通闲聊（「我最近学了拼音」），
+// 故收紧为「近指词 + 时事名词」共现，且排除解释类问题——其余一律交 LLM。
+const RECENCY_TERMS = /(最新|最近|近期|本周|这周|今年|今天|刚刚|实时)/;
+const CURRENT_EVENTS_NOUN =
+  /(新闻|比赛|比分|赛事|赛程|上映|发布|价格|多少钱|股价|排行|排行榜|发现|结果|冠军|纪录)/;
 
 const PLACE_TERMS =
   /(游乐园|乐园|商场|购物中心|公园|博物馆|科技馆|动物园|水族馆|影院|电影院|餐厅|饭店|医院|景点|酒店|书店|迪士尼)/;
@@ -38,7 +50,10 @@ export function parseRealtimeQuestion(message: string): RealtimeQuestion {
     LOCAL_REALTIME_TERMS.test(normalized) &&
     (PLACE_TERMS.test(normalized) ||
       /(营业|开放|门票|票价|活动|地址|怎么去)/.test(normalized));
-  const isGeneralRealtimeQuestion = GENERAL_REALTIME_TERMS.test(normalized);
+  const isGeneralRealtimeQuestion =
+    RECENCY_TERMS.test(normalized) &&
+    CURRENT_EVENTS_NOUN.test(normalized) &&
+    !isExplanatoryQuestion(normalized);
   const isRealtimeQuestion = isLocalQuestion || isGeneralRealtimeQuestion;
 
   if (!isRealtimeQuestion) {

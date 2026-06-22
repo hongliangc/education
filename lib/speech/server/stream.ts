@@ -44,6 +44,18 @@ const LEAD_IN_TICK_MS = 120; // 每 120ms 补一口
 const LEAD_IN_TICK_FRAMES = 4; // 每口 ~144ms 音频：略快于实时，留薄余量防欠载、又不堆积过多延时
 const LEAD_IN_CHUNK = silentFrames(LEAD_IN_TICK_FRAMES);
 
+// 腾讯大模型 TTS 对含 emoji / 纯符号的段会判 code 20002 (SSMLInvalid)，并使 final=1 不下发
+// → 缓存从不落盘、流以错误收尾。合成前剔除 emoji（图形符号）、变体选择符 / ZWJ / keycap、
+// 区域指示符（国旗），并收敛空白。仅净化送 TTS 的副本，前端展示文本不受影响。
+function sanitizeForTts(text: string): string {
+  return text
+    .replace(/\p{Extended_Pictographic}/gu, "") // emoji / 各类图形符号（含 ✨🎤🤔🌟 等）
+    .replace(/[\u{FE00}-\u{FE0F}\u{200D}\u{20E3}]/gu, "") // 变体选择符 / 零宽连接符 / keycap
+    .replace(/[\u{1F1E6}-\u{1F1FF}]/gu, "") // 区域指示符（emoji 国旗的组成字符）
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 // 音色解析（路由查缓存键 与 synthesizeStream 合成/写缓存 必须用同一份 → 同一段文必然同一 key）。
 export function resolveStreamVoice(lang: string, voice?: number): number {
   const isZh = (lang ?? "zh-CN").startsWith("zh");
@@ -94,16 +106,27 @@ function buildSignedUrl(voice: number): { url: string; sessionId: string } {
  *  pad=true 时在合成结束后追加一小段静音（仅给 iPhone 原生边下边播抵消掐尾用），不写入缓存。 */
 export function synthesizeStream(
   text: string,
-  opts: { lang?: string; voice?: number; pad?: boolean } = {},
+  opts: { lang?: string; voice?: number; pad?: boolean; tag?: string } = {},
 ): ReadableStream<Uint8Array> {
   if (!isSpeechConfigured()) throw new Error("speech not configured");
   const lang = opts.lang ?? "zh-CN";
   const voice = resolveStreamVoice(lang, opts.voice);
   const { url, sessionId } = buildSignedUrl(voice);
   const cacheKey = ttsCacheKey(text, String(voice), lang);
+  // 送腾讯合成用净化文本（去 emoji，避免 20002）；缓存键仍用原始 text（读写一致，命中的是这段干净音频）。
+  const ttsText = sanitizeForTts(text);
 
   let ws: WebSocket | null = null;
   let closed = false;
+  // 首段延时诊断：记录腾讯 WS 各阶段相对建流的耗时（ms），把「腾讯首帧地板」拆成
+  // 握手(open)→就绪(ready)→模型首帧(first) 三段——前两段可通过预热消除，模型首帧不可。
+  const t0 = Date.now();
+  let tOpen = -1;
+  let tReady = -1;
+  let tFirst = -1;
+  let firstBytes = 0; // 首帧真声字节数（对比 PC/iOS「首段请求字节数」）
+  let realBytes = 0; // 累计真声字节（不含前导/尾部静音）
+  let frames = 0; // 真声帧数
   let firstReal = false; // 是否已收到第一帧真实音频（用于停掉前导静音）
   let leadIn: ReturnType<typeof setInterval> | null = null;
   const stopLeadIn = () => {
@@ -118,6 +141,11 @@ export function synthesizeStream(
 
   return new ReadableStream<Uint8Array>({
     start(controller) {
+      // 净化后为空（纯 emoji 回复，极罕见）：没有可合成的字 → 直接收流，交客户端回退处理。
+      if (!ttsText) {
+        controller.close();
+        return;
+      }
       ws = new WebSocket(url);
       ws.binaryType = "arraybuffer";
 
@@ -125,6 +153,17 @@ export function synthesizeStream(
         if (closed) return;
         closed = true;
         stopLeadIn();
+        // 一行汇总：握手(open)→就绪(ready)→模型首帧(first) 各段耗时 + 合成请求到首帧(synth→first)
+        // + 首帧/总字节。据此判定瓶颈：open/ready 大 → 预热可消；synth→first 大 → 模型地板、预热无效。
+        // tag 带 dev=ios|pc 与 rid（由路由按 UA 注入）→ 直接区分并对比 PC/iOS。
+        const synthToFirst = tFirst >= 0 && tReady >= 0 ? tFirst - tReady : -1;
+        console.log(
+          `[tts-timing] open=${tOpen} ready=${tReady} first=${tFirst} ` +
+            `synth->first=${synthToFirst} end=${Date.now() - t0} ` +
+            `firstBytes=${firstBytes} bytes=${realBytes} frames=${frames} ` +
+            `pad=${opts.pad ? 1 : 0} lang=${lang} voice=${voice} len=${text.length} ` +
+            `${opts.tag ?? ""}${err ? " err=1" : ""}`,
+        );
         try {
           ws?.close();
         } catch {
@@ -133,6 +172,10 @@ export function synthesizeStream(
         if (err) controller.error(err);
         else controller.close();
       };
+
+      ws.addEventListener("open", () => {
+        tOpen = Date.now() - t0;
+      });
 
       ws.addEventListener("message", (ev: MessageEvent) => {
         // 文本帧：JSON 事件（ready / final / 错误）
@@ -148,12 +191,13 @@ export function synthesizeStream(
             return;
           }
           if (msg.ready === 1) {
+            tReady = Date.now() - t0;
             ws?.send(
               JSON.stringify({
                 session_id: sessionId,
                 message_id: randomUUID(),
                 action: "ACTION_SYNTHESIS",
-                data: text,
+                data: ttsText,
               }),
             );
             ws?.send(
@@ -202,10 +246,14 @@ export function synthesizeStream(
         if (!closed) {
           // 第一帧真声 → 停掉前导静音，真声紧跟其后无缝衔接（不会在真声之间夹静音）。
           if (!firstReal) {
+            tFirst = Date.now() - t0;
+            firstBytes = (ev.data as ArrayBuffer).byteLength;
             firstReal = true;
             stopLeadIn();
           }
           const bytes = new Uint8Array(ev.data as ArrayBuffer);
+          realBytes += bytes.byteLength;
+          frames += 1;
           parts.push(bytes);
           controller.enqueue(bytes);
         }
@@ -218,6 +266,11 @@ export function synthesizeStream(
       // 客户端断开（换下一句 / 关闭弹层）→ 关掉上游 WS，停止计费。
       closed = true;
       stopLeadIn();
+      console.log(
+        `[tts-timing] canceled open=${tOpen} ready=${tReady} first=${tFirst} ` +
+          `firstBytes=${firstBytes} bytes=${realBytes} frames=${frames} ` +
+          `end=${Date.now() - t0} pad=${opts.pad ? 1 : 0} len=${text.length} ${opts.tag ?? ""}`,
+      );
       try {
         ws?.close();
       } catch {

@@ -38,6 +38,23 @@ test("tts-stream server appends a silent MP3 tail only when pad is requested", a
   assert.match(source, /enqueue\(new Uint8Array\(SILENCE_MP3\)\)/);
 });
 
+test("tts-stream server strips emoji before synthesis (avoids Tencent code 20002 / broken caching)", async () => {
+  // 见 bugfix/2026-06-22-fairy-tts-emoji-ssml-invalid.md：精灵回复带 emoji → 腾讯 SSMLInvalid(20002)
+  // → final 不下发 → 缓存从不落盘、流以错误收尾。合成前净化，缓存键仍用原始 text。
+  const source = await readFile(
+    new URL("../../lib/speech/server/stream.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(source, /function sanitizeForTts\(/);
+  assert.match(source, /\\p\{Extended_Pictographic\}/);
+  // 送腾讯合成的是净化后的 ttsText，而不是原始带 emoji 的 text。
+  assert.match(source, /const ttsText = sanitizeForTts\(text\)/);
+  assert.match(source, /action: "ACTION_SYNTHESIS",\s*data: ttsText,/);
+  // 缓存键仍基于原始 text（读写一致）。
+  assert.match(source, /ttsCacheKey\(text, String\(voice\), lang\)/);
+});
+
 test("tts-stream route forwards the pad flag to the synthesizer", async () => {
   const source = await readFile(
     new URL("../../app/api/speech/tts-stream/route.ts", import.meta.url),
@@ -45,7 +62,7 @@ test("tts-stream route forwards the pad flag to the synthesizer", async () => {
   );
 
   assert.match(source, /pad = searchParams\.get\("pad"\) === "1"/);
-  assert.match(source, /synthesizeStream\(text, \{ lang, voice, pad \}\)/);
+  assert.match(source, /synthesizeStream\(text, \{ lang, voice, pad, tag \}\)/);
 });
 
 test("tts-stream server warms the iOS pipeline with lead-in silence, only when pad is requested", async () => {

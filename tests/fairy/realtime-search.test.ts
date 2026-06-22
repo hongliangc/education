@@ -29,12 +29,28 @@ test("asks for a location for nearby searches without one", () => {
   });
 });
 
-test("allows current web questions that do not depend on a location", () => {
+test("allows current web questions that pair recency with a current-events noun", () => {
   assert.deepEqual(parseRealtimeQuestion("最近有什么新的恐龙发现？"), {
     isRealtimeQuestion: true,
     locationRequired: false,
     hasLocation: false,
   });
+  assert.deepEqual(parseRealtimeQuestion("今天有什么新闻？"), {
+    isRealtimeQuestion: true,
+    locationRequired: false,
+    hasLocation: false,
+  });
+});
+
+test("does not intercept everyday chat that merely contains a recency word", () => {
+  // 回归：「最近/最新」单独出现曾误判为联网搜索。
+  for (const q of ["我最近学了拼音", "最近天气真好", "你最近怎么样呀"]) {
+    assert.deepEqual(parseRealtimeQuestion(q), {
+      isRealtimeQuestion: false,
+      locationRequired: false,
+      hasLocation: false,
+    });
+  }
 });
 
 test("leaves stable learning questions on the normal model path", () => {

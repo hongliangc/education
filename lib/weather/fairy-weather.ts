@@ -1,8 +1,24 @@
+// 解释/原理类问题护栏：「为什么会下雨」「雪是怎么形成的」是知识问题，应交 LLM 讲解，别被
+// 天气关键词预路由劫持（否则把句子残余当城市、回「找不到城市」）。故意不含「怎么样」——它是
+// 天气查询的正常说法。与 lib/search/fairy-search.ts 中同名护栏保持一致。
+const EXPLANATORY =
+  /为什么|为啥|为何|怎么形成|怎么来的|怎么回事|怎么产生|什么原理|原理是|解释一下|科学道理|形成|造成/;
+function isExplanatoryQuestion(text: string): boolean {
+  return EXPLANATORY.test(text);
+}
+
 const WEATHER_TERMS =
   /(天气|气温|温度|下雨|下雪|降雨|降雪|冷不冷|热不热|冷吗|热吗)/;
 
 const CITY_NOISE =
-  /(小精灵|小星|请问|请告诉我|告诉我|帮我|查一下|看一下|看看|今天|今日|当天|现在|目前|此刻|的|天气|气温|温度|会不会下雨|会下雨|下雨|降雨|会不会下雪|会下雪|下雪|降雪|冷不冷|热不热|冷吗|热吗|怎么样|如何|多少度|几度|吗|呢|呀|啊)/g;
+  /(小精灵|小星|请问|请告诉我|告诉我|帮我|查一下|看一下|看看|今天|今日|当天|明天|后天|大后天|昨天|前天|这几天|未来几天|未来|周末|这周|本周|早上|上午|中午|下午|晚上|白天|夜里|现在|目前|此刻|的|天气|气温|温度|会不会下雨|会下雨|下雨|降雨|会不会下雪|会下雪|下雪|降雪|冷不冷|热不热|冷吗|热吗|怎么样|如何|多少度|几度|吗|呢|呀|啊)/g;
+
+// 像样的城市名：2–8 个汉字（含间隔号，如「呼和浩特」「乌鲁木齐」），且不含疑问 / 语气 / 助词残渣。
+// 真实地名不会含 是/什么/怎/为/会/的 等字；以此把「为什么会(下雨)」「是什么(样)」这类残余挡在外面。
+const CITY_REJECT = /[是什么怎为吗呢啊哪会要能可以的了过着吧嘛样多少几]/;
+function isPlausibleCity(s: string): boolean {
+  return /^[一-龥·]{2,8}$/.test(s) && !CITY_REJECT.test(s);
+}
 
 export interface WeatherQuestion {
   isWeatherQuestion: boolean;
@@ -45,13 +61,16 @@ export class WeatherUnavailableError extends Error {}
 
 export function parseWeatherQuestion(message: string): WeatherQuestion {
   const normalized = message.trim().replace(/[，。！？、,.!?]/g, "");
-  if (!WEATHER_TERMS.test(normalized)) {
+  // 必须含天气词；解释类问题（为什么/怎么形成）一律交 LLM，不走天气查询。
+  if (!WEATHER_TERMS.test(normalized) || isExplanatoryQuestion(normalized)) {
     return { isWeatherQuestion: false };
   }
 
+  // 仅当能提取出「像样的城市名」时才判为天气查询；否则（含天气词但无干净城市，如
+  // 「今天天气怎么样」）交 LLM 自然回应——不再把句子残余当城市去地理编码、回「找不到城市」。
   const city = normalized.replace(CITY_NOISE, "").trim();
-  if (!city || city.length > 30) {
-    return { isWeatherQuestion: true };
+  if (!isPlausibleCity(city)) {
+    return { isWeatherQuestion: false };
   }
 
   return { isWeatherQuestion: true, city };
