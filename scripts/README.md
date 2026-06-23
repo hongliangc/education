@@ -38,6 +38,9 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
   - 应用：`node scripts/sync-reward-resources.mjs`
 - **`ts-resolve-hooks.mjs`** — ESM resolve 钩子：把无扩展名的相对导入重试为 `.ts`，让离线 node 脚本能 import 走 Turbopack 打包的内容模块（被 `sync-reward-resources.mjs` 用）。
 - **`preview-devices.mjs`** — 多端预览截图：Playwright 真 WebKit + Chromium 把 URL 在 iPhone/横屏/Pixel/PC 视口各截一张到 `tmp/preview/`，核对移动端排版。`node scripts/preview-devices.mjs [url]`（默认 `http://localhost/`）。首次需 `npx playwright install webkit chromium`。交互体验：`npx playwright open --device="iPhone 13" http://localhost/`。⚠️ 全屏/音量/自动播放等 iOS 系统级行为以真机为准。
+- **`dev-https.sh`** — 本地 HTTPS 手机预览：mkcert 自签证书（SAN 含 Windows LAN IP）→ `deploy/certs/` → 经 `COMPOSE_OVERLAY` 起带 443 的 https 栈，`NEXTAUTH_URL=https://<LAN_IP>`（手机麦克风/语音需 secure context）。只改运行时与 gitignored 证书，零源码改动。还差的 Windows 端口转发 + 防火墙见 [`docs/local-https-phone-access.md`](../docs/local-https-phone-access.md)。
+- **`win-wsl-https-forward.ps1`** — Windows 端口转发助手：自提权 → 自动探 Windows LAN IP → 监听 `<LAN_IP>:443` 转发到 `127.0.0.1:443`（经 wslrelay 到 WSL nginx，绕开 `0.0.0.0`/wslrelay/VPN 三个坑）。每次运行**先清掉所有监听 443 的旧 portproxy**（含 DHCP 换 IP 前的旧 IP、旧版 `0.0.0.0`）和新旧两种命名的防火墙规则，幂等不并存。DHCP 换 IP 后重跑即可；WSL IP 变不用动。详见 [`docs/local-https-phone-access.md`](../docs/local-https-phone-access.md)。
+- **`win-wsl-https-cleanup.ps1`** — 清理上面那套：自提权 → 查询当前 portproxy(443) + 防火墙规则「WSL https LAN 443」→ 让你确认 → 删除 → 复查。只用 `netsh`，从 WSL 跑 `powershell.exe -ExecutionPolicy Bypass -File scripts/win-wsl-https-cleanup.ps1`（或 Windows 里右键用 PowerShell 运行）。
 
 ## 待补（下次需要时直接写成本目录脚本，别再写 `/tmp`）
 
@@ -52,3 +55,4 @@ wsl -e bash -ic "cd ~/workspace/education && bash scripts/<name>.sh"
 - shell 脚本：`#!/usr/bin/env bash` + `set -euo pipefail`，`cd "$(dirname "$0")/.."` 回到项目根。
 - node 脚本用 `.mjs`；需直接读 `.ts` 内容时 `node --experimental-strip-types scripts/<name>.mjs`，并优先 import 相对路径的内容文件（`@/` 别名 node 解析不了）。
 - 每加一个脚本，在上面「现有脚本」补一行用途说明。
+- 含中文的 `.ps1`：存 **UTF-8 with BOM**（开头 `EF BB BF`）。Windows PowerShell 5.1 对无 BOM 文件按系统 ANSI（中文=GBK）读，会把中文注释/字符串解码错乱导致**解析失败**。PowerShell 7 不挑，但加 BOM 两者都对。

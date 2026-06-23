@@ -1,45 +1,70 @@
-# 把 Windows 入站 443 转发到「当前」WSL 的 443，让同 WiFi 的手机经 Windows LAN IP 访问
-# WSL 里的 https 预览栈（配合 scripts/dev-https.sh）。
+﻿# 把同 WiFi 手机的访问引到 WSL 里的 https 预览栈（配合 scripts/dev-https.sh）。
+# 监听 Windows LAN IP:443 → 转发到 127.0.0.1:443（由 WSL 的 wslrelay 桥接到 WSL nginx）。
 #
-# 为什么不用再手动改：
-#   - listenaddress=0.0.0.0 → 不绑定具体 Windows LAN IP，DHCP 换 IP 也照常工作。
-#   - 自动探测当前 WSL IP（不写死）→ WSL 重启换 IP 后，重跑本脚本即可，无需手敲。
-#   - 防火墙规则按「端口」放行（不按 IP），一次性、持久。
+# 为什么转发目标用回环 127.0.0.1（而不是 WSL IP）——绕开两个本机坑：
+#   - wslrelay 已占 127.0.0.1:443 / ::1:443（localhostForwarding）→ 监听绑「具体 LAN IP」，别用 0.0.0.0。
+#   - sing-box / VPN 的 TUN 常是默认路由 → 转发目标若写 WSL IP(172.x) 会被吞；写 127.0.0.1 不经路由表。
+# 与 scripts/win-wsl-https-cleanup.ps1 配套：同一套监听 IP 与规则名（WSL https <Port>）。
+# 每次运行会先清掉所有监听本端口的旧 portproxy（含旧版的 0.0.0.0）和旧命名的防火墙规则，幂等不并存。
 #
-# 用法（任选其一）：
-#   A. 即时：右键「以管理员身份运行 PowerShell」，执行本脚本一次。WSL 重启后再跑一次即可。
-#   B. 全自动：把本文件复制到 Windows 本地路径（如 C:\Users\<你>\），再用文件末尾的命令注册成
-#      「登录时运行」的计划任务，之后开机/登录自动重建转发，彻底不用管。
-#
-#requires -RunAsAdministrator
+# 用法：
+#   从 WSL：    powershell.exe -ExecutionPolicy Bypass -File scripts/win-wsl-https-forward.ps1
+#   从 Windows：右键 → 使用 PowerShell 运行（会自动弹 UAC 提权）
+# Windows LAN IP（DHCP）变了重跑即可；WSL IP 变了不用动（转发到 127.0.0.1）。
 param(
   [int]$Port = 443,
-  [string]$Distro = ""   # 留空=WSL 默认发行版
+  [string]$LanIp = "",                          # 留空=自动探测 Windows LAN IP
+  [string]$FirewallRuleName = "WSL https LAN $Port"
 )
 $ErrorActionPreference = "Stop"
 
-# 取当前 WSL IP（eth0 第一个 IPv4）
-$wslArgs = @()
-if ($Distro) { $wslArgs += @("-d", $Distro) }
-$wslArgs += @("hostname", "-I")
-$wslIp = (& wsl.exe @wslArgs).Trim().Split(" ")[0]
-if (-not $wslIp) { throw "拿不到 WSL IP，确认 WSL 正在运行（先在 WSL 里跑 scripts/dev-https.sh 起栈）" }
-
-# 重建 portproxy（先删后加，幂等；listenaddress=0.0.0.0 不随 Windows LAN IP 变化）
-netsh interface portproxy delete v4tov4 listenaddress=0.0.0.0 listenport=$Port 2>$null | Out-Null
-netsh interface portproxy add    v4tov4 listenaddress=0.0.0.0 listenport=$Port connectaddress=$wslIp connectport=$Port
-
-# 防火墙放行（一次性、持久，按端口不按 IP）
-if (-not (Get-NetFirewallRule -DisplayName "WSL https $Port" -ErrorAction SilentlyContinue)) {
-  New-NetFirewallRule -DisplayName "WSL https $Port" -Direction Inbound -LocalPort $Port -Protocol TCP -Action Allow | Out-Null
+# ── 自提权（改 portproxy/防火墙需要管理员）。从 \\wsl.localhost 路径运行时先拷到本地 TEMP 再提权。──
+$isAdmin = ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()
+           ).IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+if (-not $isAdmin) {
+  Write-Host "需要管理员权限，正在请求提权（请在 UAC 弹窗点“是”）..." -ForegroundColor Yellow
+  $self = $PSCommandPath
+  if ($self -like '\\*') {
+    $local = Join-Path $env:TEMP 'win-wsl-https-forward.ps1'
+    Copy-Item -LiteralPath $self -Destination $local -Force
+    $self = $local
+  }
+  Start-Process -FilePath 'powershell.exe' -Verb RunAs -ArgumentList @(
+    '-NoProfile','-ExecutionPolicy','Bypass','-File',"`"$self`"",
+    '-Port',"$Port",'-LanIp',"`"$LanIp`"",'-FirewallRuleName',"`"$FirewallRuleName`""
+  )
+  exit
 }
 
-Write-Host "✅ 0.0.0.0:$Port  ->  WSL ${wslIp}:$Port  （防火墙已放行）"
-netsh interface portproxy show all
+# ── 探测 Windows LAN IP（排除 WSL/vEthernet/Loopback 虚拟网卡，优先 192.168./10. 私网段）──
+if (-not $LanIp) {
+  $LanIp = Get-NetIPAddress -AddressFamily IPv4 -ErrorAction SilentlyContinue |
+    Where-Object {
+      $_.IPAddress -notlike '127.*' -and $_.IPAddress -notlike '169.254.*' -and
+      $_.InterfaceAlias -notlike '*WSL*' -and $_.InterfaceAlias -notlike '*vEthernet*' -and
+      $_.InterfaceAlias -notlike '*Loopback*'
+    } | Where-Object { $_.IPAddress -match '^(192\.168\.|10\.)' } |
+    Select-Object -First 1 -ExpandProperty IPAddress
+}
+if (-not $LanIp) { throw "拿不到 Windows LAN IP，请确认已连 WiFi，或手动指定：-LanIp 192.168.x.x" }
 
-# ── 可选：注册成「登录时自动运行」，之后彻底不用手动（把本文件放到 Windows 本地路径后，管理员跑一次）──
-#   $p = "C:\Users\<你>\win-wsl-https-forward.ps1"
-#   $action    = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$p`""
-#   $trigger   = New-ScheduledTaskTrigger -AtLogOn
-#   $principal = New-ScheduledTaskPrincipal -UserId "$env:USERNAME" -RunLevel Highest -LogonType Interactive
-#   Register-ScheduledTask -TaskName "WSL https 443 forward" -Action $action -Trigger $trigger -Principal $principal -Force
+# ── 先清旧映射，避免并存冲突：删所有监听本端口的 portproxy（含旧版 0.0.0.0 和任意 LAN IP）──
+foreach ($line in (netsh interface portproxy show v4tov4)) {
+  if ($line -match '^\s*(\d{1,3}(?:\.\d{1,3}){3})\s+(\d+)\s+') {
+    if ([int]$matches[2] -eq $Port) {
+      netsh interface portproxy delete v4tov4 listenaddress=$($matches[1]) listenport=$Port 2>$null | Out-Null
+    }
+  }
+}
+# 旧命名的防火墙规则（早期版本叫 "WSL https <Port>"）也一并清掉，统一到 $FirewallRuleName
+netsh advfirewall firewall delete rule name="WSL https $Port" 2>$null | Out-Null
+netsh advfirewall firewall delete rule name="$FirewallRuleName" 2>$null | Out-Null
+
+# ── 加新映射：LAN IP:$Port → 127.0.0.1:$Port，并放行防火墙 ──
+netsh interface portproxy add v4tov4 listenaddress=$LanIp listenport=$Port connectaddress=127.0.0.1 connectport=$Port
+netsh advfirewall firewall add rule name="$FirewallRuleName" dir=in action=allow protocol=TCP localport=$Port | Out-Null
+
+Write-Host "`n✅ ${LanIp}:$Port  ->  127.0.0.1:$Port  ->  (wslrelay) WSL nginx   （防火墙已放行）" -ForegroundColor Green
+Write-Host "   手机同 WiFi 打开： https://$LanIp" -ForegroundColor Green
+netsh interface portproxy show v4tov4
+Read-Host "`n完成。按回车关闭"
