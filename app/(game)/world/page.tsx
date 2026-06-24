@@ -42,6 +42,7 @@ const NODES: WorldNode[] = [
   { kind: "module", id: "MATH",     x: 480, y: 460 },
   { kind: "module", id: "WORDS",    x: 665, y: 285 },
   { kind: "module", id: "STORY",    x: 835, y: 455 },
+  { kind: "module", id: "HISTORY", x: 700, y: 470 },
   {
     kind: "theater",
     id: "THEATER",
@@ -100,6 +101,7 @@ export default function WorldMapPage() {
     ALPHABET: "/english",
     STORY: "/story",
     LITERATURE: "/literature",
+    HISTORY: "/history",
   };
   const open = (m: ModuleId) => {
     sfx.click();
