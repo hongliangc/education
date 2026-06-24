@@ -30,7 +30,7 @@ function PosterGrid({
 }) {
   if (videos.length === 0) {
     return (
-      <div className="rounded-3xl bg-white/5 p-10 text-center text-white/60 ring-1 ring-white/10 backdrop-blur">
+      <div className="rounded-2xl bg-white/5 p-8 text-center text-sm text-white/60 ring-1 ring-white/10 backdrop-blur sm:rounded-3xl sm:p-10 sm:text-base">
         {emptyText}
       </div>
     );
@@ -80,7 +80,7 @@ export function TheaterBrowse({
           ))}
         </div>
       ) : error ? (
-        <div className="rounded-3xl bg-white/5 p-10 text-center text-lg font-bold text-white/80 ring-1 ring-white/10 backdrop-blur">
+        <div className="rounded-2xl bg-white/5 p-8 text-center text-base font-bold text-white/80 ring-1 ring-white/10 backdrop-blur sm:rounded-3xl sm:p-10 sm:text-lg">
           ☁️ {error}
         </div>
       ) : query.trim() ? (
@@ -88,7 +88,7 @@ export function TheaterBrowse({
       ) : activeCat ? (
         <PosterGrid videos={activeCat.videos} onOpen={onOpen} emptyText="这个分类还没有视频。" />
       ) : allVideos.length === 0 ? (
-        <div className="rounded-3xl bg-white/5 p-10 text-center text-lg font-bold text-white/80 ring-1 ring-white/10 backdrop-blur">
+        <div className="rounded-2xl bg-white/5 p-8 text-center text-base font-bold text-white/80 ring-1 ring-white/10 backdrop-blur sm:rounded-3xl sm:p-10 sm:text-lg">
           📁 视频库还是空的。
         </div>
       ) : (
@@ -100,7 +100,7 @@ export function TheaterBrowse({
               eyebrow={lastPlayed ? "继续观看" : "精选"}
             />
           )}
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             {categories.map((category) => (
               <TheaterRow
                 key={category.key}

@@ -10,18 +10,18 @@ type LockableScreenOrientation = ScreenOrientation & {
 const orientationApi = (): LockableScreenOrientation | undefined =>
   typeof screen !== "undefined" ? (screen.orientation as LockableScreenOrientation) : undefined;
 
-// iPhone Safari 只在 <video> 上提供原生全屏（webkitEnterFullscreen），不在 TS DOM lib 里，按需声明。
+// iPhone 原生全屏：webkitEnterFullscreen 把 <video> 交给 iOS 系统播放器，未进 TS DOM lib。
 type WebkitVideo = HTMLVideoElement & {
   webkitEnterFullscreen?: () => void;
+  webkitSupportsFullscreen?: boolean;
 };
 
 /**
- * 真全屏 + 默认横屏，像腾讯视频网页/App 那样：
- *  - 桌面 / 安卓 / iPad（有 Fullscreen API）：请求元素全屏并锁定横屏，自定义控件随容器一起全屏。
- *  - iPhone Safari（无元素全屏 API）：调用 `<video>.webkitEnterFullscreen()` 进入 iOS 原生播放器，
- *    系统自动横屏铺满、自带控件——这是 iPhone 网页唯一能做到的“真全屏”。
- *
- * iPhone 原生全屏由系统的“完成”按钮退出，并通过 video 的 webkit{begin,end}fullscreen 事件回写状态。
+ * 真全屏 + 默认横屏，分两条平台路径：
+ *  - 桌面 / 安卓 / iPad（有元素 Fullscreen API）：请求容器全屏并锁横屏，自定义控件随容器一起全屏。
+ *  - iPhone Safari（无元素全屏 API，地址栏/工具栏又去不掉）：调用原生 webkitEnterFullscreen
+ *    交给 iOS 系统播放器拿真全屏，立刻铺满无栏；代价是全屏内只有原生控件，
+ *    所以自定义的播放/选集等按钮只在非全屏（内联）时提供。
  */
 export function useLandscapeFullscreen(
   containerRef: RefObject<HTMLElement | null>,
@@ -40,7 +40,7 @@ export function useLandscapeFullscreen(
     return () => document.removeEventListener("fullscreenchange", onFs);
   }, []);
 
-  // iPhone：原生 <video> 全屏在 video 元素上触发 webkit{begin,end}fullscreen。
+  // iPhone 原生播放器全屏：进出由 iOS 控制，镜像回 isFullscreen 让控件状态保持一致。
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
@@ -64,15 +64,35 @@ export function useLandscapeFullscreen(
         .catch(() => undefined);
       return;
     }
-    // iPhone Safari：退化为 <video> 原生全屏（真全屏 + 自动横屏）。
+    // iPhone Safari 标签页：没有元素全屏 API，交给系统视频播放器拿真全屏。
     const video = videoRef.current as WebkitVideo | null;
-    video?.webkitEnterFullscreen?.();
+    if (!video || typeof video.webkitEnterFullscreen !== "function") return;
+    const enterNative = () => {
+      try {
+        video.webkitEnterFullscreen?.();
+      } catch {
+        // 原生全屏偶发不可用时静默忽略，留在内联自定义控件。
+      }
+    };
+    // 元数据已就绪可直接进原生全屏。iOS 在首次播放前不加载元数据，
+    // 此时 webkitSupportsFullscreen=false、webkitEnterFullscreen 静默无效，
+    // 故在同一用户手势内开播以加载元数据，待 loadedmetadata 后再进全屏（避免“先点播放才能全屏”）。
+    if (video.webkitSupportsFullscreen) {
+      enterNative();
+      return;
+    }
+    const onReady = () => {
+      video.removeEventListener("loadedmetadata", onReady);
+      enterNative();
+    };
+    video.addEventListener("loadedmetadata", onReady);
+    void video.play().catch(() => undefined);
   }, [containerRef, videoRef]);
 
   const exit = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
     orientationApi()?.unlock?.();
-    // iPhone 原生全屏由系统“完成”按钮退出，无需额外处理。
+    setIsFullscreen(false);
   }, []);
 
   const toggle = useCallback(() => {

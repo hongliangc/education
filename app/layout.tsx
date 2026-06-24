@@ -19,6 +19,18 @@ export const metadata: Metadata = {
   // 仅对 FetchLoader 生效），因此必须在文档级声明 no-referrer，让 XHR / fetch / 原生
   // <video> 的取流请求都不带 Referer。这是让默认加载器生效的唯一机制。
   referrer: "no-referrer",
+  manifest: "/manifest.webmanifest",
+  icons: { icon: "/icon.svg", apple: "/icon.svg" },
+  // 加到主屏幕后以 standalone 启动（无 Safari chrome），播放器旋转全屏即真全屏。
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "学习王国",
+  },
+  // Next 16 的 appleWebApp.capable 只输出新版 <meta name="mobile-web-app-capable">，
+  // 不再输出 iOS <16.4 识别的旧版 apple-mobile-web-app-capable。旧 iOS 缺这个标签时
+  // “添加到主屏幕”不会以 standalone 启动（仍带 Safari chrome），真全屏路径失效。手动补上。
+  other: { "apple-mobile-web-app-capable": "yes" },
 };
 
 // viewportFit:"cover" 让刘海/底部安全区由 env(safe-area-inset-*) 接管；

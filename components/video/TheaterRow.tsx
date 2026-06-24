@@ -12,7 +12,7 @@ interface TheaterRowProps {
 }
 
 const chevron =
-  "flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-xl ring-1 ring-white/15 backdrop-blur transition hover:bg-white/20";
+  "hidden h-9 w-9 items-center justify-center rounded-full bg-white/10 text-xl ring-1 ring-white/15 backdrop-blur transition hover:bg-white/20 sm:flex";
 
 export function TheaterRow({ title, videos, onOpen, onSeeAll }: TheaterRowProps) {
   const scroller = useRef<HTMLDivElement>(null);
@@ -25,9 +25,9 @@ export function TheaterRow({ title, videos, onOpen, onSeeAll }: TheaterRowProps)
 
   return (
     <section>
-      <div className="mb-2 flex items-center gap-2">
-        <h2 className="text-xl font-black text-white sm:text-2xl">{title}</h2>
-        <span className="text-base font-bold text-[var(--theater-accent)] sm:text-lg">
+      <div className="mb-2 flex items-center gap-1.5 sm:gap-2">
+        <h2 className="min-w-0 truncate text-base font-black text-white sm:text-2xl">{title}</h2>
+        <span className="shrink-0 text-xs font-bold text-[var(--theater-accent)] sm:text-lg">
           {videos.length} 部
         </span>
         <div className="ml-auto flex items-center gap-1">
@@ -40,7 +40,7 @@ export function TheaterRow({ title, videos, onOpen, onSeeAll }: TheaterRowProps)
           <button
             type="button"
             onClick={onSeeAll}
-            className="ml-1 text-base font-bold text-[var(--theater-accent)] transition hover:opacity-80 sm:text-lg"
+            className="ml-1 shrink-0 text-xs font-bold text-[var(--theater-accent)] transition hover:opacity-80 sm:text-lg"
           >
             全部 ›
           </button>
@@ -49,14 +49,14 @@ export function TheaterRow({ title, videos, onOpen, onSeeAll }: TheaterRowProps)
 
       <div
         ref={scroller}
-        className="flex snap-x gap-3 overflow-x-auto scroll-smooth pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        className="flex snap-x gap-2 overflow-x-auto scroll-smooth pb-1 sm:gap-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {videos.map((video) => (
           <TheaterPosterCard
             key={video.id}
             video={video}
             onOpen={onOpen}
-            className="w-60 shrink-0 snap-start sm:w-64"
+            className="w-[44vw] shrink-0 snap-start sm:w-64"
           />
         ))}
       </div>

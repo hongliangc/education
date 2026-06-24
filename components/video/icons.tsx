@@ -138,3 +138,24 @@ export function BackIcon(props: IconProps) {
     </svg>
   );
 }
+
+// 适应屏幕：画面带上下黑边、完整保留比例。
+export function AspectFitIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...strokeProps} {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <line x1="3" y1="15" x2="21" y2="15" />
+    </svg>
+  );
+}
+
+// 铺满屏幕：画面放大裁切、左右溢出填满。
+export function AspectFillIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" {...strokeProps} {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <rect x="0" y="9" width="24" height="6" rx="1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}

@@ -31,14 +31,14 @@ export function TheaterPosterCard({ video, onOpen, className }: TheaterPosterCar
         )}
 
         {!video.unlocked && (
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-base font-black text-amber-300 ring-1 ring-white/15 backdrop-blur">
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-xs font-black text-amber-300 ring-1 ring-white/15 backdrop-blur sm:px-2.5 sm:py-1 sm:text-base">
             <span aria-hidden="true">🔒</span>
             <span>⭐×{video.cost}</span>
           </div>
         )}
       </div>
 
-      <p className="mt-2 line-clamp-2 text-base font-bold leading-snug text-white/90 transition group-hover:text-white sm:text-lg">
+      <p className="mt-1.5 line-clamp-2 text-xs font-bold leading-snug text-white/90 transition group-hover:text-white sm:mt-2 sm:text-lg">
         {video.title}
       </p>
     </button>

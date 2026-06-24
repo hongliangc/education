@@ -35,67 +35,80 @@ export function TheaterTopBar({
   const inCategory = activeCategoryTitle !== null;
 
   return (
-    <div className="sticky top-[calc(env(safe-area-inset-top)_+_4rem)] z-20 mb-6">
-      <div className="flex flex-wrap items-center gap-3 rounded-2xl bg-black/45 px-3 py-3 ring-1 ring-white/10 backdrop-blur-xl">
-        {inCategory ? (
-          <>
-            <BackButton label="返回" onClick={onExitCategory} />
-            <span className="max-w-[45vw] truncate text-lg font-black text-white sm:max-w-none">
-              {activeCategoryTitle}
-            </span>
-          </>
-        ) : (
-          <>
-            <BackButton label="返回世界" onClick={onBack} />
-            <span className="flex items-center gap-2" aria-label="视频影院">
-              <span
-                aria-hidden="true"
-                style={{ background: "linear-gradient(135deg, var(--theater-accent), rgba(255,255,255,0.18))" }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl text-xl shadow-lg ring-1 ring-white/30"
-              >
-                🎬
+    <div className="sticky top-[calc(env(safe-area-inset-top)_+_3.5rem)] z-20 mb-4 sm:top-[calc(env(safe-area-inset-top)_+_4rem)] sm:mb-6">
+      <div className="rounded-2xl bg-black/50 px-3 py-2.5 ring-1 ring-white/10 backdrop-blur-xl sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          {inCategory ? (
+            <>
+              <BackButton
+                label="返回"
+                onClick={onExitCategory}
+                className="px-3 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-lg"
+              />
+              <span className="min-w-0 flex-1 truncate text-base font-black text-white sm:text-lg">
+                {activeCategoryTitle}
               </span>
-              <span
-                aria-hidden="true"
-                style={{ backgroundImage: "linear-gradient(90deg,#ffffff,var(--theater-accent))" }}
-                className="bg-clip-text text-xl font-black tracking-wide text-transparent drop-shadow"
-              >
-                视频影院
+            </>
+          ) : (
+            <>
+              <BackButton
+                label="返回世界"
+                onClick={onBack}
+                className="px-3 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-lg"
+              />
+              <span className="flex min-w-0 items-center gap-2" aria-label="视频影院">
+                <span
+                  aria-hidden="true"
+                  style={{
+                    background:
+                      "linear-gradient(135deg, var(--theater-accent), rgba(255,255,255,0.18))",
+                  }}
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-lg shadow-lg ring-1 ring-white/30 sm:h-9 sm:w-9 sm:text-xl"
+                >
+                  🎬
+                </span>
+                <span
+                  aria-hidden="true"
+                  style={{ backgroundImage: "linear-gradient(90deg,#ffffff,var(--theater-accent))" }}
+                  className="truncate bg-clip-text text-lg font-black tracking-wide text-transparent drop-shadow sm:text-xl"
+                >
+                  视频影院
+                </span>
               </span>
-            </span>
-          </>
-        )}
+            </>
+          )}
 
-        <div className="relative order-last w-full sm:order-none sm:ml-auto sm:w-56 md:w-72">
+          <div className="ml-auto hidden items-center gap-1.5 sm:flex" role="group" aria-label="背景风格">
+            {THEATER_THEMES.map((theme) => (
+              <button
+                key={theme.id}
+                type="button"
+                title={theme.label}
+                aria-label={`背景：${theme.label}`}
+                aria-pressed={themeId === theme.id}
+                onClick={() => onThemeChange(theme.id)}
+                style={{ background: theme.swatch }}
+                className={cn(
+                  "h-6 w-6 rounded-full transition hover:scale-110",
+                  themeId === theme.id ? "scale-110 ring-2 ring-white" : "ring-1 ring-white/30",
+                )}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="relative mt-2 w-full sm:order-none sm:ml-auto sm:mt-0 sm:w-56 md:w-72">
           <input
             type="text"
             value={query}
             onChange={(e) => onQueryChange(e.target.value)}
-            placeholder="搜索视频…（拼音首字母，如 dhdy）"
+            placeholder="搜索视频 / 拼音首字母"
             aria-label="搜索视频"
-            className="h-11 w-full rounded-full bg-white/10 px-4 pl-11 text-base text-white placeholder-white/40 ring-1 ring-white/20 backdrop-blur transition focus:outline-none focus:ring-white/40 sm:text-lg"
+            className="h-10 w-full rounded-full bg-white/10 px-4 pl-10 text-sm text-white placeholder-white/40 ring-1 ring-white/20 backdrop-blur transition focus:outline-none focus:ring-white/40 sm:h-11 sm:pl-11 sm:text-lg"
           />
-          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--theater-accent)]">
+          <span className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-sm text-[var(--theater-accent)] sm:text-base">
             🔍
           </span>
-        </div>
-
-        <div className="ml-auto flex items-center gap-1.5 sm:ml-0" role="group" aria-label="背景风格">
-          {THEATER_THEMES.map((theme) => (
-            <button
-              key={theme.id}
-              type="button"
-              title={theme.label}
-              aria-label={`背景：${theme.label}`}
-              aria-pressed={themeId === theme.id}
-              onClick={() => onThemeChange(theme.id)}
-              style={{ background: theme.swatch }}
-              className={cn(
-                "h-6 w-6 rounded-full transition hover:scale-110",
-                themeId === theme.id ? "scale-110 ring-2 ring-white" : "ring-1 ring-white/30",
-              )}
-            />
-          ))}
         </div>
       </div>
     </div>

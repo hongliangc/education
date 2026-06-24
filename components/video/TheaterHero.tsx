@@ -13,7 +13,7 @@ interface TheaterHeroProps {
 export function TheaterHero({ video, onOpen, eyebrow = "精选" }: TheaterHeroProps) {
   const [imgFailed, setImgFailed] = useState(false);
   return (
-    <div className="relative mb-8 h-[42vh] min-h-[300px] w-full overflow-hidden rounded-3xl ring-1 ring-white/10">
+    <div className="relative mb-6 h-[48vh] min-h-[260px] w-full overflow-hidden rounded-2xl ring-1 ring-white/10 sm:mb-8 sm:h-[42vh] sm:min-h-[300px] sm:rounded-3xl">
       {video.posterUrl && !imgFailed ? (
         <img
           src={video.posterUrl}
@@ -28,24 +28,24 @@ export function TheaterHero({ video, onOpen, eyebrow = "精选" }: TheaterHeroPr
       <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/40 to-transparent" />
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
 
-      <div className="relative flex h-full max-w-xl flex-col justify-end gap-3 p-6 sm:p-8">
-        <span className="text-base font-black tracking-widest text-[var(--theater-accent)] sm:text-lg">
+      <div className="relative flex h-full max-w-xl flex-col justify-end gap-2 p-4 sm:gap-3 sm:p-8">
+        <span className="text-sm font-black tracking-widest text-[var(--theater-accent)] sm:text-lg">
           {eyebrow} · {video.categoryTitle}
         </span>
-        <h1 className="text-3xl font-black drop-shadow sm:text-5xl">{video.title}</h1>
+        <h1 className="line-clamp-2 text-2xl font-black leading-tight drop-shadow sm:text-5xl">{video.title}</h1>
         {video.summary && (
-          <p className="line-clamp-2 text-base text-white/70 sm:text-lg">{video.summary}</p>
+          <p className="line-clamp-2 text-sm text-white/70 sm:text-lg">{video.summary}</p>
         )}
         <div className="flex items-center gap-3 pt-1">
           <button
             type="button"
             onClick={() => onOpen(video)}
-            className="flex h-12 items-center gap-2 rounded-full bg-white px-6 font-black text-slate-900 shadow-lg transition hover:scale-105"
+            className="flex h-11 items-center gap-2 rounded-full bg-white px-5 text-sm font-black text-slate-900 shadow-lg transition hover:scale-105 sm:h-12 sm:px-6 sm:text-base"
           >
             ▶ 播放
           </button>
           {!video.unlocked && (
-            <span className="flex h-12 items-center gap-1 rounded-full bg-black/40 px-5 font-black text-amber-300 ring-1 ring-white/15 backdrop-blur">
+            <span className="flex h-11 items-center gap-1 rounded-full bg-black/40 px-4 text-sm font-black text-amber-300 ring-1 ring-white/15 backdrop-blur sm:h-12 sm:px-5 sm:text-base">
               🔒 ⭐×{video.cost}
             </span>
           )}

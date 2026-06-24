@@ -139,7 +139,10 @@ export default function TheaterPage() {
     currentEpisodeIndex >= 0 ? episodeSiblings[currentEpisodeIndex + 1] : undefined;
 
   return (
-    <main className="relative min-h-screen px-4 pb-12 pt-16" style={mainStyle}>
+    <main
+      className="relative min-h-screen px-3 pb-10 pt-14 sm:px-4 sm:pb-12 sm:pt-16"
+      style={mainStyle}
+    >
       <div className="mx-auto max-w-6xl">
         <TheaterTopBar
           query={query}
