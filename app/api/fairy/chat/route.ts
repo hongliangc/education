@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { buildFairyPrompt } from "@/lib/ai/prompts";
+import { HISTORY_GUIDE_PROMPT } from "@/lib/fairy/historyPrompt";
 import { checkContentSafety } from "@/lib/ai/safety";
 import {
   aiSafetyCheck,
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { message, history, childName, age, recentModule, stars, context } =
+  const { message, history, childName, age, recentModule, stars, context, guide } =
     await req.json().catch(() => ({}));
   const userMessage = String(message ?? "你好");
   // 接地内容（当前名句/寓言原文+解读）：限长裁剪，纳入提示注入防护，只作参考资料
@@ -109,13 +110,17 @@ export async function POST(req: Request) {
     }
   }
 
-  const system = buildFairyPrompt({
-    childName,
-    age,
-    recentModule,
-    stars,
-    context: safeContext,
-  });
+  // 历史向导模式：换用专属人设（强调史书/演义/传说/争议的区分），其余沿用通用提示。
+  const system =
+    guide === "history"
+      ? HISTORY_GUIDE_PROMPT
+      : buildFairyPrompt({
+          childName,
+          age,
+          recentModule,
+          stars,
+          context: safeContext,
+        });
   const tGen = Date.now();
   const { reply, source } = await generateFairyReply({
     system,

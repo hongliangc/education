@@ -52,12 +52,14 @@ export function FairyChat({
   child,
   onClose,
   context,
+  guide,
   suggestions,
   opening,
 }: {
   child: { name: string; age?: number; totalStars?: number };
   onClose: () => void;
   context?: string; // 当前名句/寓言原文+解读，传给后端接地作答；不传时行为不变
+  guide?: "history"; // 切换精灵人设（如历史向导），不传时为通用精灵
   suggestions?: string[]; // 起步问题气泡，给还不会提问的小小孩搭梯子
   opening?: string; // 传入则一打开就让精灵先主动讲一遍（如「语句解读」），不显示用户气泡；之后照常语音追问
 }) {
@@ -112,6 +114,7 @@ export function FairyChat({
           age: child.age,
           stars: child.totalStars,
           context, // undefined 时 JSON.stringify 自动省略，旧调用不受影响
+          guide, // 历史向导等人设标记；undefined 时省略，走通用精灵
         }),
       });
       const { reply } = await res.json();
