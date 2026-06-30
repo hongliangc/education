@@ -1,0 +1,66 @@
+import { pinyin } from "pinyin-pro";
+
+export const HANZI_LEVELS = ["G1", "G2", "G3", "G4", "G5", "G6"] as const;
+export type PrimaryGradeLevel = (typeof HANZI_LEVELS)[number];
+
+export interface HanziItem {
+  id: string;
+  level: PrimaryGradeLevel;
+  char: string;
+  pinyin: string;
+  meaning: string;
+  words: readonly string[];
+  story: string;
+  tags: readonly string[];
+}
+
+const LEVEL_CHARS: Record<PrimaryGradeLevel, readonly string[]> = {
+  G1: [..."一二三四五六七八九十人口日月水火山木田土上下大小多少左右中"],
+  G2: [..."天云风雨雪花草虫鱼鸟马牛羊手足耳目牙门车船家学校"],
+  G3: [..."春夏秋冬东西南北前后里外早晚明亮声音朋友老师同学书笔"],
+  G4: [..."国城村河海森林星光电气快乐安静勇敢帮助学习语言"],
+  G5: [..."身体健康运动比赛故事音乐颜色形状方向时间节日祖先"],
+  G6: [..."观察想象发现创造保护环境责任合作坚持希望梦愿世界未来"],
+};
+
+const DETAILS: Record<string, { meaning: string; words: readonly string[]; story: string; tags: readonly string[] }> = {
+  一: { meaning: "数字一", words: ["一个", "第一"], story: "一横像小路，稳稳向前走。", tags: ["number"] },
+  二: { meaning: "数字二", words: ["二月", "二人"], story: "两条横线排排站，上短下长更漂亮。", tags: ["number"] },
+  三: { meaning: "数字三", words: ["三天", "三只"], story: "三条横线像台阶，一步一步往上爬。", tags: ["number"] },
+  人: { meaning: "人", words: ["大人", "人民"], story: "一撇一捺像两条腿，站得稳稳的。", tags: ["body"] },
+  口: { meaning: "嘴巴", words: ["口水", "门口"], story: "小方框张开口，可以说话也能唱歌。", tags: ["body"] },
+  日: { meaning: "太阳", words: ["日子", "生日"], story: "太阳住进小窗格，天天给我们光。", tags: ["nature"] },
+  月: { meaning: "月亮", words: ["月亮", "月牙"], story: "弯弯月亮挂天空，夜里陪你做美梦。", tags: ["nature"] },
+  水: { meaning: "水", words: ["喝水", "河水"], story: "水流弯弯跑得快，洗手喝水都要它。", tags: ["nature"] },
+  火: { meaning: "火", words: ["火山", "火光"], story: "小火苗跳呀跳，靠近它要小心。", tags: ["nature"] },
+  山: { meaning: "高山", words: ["大山", "山上"], story: "三个山尖连一起，远远看见高高山。", tags: ["nature"] },
+};
+
+export const HANZI_CATALOG: readonly HanziItem[] = HANZI_LEVELS.flatMap((level) =>
+  LEVEL_CHARS[level].map((char) => buildItem(level, char)),
+);
+
+function buildItem(level: PrimaryGradeLevel, char: string): HanziItem {
+  const detail = DETAILS[char] ?? fallbackDetail(char);
+  return {
+    id: `${level}-${char}`,
+    level,
+    char,
+    pinyin: pinyin(char, { toneType: "symbol" }),
+    ...detail,
+  };
+}
+
+function fallbackDetail(char: string): {
+  meaning: string;
+  words: readonly string[];
+  story: string;
+  tags: readonly string[];
+} {
+  return {
+    meaning: `汉字「${char}」`,
+    words: [`${char}字`, `学习${char}`],
+    story: `今天认识「${char}」，把它放进词语里读一读。`,
+    tags: ["common"],
+  };
+}

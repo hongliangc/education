@@ -1,0 +1,156 @@
+"use client";
+
+import { useCallback, useRef, useState } from "react";
+import { Btn } from "@/components/Btn";
+import { useSFX } from "@/components/audio/useSFX";
+import { speakText } from "@/lib/speech";
+import {
+  pickHanziWritingRound,
+  type HanziItem,
+  type PrimaryGradeLevel,
+} from "@/content/hanzi";
+import type { OnComplete } from "../types";
+import { GameDone } from "../GameDone";
+import { HanziLevelTabs } from "./HanziLevelTabs";
+import { HanziWriterPad } from "./HanziWriterPad";
+
+const ROUND_SIZE = 4;
+
+export function HanziWritingPractice({
+  level,
+  onLevelChange,
+  onComplete,
+  onExit,
+  onChangeMode,
+}: {
+  level: PrimaryGradeLevel;
+  onLevelChange: (level: PrimaryGradeLevel) => void;
+  onComplete: OnComplete;
+  onExit: () => void;
+  onChangeMode: () => void;
+}) {
+  const [round, setRound] = useState<HanziItem[]>(() => pickHanziWritingRound(level, ROUND_SIZE));
+  const [idx, setIdx] = useState(0);
+  const [completedChars, setCompletedChars] = useState(0);
+  const [strokeTicks, setStrokeTicks] = useState(0);
+  const [demoRequest, setDemoRequest] = useState(0);
+  const [done, setDone] = useState(false);
+  const { sfx } = useSFX();
+  const startedAt = useRef(Date.now());
+
+  const item = round[idx];
+
+  const restart = useCallback(
+    (nextLevel = level) => {
+      setRound(pickHanziWritingRound(nextLevel, ROUND_SIZE));
+      setIdx(0);
+      setCompletedChars(0);
+      setStrokeTicks(0);
+      setDemoRequest(0);
+      setDone(false);
+      startedAt.current = Date.now();
+    },
+    [level],
+  );
+
+  const changeLevel = (nextLevel: PrimaryGradeLevel) => {
+    onLevelChange(nextLevel);
+    restart(nextLevel);
+  };
+
+  const strokeCorrect = useCallback(() => {
+    setStrokeTicks((value) => value + 1);
+  }, []);
+
+  if (done) {
+    const stars = Math.max(1, Math.round((completedChars / round.length) * 3));
+    return (
+      <GameDone
+        starsEarned={stars}
+        correctQ={completedChars}
+        totalQ={round.length}
+        onAgain={() => restart()}
+        onClose={onExit}
+        onChangeMode={onChangeMode}
+        changeModeLabel="去认汉字"
+      />
+    );
+  }
+
+  if (!item) return null;
+
+  const next = () => {
+    sfx.correct();
+    const correct = completedChars + 1;
+    setCompletedChars(correct);
+    if (idx + 1 >= round.length) {
+      const stars = Math.max(1, Math.round((correct / round.length) * 3));
+      onComplete({
+        score: correct * 25,
+        totalQ: round.length,
+        correctQ: correct,
+        durationSec: Math.round((Date.now() - startedAt.current) / 1000),
+        starsEarned: stars,
+      });
+      setDone(true);
+    } else {
+      setIdx((value) => value + 1);
+      setStrokeTicks(0);
+      setDemoRequest(0);
+    }
+  };
+
+  return (
+    <div className="space-y-5">
+      <HanziLevelTabs level={level} onChange={changeLevel} />
+
+      <div className="text-center">
+        <div className="text-6xl font-bold text-slate-800">{item.char}</div>
+        <div className="mt-1 text-2xl font-bold text-pink-500">{item.pinyin}</div>
+        <div className="mt-1 text-sm text-slate-500">
+          {item.meaning} · {item.words.join(" / ")}
+        </div>
+        <div className="mt-2 flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => speakText(item.char, { lang: "zh-CN" })}
+            className="rounded-full bg-sky-100 px-4 py-2 text-sm font-bold text-sky-700"
+          >
+            🔊 听这个字
+          </button>
+          <button
+            type="button"
+            onClick={() => setDemoRequest((value) => value + 1)}
+            className="rounded-full bg-pink-100 px-4 py-2 text-sm font-bold text-pink-700"
+          >
+            ✍️ 演示笔顺
+          </button>
+        </div>
+      </div>
+
+      <HanziWriterPad
+        item={item}
+        demoRequest={demoRequest}
+        onStrokeCorrect={strokeCorrect}
+      />
+
+      <div className="rounded-3xl bg-amber-50 p-4 text-center text-sm font-bold text-amber-700">
+        {item.story}
+        <div className="mt-1 text-xs text-amber-600">已写对 {strokeTicks} 笔，跟着提示完成描红。</div>
+      </div>
+
+      <div className="flex flex-wrap justify-center gap-3">
+        <Btn variant="ghost" onClick={onChangeMode}>
+          🔍 去认汉字
+        </Btn>
+        <Btn variant="primary" onClick={next}>
+          下一个字 ✓
+        </Btn>
+      </div>
+
+      <p className="text-center text-sm text-slate-400">
+        第 {idx + 1} 个字 / 共 {round.length} 个
+      </p>
+    </div>
+  );
+}

@@ -14,8 +14,8 @@ import { getMathCurriculum } from "@/content/math/curriculum";
 import { useGameStore } from "@/store/gameStore";
 import { resolveChildGrade, type Grade } from "@/lib/grades";
 
-// Math, alphabet and word matching generate grade-appropriate content; other modules don't.
-const GRADE_AWARE = new Set<Slug>(["math", "alphabet", "words"]);
+// Math, alphabet, word matching and Hanzi learning generate grade-appropriate content.
+const GRADE_AWARE = new Set<Slug>(["math", "alphabet", "words", "writing"]);
 
 const SLUGS = {
   writing: "WRITING",
@@ -91,7 +91,9 @@ export default function PlayPage({
 
   return (
     <GameModal title={meta.label} emoji={meta.emoji} color={meta.color} onClose={back}>
-      {slug === "writing" && <WritingGame onComplete={onSessionComplete} onExit={back} />}
+      {slug === "writing" && (
+        <WritingGame grade={grade} onComplete={onSessionComplete} onExit={back} />
+      )}
       {slug === "alphabet" && (
         <AlphabetGame grade={grade} onComplete={onSessionComplete} onExit={back} />
       )}
