@@ -4,10 +4,10 @@ import test from "node:test";
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
 import { THREE_KINGDOMS } from "../../content/storybooks/three-kingdoms.ts";
 
-test("三国是一本 6 章 novel，idx 顺序 0-5", () => {
+test("三国是一本 10 章 novel，idx 顺序 0-9", () => {
   assert.equal(THREE_KINGDOMS.id, "three-kingdoms");
   assert.equal(THREE_KINGDOMS.kind, "novel");
-  assert.equal(THREE_KINGDOMS.chapters.length, 6);
+  assert.equal(THREE_KINGDOMS.chapters.length, 10);
   THREE_KINGDOMS.chapters.forEach((c, i) => assert.equal(c.idx, i));
 });
 
