@@ -424,18 +424,22 @@ export function enAudioSlug(text: string): string {
 }
 
 /**
- * 朗读英文：优先播预生成的 Polly 美式音频（public/audio/en/<slug>.mp3），
- * 缺失/被拦则优雅回退浏览器 Web Speech。与 speakText 同形，可直接替换英文 speakText 调用。
+ * 播放一个【指定 URL】的预生成英文 clip；缺失/被拦则优雅回退浏览器 Web Speech 朗读 `text`。
+ * 与 speakEnglish 同形，但用显式路径——双语阅读按 /audio/reading/<story>/<NN>.mp3 取句子音频，
+ * 而非按文本 slug。SSR / 无 window 时直接走 speakText。
  */
-export function speakEnglish(text: string, opts: SpeakOptions = {}): SpeechController {
-  const slug = enAudioSlug(text);
-  if (!slug || typeof window === "undefined") return speakText(text, { ...opts, lang: "en-US" });
+export function speakEnglishClip(
+  url: string,
+  text: string,
+  opts: SpeakOptions = {},
+): SpeechController {
+  if (typeof window === "undefined") return speakText(text, { ...opts, lang: "en-US" });
 
   let aborted = false;
   let done = false;
   let inner: SpeechController | null = null;
   stopSpeaking();
-  const a = new Audio(`/audio/en/${slug}.mp3`);
+  const a = new Audio(url);
   currentAudio = a;
   const clear = () => {
     if (currentAudio === a) currentAudio = null;
@@ -454,7 +458,7 @@ export function speakEnglish(text: string, opts: SpeakOptions = {}): SpeechContr
   };
   if (opts.rate && opts.rate !== 1) a.playbackRate = opts.rate;
   a.onended = finish;
-  a.onerror = fallback; // 该 slug 没有 clip → 回退浏览器朗读
+  a.onerror = fallback; // 该 clip 不存在 → 回退浏览器朗读
   void a.play().catch(fallback); // 自动播放被拦 → 回退
   return {
     pause() {
@@ -475,6 +479,16 @@ export function speakEnglish(text: string, opts: SpeakOptions = {}): SpeechContr
       clear();
     },
   };
+}
+
+/**
+ * 朗读英文：优先播预生成的 Polly 美式音频（public/audio/en/<slug>.mp3），
+ * 缺失/被拦则优雅回退浏览器 Web Speech。与 speakText 同形，可直接替换英文 speakText 调用。
+ */
+export function speakEnglish(text: string, opts: SpeakOptions = {}): SpeechController {
+  const slug = enAudioSlug(text);
+  if (!slug) return speakText(text, { ...opts, lang: "en-US" });
+  return speakEnglishClip(`/audio/en/${slug}.mp3`, text, opts);
 }
 
 /** 依次朗读多段英文（字母名→例词 / 整组连读），逐段走 speakEnglish（clip→Web Speech 回退）。 */

@@ -7,13 +7,14 @@ import { EnglishScene } from "@/components/games/english/EnglishScene";
 import { ENGLISH_SCENES } from "@/content/english/scene";
 import { AlphabetCategory } from "./alphabet/AlphabetCategory";
 import { IpaCategory } from "./ipa/IpaCategory";
+import { ReadingCategory } from "./reading/ReadingCategory";
 
-type MainCategory = "scene" | "sounds";
+type MainCategory = "scene" | "sounds" | "reading";
 type SoundCategory = "alphabet" | "ipa";
 
 export function EnglishHub() {
   const router = useRouter();
-  const [mainCategory, setMainCategory] = useState<MainCategory>("scene");
+  const [mainCategory, setMainCategory] = useState<MainCategory>("sounds");
   const [soundCategory, setSoundCategory] = useState<SoundCategory>("alphabet");
   const [sceneId, setSceneId] = useState(ENGLISH_SCENES[0].id);
   const [runKey, setRunKey] = useState(0);
@@ -31,7 +32,7 @@ export function EnglishHub() {
           </div>
         </header>
 
-        <div className="mt-5 grid grid-cols-2 gap-2 rounded-3xl bg-white/70 p-2 shadow-sm ring-1 ring-slate-100">
+        <div className="mt-5 grid grid-cols-3 gap-2 rounded-3xl bg-white/70 p-2 shadow-sm ring-1 ring-slate-100">
           <CategoryButton
             active={mainCategory === "scene"}
             onClick={() => setMainCategory("scene")}
@@ -45,6 +46,13 @@ export function EnglishHub() {
             activeClass="bg-purple-500"
           >
             🔤 字母 & 音标
+          </CategoryButton>
+          <CategoryButton
+            active={mainCategory === "reading"}
+            onClick={() => setMainCategory("reading")}
+            activeClass="bg-sky-500"
+          >
+            📖 双语阅读
           </CategoryButton>
         </div>
 
@@ -88,7 +96,15 @@ export function EnglishHub() {
         ) : null}
       </div>
 
-      <div className={`mx-auto mt-5 ${mainCategory === "sounds" ? "max-w-5xl" : "max-w-md"}`}>
+      <div
+        className={`mx-auto mt-5 ${
+          mainCategory === "sounds"
+            ? "max-w-5xl"
+            : mainCategory === "reading"
+              ? "max-w-2xl"
+              : "max-w-md"
+        }`}
+      >
         <div className="rounded-3xl bg-white/60 p-4 shadow-sm ring-1 ring-slate-100">
           {mainCategory === "scene" ? (
             <EnglishScene
@@ -96,6 +112,8 @@ export function EnglishHub() {
               scene={scene}
               onExit={() => setRunKey((key) => key + 1)}
             />
+          ) : mainCategory === "reading" ? (
+            <ReadingCategory />
           ) : soundCategory === "alphabet" ? (
             <AlphabetCategory />
           ) : (
