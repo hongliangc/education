@@ -92,7 +92,7 @@ export default function PlayPage({
   return (
     <GameModal title={meta.label} emoji={meta.emoji} color={meta.color} onClose={back}>
       {slug === "writing" && (
-        <WritingGame grade={grade} onComplete={onSessionComplete} onExit={back} />
+        <WritingGame childId={child.id} grade={grade} onComplete={onSessionComplete} onExit={back} />
       )}
       {slug === "alphabet" && (
         <AlphabetGame grade={grade} onComplete={onSessionComplete} onExit={back} />

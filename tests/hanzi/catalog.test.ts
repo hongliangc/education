@@ -18,6 +18,8 @@ test("every hanzi entry has a unique id and required learning fields", () => {
     assert.ok(item.meaning.length > 0, `${item.id} missing meaning`);
     assert.ok(item.words.length >= 2, `${item.id} should have at least two words`);
     assert.ok(item.story.length > 0, `${item.id} missing child-facing story`);
+    assert.ok(item.groupTitle.length > 0, `${item.id} missing memory group title`);
+    assert.ok(item.groupPhrase.length > 0, `${item.id} missing memory phrase`);
   }
 });
 
@@ -52,4 +54,20 @@ test("recognition challenge generation includes exactly one correct answer", () 
     );
     assert.equal(new Set(challenge.choices.map((choice) => choice.id)).size, challenge.choices.length);
   }
+});
+
+test("catalog preserves memorable group order for numbers, directions and seasons", () => {
+  const g1Numbers = HANZI_CATALOG.filter((item) => item.groupTitle === "数字歌").map(
+    (item) => item.char,
+  );
+  const directions = HANZI_CATALOG.filter((item) => item.groupTitle === "方向词").map(
+    (item) => item.char,
+  );
+  const seasons = HANZI_CATALOG.filter((item) => item.groupTitle === "四季轮转").map(
+    (item) => item.char,
+  );
+
+  assert.deepEqual(g1Numbers, [..."一二三四五六七八九十"]);
+  assert.deepEqual(directions, [..."上下左右东西南北"]);
+  assert.deepEqual(seasons, [..."春夏秋冬"]);
 });

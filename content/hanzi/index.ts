@@ -1,6 +1,8 @@
 export {
   HANZI_CATALOG,
   HANZI_LEVELS,
+  HANZI_MEMORY_GROUPS,
+  type HanziMemoryGroup,
   type HanziItem,
   type PrimaryGradeLevel,
 } from "./catalog";
@@ -15,3 +17,12 @@ export {
   type HanziChoice,
   type HanziRecognitionMode,
 } from "./round";
+export {
+  categorizeHanzi,
+  getHanziStatus,
+  recordHanziResult,
+  selectDueHanzi,
+  type HanziLearningStatus,
+  type HanziProgressEntry,
+  type HanziProgressMap,
+} from "./progress";

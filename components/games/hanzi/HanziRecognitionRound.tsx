@@ -7,6 +7,7 @@ import { speakText } from "@/lib/speech";
 import {
   generateHanziChallenges,
   type HanziChallenge,
+  type HanziProgressMap,
   type PrimaryGradeLevel,
 } from "@/content/hanzi";
 import type { OnComplete } from "../types";
@@ -17,19 +18,23 @@ const ROUND_SIZE = 8;
 
 export function HanziRecognitionRound({
   level,
+  progress,
   onLevelChange,
+  onResult,
   onComplete,
   onExit,
   onChangeMode,
 }: {
   level: PrimaryGradeLevel;
+  progress: HanziProgressMap;
   onLevelChange: (level: PrimaryGradeLevel) => void;
+  onResult: (hanziId: string, correct: boolean) => void;
   onComplete: OnComplete;
   onExit: () => void;
   onChangeMode: () => void;
 }) {
   const [round, setRound] = useState<HanziChallenge[]>(() =>
-    generateHanziChallenges(level, ROUND_SIZE),
+    generateHanziChallenges(level, ROUND_SIZE, Math.random, progress),
   );
   const [qi, setQi] = useState(0);
   const [correctQ, setCorrectQ] = useState(0);
@@ -42,19 +47,21 @@ export function HanziRecognitionRound({
 
   const restart = useCallback(
     (nextLevel = level) => {
-      setRound(generateHanziChallenges(nextLevel, ROUND_SIZE));
+      setRound(generateHanziChallenges(nextLevel, ROUND_SIZE, Math.random, progress));
       setQi(0);
       setCorrectQ(0);
       setFeedback(null);
       setDone(false);
       startedAt.current = Date.now();
     },
-    [level],
+    [level, progress],
   );
 
   useEffect(() => {
     restart(level);
-  }, [level, restart]);
+    // Only changing grade/level should reset the current round; progress updates happen after answers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [level]);
 
   const replay = useCallback(() => {
     if (question) speakText(question.speak.text, { lang: question.speak.lang, rate: 0.9 });
@@ -79,11 +86,26 @@ export function HanziRecognitionRound({
     );
   }
 
-  if (!question) return null;
+  if (!question) {
+    return (
+      <div className="space-y-5 text-center">
+        <HanziLevelTabs level={level} onChange={onLevelChange} />
+        <div className="rounded-3xl bg-emerald-50 p-6 text-emerald-700 ring-1 ring-emerald-100">
+          <div className="text-4xl">✅</div>
+          <div className="mt-2 text-lg font-bold">这个年级暂时都掌握了</div>
+          <div className="mt-1 text-sm">到复习时间后，这些字会自动回到练习里。</div>
+        </div>
+        <Btn variant="ghost" onClick={onChangeMode}>
+          ✏️ 去练写字
+        </Btn>
+      </div>
+    );
+  }
 
   const choose = (choiceId: string) => {
     if (feedback) return;
     const ok = choiceId === question.answerId;
+    onResult(question.answerId, ok);
     setFeedback(ok ? "correct" : "wrong");
     if (ok) {
       sfx.correct();

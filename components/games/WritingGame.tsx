@@ -7,26 +7,33 @@ import type { Grade } from "@/lib/grades";
 import type { OnComplete } from "./types";
 import { HanziRecognitionRound } from "./hanzi/HanziRecognitionRound";
 import { HanziWritingPractice } from "./hanzi/HanziWritingPractice";
+import { HanziLibraryProgress } from "./hanzi/HanziLibraryProgress";
+import { useHanziProgress } from "./hanzi/useHanziProgress";
 
 type HanziMode = "menu" | "recognition" | "writing";
 
 export function WritingGame({
+  childId,
   grade,
   onComplete,
   onExit,
 }: {
+  childId: string;
   grade: Grade;
   onComplete: OnComplete;
   onExit: () => void;
 }) {
   const [mode, setMode] = useState<HanziMode>("menu");
   const [level, setLevel] = useState<PrimaryGradeLevel>(() => getDefaultHanziLevel(grade));
+  const { progress, recordResult } = useHanziProgress(childId);
 
   if (mode === "recognition") {
     return (
       <HanziRecognitionRound
         level={level}
+        progress={progress}
         onLevelChange={setLevel}
+        onResult={recordResult}
         onComplete={onComplete}
         onExit={onExit}
         onChangeMode={() => setMode("writing")}
@@ -38,7 +45,9 @@ export function WritingGame({
     return (
       <HanziWritingPractice
         level={level}
+        progress={progress}
         onLevelChange={setLevel}
+        onResult={recordResult}
         onComplete={onComplete}
         onExit={onExit}
         onChangeMode={() => setMode("recognition")}
@@ -87,6 +96,8 @@ export function WritingGame({
           回到地图
         </Btn>
       </div>
+
+      <HanziLibraryProgress progress={progress} />
     </div>
   );
 }

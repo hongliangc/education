@@ -7,6 +7,7 @@ import { speakText } from "@/lib/speech";
 import {
   pickHanziWritingRound,
   type HanziItem,
+  type HanziProgressMap,
   type PrimaryGradeLevel,
 } from "@/content/hanzi";
 import type { OnComplete } from "../types";
@@ -18,18 +19,24 @@ const ROUND_SIZE = 4;
 
 export function HanziWritingPractice({
   level,
+  progress,
   onLevelChange,
+  onResult,
   onComplete,
   onExit,
   onChangeMode,
 }: {
   level: PrimaryGradeLevel;
+  progress: HanziProgressMap;
   onLevelChange: (level: PrimaryGradeLevel) => void;
+  onResult: (hanziId: string, correct: boolean) => void;
   onComplete: OnComplete;
   onExit: () => void;
   onChangeMode: () => void;
 }) {
-  const [round, setRound] = useState<HanziItem[]>(() => pickHanziWritingRound(level, ROUND_SIZE));
+  const [round, setRound] = useState<HanziItem[]>(() =>
+    pickHanziWritingRound(level, ROUND_SIZE, Math.random, progress),
+  );
   const [idx, setIdx] = useState(0);
   const [completedChars, setCompletedChars] = useState(0);
   const [strokeTicks, setStrokeTicks] = useState(0);
@@ -42,7 +49,7 @@ export function HanziWritingPractice({
 
   const restart = useCallback(
     (nextLevel = level) => {
-      setRound(pickHanziWritingRound(nextLevel, ROUND_SIZE));
+      setRound(pickHanziWritingRound(nextLevel, ROUND_SIZE, Math.random, progress));
       setIdx(0);
       setCompletedChars(0);
       setStrokeTicks(0);
@@ -50,7 +57,7 @@ export function HanziWritingPractice({
       setDone(false);
       startedAt.current = Date.now();
     },
-    [level],
+    [level, progress],
   );
 
   const changeLevel = (nextLevel: PrimaryGradeLevel) => {
@@ -77,10 +84,25 @@ export function HanziWritingPractice({
     );
   }
 
-  if (!item) return null;
+  if (!item) {
+    return (
+      <div className="space-y-5 text-center">
+        <HanziLevelTabs level={level} onChange={changeLevel} />
+        <div className="rounded-3xl bg-emerald-50 p-6 text-emerald-700 ring-1 ring-emerald-100">
+          <div className="text-4xl">✅</div>
+          <div className="mt-2 text-lg font-bold">这个年级暂时都掌握了</div>
+          <div className="mt-1 text-sm">到复习时间后，这些字会自动回到写字练习里。</div>
+        </div>
+        <Btn variant="ghost" onClick={onChangeMode}>
+          🔍 去认汉字
+        </Btn>
+      </div>
+    );
+  }
 
   const next = () => {
     sfx.correct();
+    onResult(item.id, true);
     const correct = completedChars + 1;
     setCompletedChars(correct);
     if (idx + 1 >= round.length) {

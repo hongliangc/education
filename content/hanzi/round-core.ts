@@ -1,4 +1,5 @@
 import type { HanziItem, PrimaryGradeLevel } from "./catalog";
+import type { HanziProgressMap } from "./progress";
 
 export type HanziRecognitionMode = "char-meaning" | "meaning-char" | "pinyin-char" | "word-char";
 
@@ -48,8 +49,11 @@ export function generateHanziChallenges(
   level: PrimaryGradeLevel,
   count = 8,
   rng: () => number = Math.random,
+  progress?: HanziProgressMap,
+  now = Date.now(),
 ): HanziChallenge[] {
-  const pool = getHanziForPrimaryGrade(catalog, levels, level);
+  const fullPool = getHanziForPrimaryGrade(catalog, levels, level);
+  const pool = progress ? selectRoundCandidates(fullPool, progress, now) : fullPool;
   const answers = pickRound(pool, count, rng);
   const modes: readonly HanziRecognitionMode[] = [
     "char-meaning",
@@ -69,8 +73,12 @@ export function pickHanziWritingRound(
   level: PrimaryGradeLevel,
   count = 4,
   rng: () => number = Math.random,
+  progress?: HanziProgressMap,
+  now = Date.now(),
 ): HanziItem[] {
-  return pickRound(getHanziForPrimaryGrade(catalog, levels, level), count, rng);
+  const fullPool = getHanziForPrimaryGrade(catalog, levels, level);
+  const pool = progress ? selectRoundCandidates(fullPool, progress, now) : fullPool;
+  return pickRound(pool, count, rng);
 }
 
 function buildChallenge(
@@ -118,6 +126,18 @@ function toChoice(item: HanziItem): HanziChoice {
 
 function pickRound<T>(pool: readonly T[], count: number, rng: () => number): T[] {
   return shuffled(pool, rng).slice(0, Math.min(count, pool.length));
+}
+
+function selectRoundCandidates<T extends { id: string }>(
+  items: readonly T[],
+  progress: HanziProgressMap,
+  now: number,
+): T[] {
+  return items.filter((item) => {
+    const entry = progress[item.id];
+    if (!entry || entry.correctStreak < 3) return true;
+    return typeof entry.nextReviewAt === "number" && entry.nextReviewAt <= now;
+  });
 }
 
 function pickDistinct<T>(

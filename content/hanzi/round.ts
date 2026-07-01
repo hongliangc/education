@@ -1,4 +1,5 @@
 import { HANZI_CATALOG, HANZI_LEVELS, type PrimaryGradeLevel } from "./catalog";
+import type { HanziProgressMap } from "./progress";
 import {
   generateHanziChallenges as generateCoreChallenges,
   getHanziForLevel as getCoreHanziForLevel,
@@ -35,14 +36,18 @@ export function generateHanziChallenges(
   level: PrimaryGradeLevel,
   count = 8,
   rng: () => number = Math.random,
+  progress?: HanziProgressMap,
+  now = Date.now(),
 ) {
-  return generateCoreChallenges(HANZI_CATALOG, HANZI_LEVELS, level, count, rng);
+  return generateCoreChallenges(HANZI_CATALOG, HANZI_LEVELS, level, count, rng, progress, now);
 }
 
 export function pickHanziWritingRound(
   level: PrimaryGradeLevel,
   count = 4,
   rng: () => number = Math.random,
+  progress?: HanziProgressMap,
+  now = Date.now(),
 ) {
-  return pickCoreHanziWritingRound(HANZI_CATALOG, HANZI_LEVELS, level, count, rng);
+  return pickCoreHanziWritingRound(HANZI_CATALOG, HANZI_LEVELS, level, count, rng, progress, now);
 }
