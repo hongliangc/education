@@ -101,3 +101,24 @@ body {
 /* 隐藏滚动条但保留滚动 */
 .scroll-hide::-webkit-scrollbar { display: none; }
 .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* 历史板块：碑刻/史册展示字 */
+.font-history { font-family: var(--font-history), serif; }
+
+/* 朝代卷轴展开（进三国页一次性） */
+@keyframes scroll-unfurl {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+.anim-scroll-unfurl { transform-origin: left center; animation: scroll-unfurl 0.5s ease-out both; }
+@media (prefers-reduced-motion: reduce) {
+  .anim-scroll-unfurl { animation: none; }
+}
+
+/* 历史长卷入口：卡片浮现 / 竖牌淡入 / 展开按钮金光脉冲 */
+@keyframes cardRise { from { opacity: 0; transform: translateY(26px) scale(.93); } to { opacity: 1; transform: none; } }
+@keyframes plaqueIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes ctaPulse {
+  0%, 100% { box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 2px rgba(232,196,90,.18), 0 0 0 0 rgba(232,196,90,0); }
+  50%      { box-shadow: 0 6px 18px rgba(0,0,0,.45), inset 0 0 0 2px rgba(232,196,90,.18), 0 0 24px 2px rgba(232,196,90,.42); }
+}

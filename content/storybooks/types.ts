@@ -16,6 +16,10 @@ export interface Chapter {
   questions: StoryQuestion[]; // 每章 2–3 题
   moral?: string; // 章末道理；短篇必填，长篇可逐章给或书末给
   images?: string[]; // 有序插画 public 相对路径（如 "/illustrations/<book>/x.webp"）；StoryPlayer 按朗读进度轮播；缺省回退 emoji
+  // 演义 vs 史实 轻量对照（章末小卡）；缺省则不渲染对照卡
+  historyNote?: { romance: string; history: string };
+  // 该章涉及的人物卡 key（Plan 2 群英谱消费：读完点亮"相识"，章末题答对升"了解"）
+  cardKeys?: string[];
 }
 
 export interface StoryBook {

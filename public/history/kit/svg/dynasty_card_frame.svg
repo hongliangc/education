@@ -1,0 +1,6 @@
+<svg width="280" height="380" viewBox="0 0 280 380" xmlns="http://www.w3.org/2000/svg">
+<defs><filter id="s"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-opacity=".35"/></filter></defs>
+<rect x="18" y="18" width="244" height="344" rx="22" fill="#71351d" stroke="#efbf55" stroke-width="3" filter="url(#s)"/>
+<rect x="30" y="30" width="220" height="320" rx="15" fill="none" stroke="#ffe089" stroke-opacity=".75" stroke-width="2"/>
+<path d="M30 58V30h28M250 58V30h-28M30 322v28h28M250 322v28h-28" fill="none" stroke="#efbf55" stroke-width="2"/>
+</svg>

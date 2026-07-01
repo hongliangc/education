@@ -15,7 +15,7 @@ export function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(" ");
 }
 
-export const MODULES = ["WRITING", "ALPHABET", "WORDS", "MATH", "STORY", "LITERATURE"] as const;
+export const MODULES = ["WRITING", "ALPHABET", "WORDS", "MATH", "STORY", "LITERATURE", "HISTORY"] as const;
 export type ModuleId = (typeof MODULES)[number];
 
 export const MODULE_META: Record<ModuleId, { label: string; emoji: string; color: string }> = {
@@ -25,4 +25,5 @@ export const MODULE_META: Record<ModuleId, { label: string; emoji: string; color
   MATH:       { label: "趣味算术", emoji: "🔢", color: "#fbbf24" },
   STORY:      { label: "故事智慧", emoji: "📜", color: "#a78bfa" },
   LITERATURE: { label: "诸子智慧", emoji: "🪷", color: "#2dd4bf" },
+  HISTORY:    { label: "上下五千年", emoji: "🏯", color: "#2E8B6B" },
 };

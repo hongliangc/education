@@ -1,0 +1,6 @@
+<svg width="960" height="480" viewBox="0 0 960 480" xmlns="http://www.w3.org/2000/svg">
+<defs><filter id="shadow"><feDropShadow dx="0" dy="10" stdDeviation="10" flood-opacity=".35"/></filter><linearGradient id="paper" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e7c27c"/><stop offset="1" stop-color="#d8a75e"/></linearGradient></defs>
+<rect x="30" y="30" width="900" height="420" rx="30" fill="url(#paper)" filter="url(#shadow)"/>
+<rect x="30" y="30" width="900" height="420" rx="30" fill="none" stroke="#f3c45b" stroke-width="3"/>
+<rect x="48" y="48" width="864" height="384" rx="22" fill="none" stroke="#7c4a1e" stroke-opacity=".45"/>
+</svg>
