@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  migrateHanziProgress,
   recordHanziResult,
+  recordHanziExplanation,
   type HanziProgressMap,
 } from "@/content/hanzi";
 
@@ -21,23 +23,30 @@ export function useHanziProgress(childId: string) {
   useEffect(() => {
     if (typeof window === "undefined") return;
     if (loadedKey !== storageKey) return;
-    window.localStorage.setItem(storageKey, JSON.stringify(progress));
+    const current = migrateHanziProgress(parseStoredValue(window.localStorage.getItem(storageKey)));
+    window.localStorage.setItem(storageKey, JSON.stringify({ version: 2, entries: progress, unmapped: current.unmapped }));
   }, [loadedKey, progress, storageKey]);
 
   const recordResult = useCallback((hanziId: string, correct: boolean) => {
     setProgress((current) => recordHanziResult(current, hanziId, correct));
   }, []);
+  const recordExplanation = useCallback((hanziId: string) => {
+    setProgress((current) => recordHanziExplanation(current, hanziId));
+  }, []);
 
-  return useMemo(() => ({ progress, recordResult }), [progress, recordResult]);
+  return useMemo(() => ({ progress, recordResult, recordExplanation }), [progress, recordResult, recordExplanation]);
 }
 
 function readProgress(storageKey: string): HanziProgressMap {
   if (typeof window === "undefined") return {};
   try {
-    const parsed = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}") as unknown;
-    if (!parsed || typeof parsed !== "object") return {};
-    return parsed as HanziProgressMap;
+    return migrateHanziProgress(parseStoredValue(window.localStorage.getItem(storageKey))).entries;
   } catch {
     return {};
   }
+}
+
+function parseStoredValue(value: string | null): unknown {
+  if (!value) return {};
+  return JSON.parse(value) as unknown;
 }

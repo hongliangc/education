@@ -5,7 +5,7 @@ import { THREE_KINGDOMS } from "@/content/storybooks/three-kingdoms";
 import { THREE_KINGDOMS_DETAIL } from "@/content/history/three-kingdoms-detail";
 import { TK, panelStyle } from "./theme";
 
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const SERIF = "var(--font-history)";
 
 export function StoryTab({
   completedChapters,

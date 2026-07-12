@@ -1,41 +1,37 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
-import { speakText } from "@/lib/speech";
+import { speakText, type SpeechController } from "@/lib/speech";
 import {
-  pickHanziWritingRound,
+  pickHanziWritingRoundFromPool,
   type HanziItem,
-  type HanziProgressMap,
-  type PrimaryGradeLevel,
 } from "@/content/hanzi";
 import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
-import { HanziLevelTabs } from "./HanziLevelTabs";
 import { HanziWriterPad } from "./HanziWriterPad";
+import { HanziWordWritingPractice } from "./HanziWordWritingPractice";
+import { HanziScreenHeader } from "./HanziScreenHeader";
 
 const ROUND_SIZE = 4;
 
 export function HanziWritingPractice({
-  level,
-  progress,
-  onLevelChange,
   onResult,
   onComplete,
   onExit,
   onChangeMode,
+  items,
 }: {
-  level: PrimaryGradeLevel;
-  progress: HanziProgressMap;
-  onLevelChange: (level: PrimaryGradeLevel) => void;
   onResult: (hanziId: string, correct: boolean) => void;
   onComplete: OnComplete;
   onExit: () => void;
   onChangeMode: () => void;
+  items: readonly HanziItem[];
 }) {
+  const [writingMode, setWritingMode] = useState<"characters" | "words">("characters");
   const [round, setRound] = useState<HanziItem[]>(() =>
-    pickHanziWritingRound(level, ROUND_SIZE, Math.random, progress),
+    pickHanziWritingRoundFromPool(items, ROUND_SIZE, Math.random),
   );
   const [idx, setIdx] = useState(0);
   const [completedChars, setCompletedChars] = useState(0);
@@ -44,12 +40,20 @@ export function HanziWritingPractice({
   const [done, setDone] = useState(false);
   const { sfx } = useSFX();
   const startedAt = useRef(Date.now());
+  const speechRef = useRef<SpeechController | null>(null);
+
+  useEffect(() => {
+    return () => {
+      speechRef.current?.stop();
+      speechRef.current = null;
+    };
+  }, []);
 
   const item = round[idx];
 
   const restart = useCallback(
-    (nextLevel = level) => {
-      setRound(pickHanziWritingRound(nextLevel, ROUND_SIZE, Math.random, progress));
+    () => {
+      setRound(pickHanziWritingRoundFromPool(items, ROUND_SIZE, Math.random));
       setIdx(0);
       setCompletedChars(0);
       setStrokeTicks(0);
@@ -57,17 +61,14 @@ export function HanziWritingPractice({
       setDone(false);
       startedAt.current = Date.now();
     },
-    [level, progress],
+    [items],
   );
-
-  const changeLevel = (nextLevel: PrimaryGradeLevel) => {
-    onLevelChange(nextLevel);
-    restart(nextLevel);
-  };
 
   const strokeCorrect = useCallback(() => {
     setStrokeTicks((value) => value + 1);
   }, []);
+
+  if (writingMode === "words") return <HanziWordWritingPractice items={items} onResult={onResult} onComplete={onComplete} onExit={onExit} onCharacters={() => setWritingMode("characters")} />;
 
   if (done) {
     const stars = Math.max(1, Math.round((completedChars / round.length) * 3));
@@ -87,10 +88,9 @@ export function HanziWritingPractice({
   if (!item) {
     return (
       <div className="space-y-5 text-center">
-        <HanziLevelTabs level={level} onChange={changeLevel} />
         <div className="rounded-3xl bg-emerald-50 p-6 text-emerald-700 ring-1 ring-emerald-100">
           <div className="text-4xl">✅</div>
-          <div className="mt-2 text-lg font-bold">这个年级暂时都掌握了</div>
+          <div className="mt-2 text-lg font-bold">所选内容暂时都掌握了</div>
           <div className="mt-1 text-sm">到复习时间后，这些字会自动回到写字练习里。</div>
         </div>
         <Btn variant="ghost" onClick={onChangeMode}>
@@ -101,6 +101,8 @@ export function HanziWritingPractice({
   }
 
   const next = () => {
+    speechRef.current?.stop();
+    speechRef.current = null;
     sfx.correct();
     onResult(item.id, true);
     const correct = completedChars + 1;
@@ -124,7 +126,8 @@ export function HanziWritingPractice({
 
   return (
     <div className="space-y-5">
-      <HanziLevelTabs level={level} onChange={changeLevel} />
+      <HanziScreenHeader title="汉字书写" subtitle="跟着笔顺写一写" onBack={onExit} progress={`${idx + 1}/${round.length}`} />
+      <div className="grid grid-cols-2 gap-2"><button type="button" className="rounded-2xl bg-sky-500 py-3 font-black text-white">单字练习</button><button type="button" onClick={() => setWritingMode("words")} className="rounded-2xl bg-white py-3 font-black text-slate-600 ring-1 ring-slate-200">词语练习</button></div>
 
       <div className="text-center">
         <div className="text-6xl font-bold text-slate-800">{item.char}</div>
@@ -135,7 +138,10 @@ export function HanziWritingPractice({
         <div className="mt-2 flex flex-wrap justify-center gap-2">
           <button
             type="button"
-            onClick={() => speakText(item.char, { lang: "zh-CN" })}
+            onClick={() => {
+              speechRef.current?.stop();
+              speechRef.current = speakText(item.char, { lang: "zh-CN" });
+            }}
             className="rounded-full bg-sky-100 px-4 py-2 text-sm font-bold text-sky-700"
           >
             🔊 听这个字

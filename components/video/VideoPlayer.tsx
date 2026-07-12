@@ -28,7 +28,8 @@ interface VideoPlayerProps {
   episodes?: EpisodeItem[];
   currentEpisodeId?: string;
   onRefreshSource?: (resumeAtSec: number) => void;
-  onBack: () => void;
+  onRememberPosition?: (currentTimeSec: number, durationSec: number) => void;
+  onBack: (currentTimeSec?: number, durationSec?: number) => void;
   onNext?: () => void;
   onSelectEpisode?: (id: string) => void;
 }
@@ -46,6 +47,7 @@ export function VideoPlayer({
   episodes,
   currentEpisodeId,
   onRefreshSource,
+  onRememberPosition,
   onBack,
   onNext,
   onSelectEpisode,
@@ -79,6 +81,38 @@ export function VideoPlayer({
     onRefreshRef.current?.(videoRef.current?.currentTime ?? 0);
   });
 
+  const rememberCurrentPosition = () => {
+    const video = videoRef.current;
+    if (!video || !onRememberPosition) return;
+    onRememberPosition(video.currentTime, Number.isFinite(video.duration) ? video.duration : 0);
+  };
+
+  const handleBack = () => {
+    const video = videoRef.current;
+    onBack(video?.currentTime ?? 0, video && Number.isFinite(video.duration) ? video.duration : 0);
+  };
+
+  const handleNext = () => {
+    rememberCurrentPosition();
+    onNext?.();
+  };
+
+  const handleSelectEpisode = (id: string) => {
+    rememberCurrentPosition();
+    onSelectEpisode?.(id);
+  };
+
+  useEffect(() => {
+    if (!onRememberPosition || currentTime <= 0) return;
+    onRememberPosition(currentTime, duration);
+  }, [currentTime, duration, onRememberPosition]);
+
+  useEffect(() => {
+    if (!onRememberPosition) return;
+    window.addEventListener("pagehide", rememberCurrentPosition);
+    return () => window.removeEventListener("pagehide", rememberCurrentPosition);
+  });
+
   // 应用播放速度。切清晰度/换源会把 playbackRate 重置回 1，故依赖 activeSrc 重新施加。
   useEffect(() => {
     const video = videoRef.current;
@@ -105,7 +139,7 @@ export function VideoPlayer({
     toggleMute,
     toggleFullscreen,
     showControls,
-    onEscape: onBack,
+    onEscape: handleBack,
   });
 
   const showOverlay = loading || Boolean(error) || !activeSrc;
@@ -161,7 +195,7 @@ export function VideoPlayer({
           <div className="pointer-events-auto flex items-center gap-3">
             <button
               type="button"
-              onClick={onBack}
+              onClick={handleBack}
               aria-label="返回片库"
               className="flex h-10 w-10 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/15 hover:text-white"
             >
@@ -205,8 +239,8 @@ export function VideoPlayer({
             onSelectQuality={selectQuality}
             onToggleFullscreen={toggleFullscreen}
             onToggleFill={() => setFilled((value) => !value)}
-            onNext={onNext}
-            onSelectEpisode={onSelectEpisode}
+            onNext={handleNext}
+            onSelectEpisode={handleSelectEpisode}
           />
         </div>
       )}
@@ -217,7 +251,7 @@ export function VideoPlayer({
         onToggle={() => setLocked((value) => !value)}
       />
 
-      {showOverlay && <VideoStatusOverlay loading={loading} error={error} onBack={onBack} />}
+      {showOverlay && <VideoStatusOverlay loading={loading} error={error} onBack={handleBack} />}
     </section>
   );
 }

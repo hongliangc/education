@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
-import { categorizeHanzi, getHanziStatus, recordHanziResult, selectDueHanzi } from "../../content/hanzi/progress.ts";
+import { categorizeHanzi, getHanziStatus, recordHanziExplanation, recordHanziResult, selectDueHanzi } from "../../content/hanzi/progress.ts";
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
 import { generateHanziChallenges } from "../../content/hanzi/round-core.ts";
 
@@ -17,8 +17,18 @@ test("three correct answers mark a hanzi as known until its review date", () => 
     learnedAt,
   );
 
-  assert.equal(getHanziStatus(progress["G1-一"], learnedAt + DAY), "known");
-  assert.equal(getHanziStatus(progress["G1-一"], learnedAt + 4 * DAY), "review");
+  assert.equal(getHanziStatus(progress["G1-一"], learnedAt + DAY - 1), "known");
+  assert.equal(getHanziStatus(progress["G1-一"], learnedAt + 2 * DAY), "review");
+  assert.equal(progress["G1-一"].stage, "mastered");
+});
+
+test("explaining a hanzi records the Feynman step without mastering it", () => {
+  const now = Date.UTC(2026, 6, 11);
+  const progress = recordHanziExplanation({}, "G1-一", now);
+
+  assert.equal(progress["G1-一"].explainCount, 1);
+  assert.equal(progress["G1-一"].stage, "explaining");
+  assert.equal(getHanziStatus(progress["G1-一"], now), "practice");
 });
 
 test("wrong answer sends a known hanzi back to practice", () => {

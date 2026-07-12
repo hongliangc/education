@@ -6,7 +6,7 @@ import { GameModal } from "@/components/GameModal";
 import type { Person } from "@/content/history/three-kingdoms-detail";
 import { TK } from "./theme";
 
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const SERIF = "var(--font-history)";
 const FACTION_NAME: Record<Person["faction"], string> = { shu: "蜀汉", wei: "魏国", wu: "东吴", qun: "群雄" };
 
 export function CharacterModal({

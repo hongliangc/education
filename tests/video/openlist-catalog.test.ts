@@ -69,6 +69,52 @@ test("builds categories from folder listings with default order, title, cost and
   assert.equal(hello.thumbUrl, undefined);
 });
 
+test("orders numbered episodes naturally even when the upstream listing is shuffled", () => {
+  const catalog = buildVideoCatalog("/videos", [
+    {
+      category: "三国演义",
+      files: [
+        { name: "三国演义 第10集.mp4", isDir: false },
+        { name: "三国演义 第2集.mp4", isDir: false },
+        { name: "三国演义 第1集.mp4", isDir: false },
+      ],
+    },
+  ]);
+
+  assert.deepEqual(
+    catalog.map((video) => video.title),
+    ["三国演义 第1集", "三国演义 第2集", "三国演义 第10集"],
+  );
+  assert.deepEqual(
+    catalog.map((video) => video.order),
+    [1, 2, 3],
+  );
+});
+
+test("orders leading-number Chinese episode filenames naturally", () => {
+  const catalog = buildVideoCatalog("/videos", [
+    {
+      category: "三国演义94版.D修复全网最清445G",
+      files: [
+        { name: "20孙策之死.mkv", isDir: false },
+        { name: "78诈病赚曹爽.mkv", isDir: false },
+        { name: "05三英战吕布.mkv", isDir: false },
+        { name: "01桃园三结义.mkv", isDir: false },
+        { name: "02十常侍乱政.mkv", isDir: false },
+      ],
+    },
+  ]);
+
+  assert.deepEqual(
+    catalog.map((video) => video.title),
+    ["01桃园三结义", "02十常侍乱政", "05三英战吕布", "20孙策之死", "78诈病赚曹爽"],
+  );
+  assert.deepEqual(
+    catalog.map((video) => video.order),
+    [1, 2, 3, 4, 5],
+  );
+});
+
 test("supports a video-root mount whose categories sit at the root", () => {
   const catalog = buildVideoCatalog("/", [
     { category: "科普", files: [{ name: "宇宙.mp4", isDir: false }] },

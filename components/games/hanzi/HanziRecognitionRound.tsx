@@ -3,38 +3,38 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { useSFX } from "@/components/audio/useSFX";
-import { speakText } from "@/lib/speech";
+import { speakChunks, type SpeechController } from "@/lib/speech";
 import {
-  generateHanziChallenges,
+  generateHanziChallengesFromPool,
+  hanziQuestionSpeechText,
+  type HanziItem,
   type HanziChallenge,
-  type HanziProgressMap,
-  type PrimaryGradeLevel,
 } from "@/content/hanzi";
 import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
-import { HanziLevelTabs } from "./HanziLevelTabs";
-
-const ROUND_SIZE = 8;
+import { HanziScreenHeader } from "./HanziScreenHeader";
 
 export function HanziRecognitionRound({
-  level,
-  progress,
-  onLevelChange,
   onResult,
   onComplete,
   onExit,
   onChangeMode,
+  roundSize = 8,
+  title = "认字闯关",
+  items,
+  distractorPool,
 }: {
-  level: PrimaryGradeLevel;
-  progress: HanziProgressMap;
-  onLevelChange: (level: PrimaryGradeLevel) => void;
   onResult: (hanziId: string, correct: boolean) => void;
   onComplete: OnComplete;
   onExit: () => void;
   onChangeMode: () => void;
+  roundSize?: number;
+  title?: string;
+  items: readonly HanziItem[];
+  distractorPool: readonly HanziItem[];
 }) {
   const [round, setRound] = useState<HanziChallenge[]>(() =>
-    generateHanziChallenges(level, ROUND_SIZE, Math.random, progress),
+    generateHanziChallengesFromPool(items, distractorPool, roundSize, Math.random),
   );
   const [qi, setQi] = useState(0);
   const [correctQ, setCorrectQ] = useState(0);
@@ -42,33 +42,35 @@ export function HanziRecognitionRound({
   const [done, setDone] = useState(false);
   const { sfx } = useSFX();
   const startedAt = useRef(Date.now());
+  const speechRef = useRef<SpeechController | null>(null);
 
   const question = round[qi];
 
   const restart = useCallback(
-    (nextLevel = level) => {
-      setRound(generateHanziChallenges(nextLevel, ROUND_SIZE, Math.random, progress));
+    () => {
+      setRound(generateHanziChallengesFromPool(items, distractorPool, roundSize, Math.random));
       setQi(0);
       setCorrectQ(0);
       setFeedback(null);
       setDone(false);
       startedAt.current = Date.now();
     },
-    [level, progress],
+    [distractorPool, items, roundSize],
   );
 
-  useEffect(() => {
-    restart(level);
-    // Only changing grade/level should reset the current round; progress updates happen after answers.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [level]);
-
   const replay = useCallback(() => {
-    if (question) speakText(question.speak.text, { lang: question.speak.lang, rate: 0.9 });
+    speechRef.current?.stop();
+    speechRef.current = question
+      ? speakChunks(hanziQuestionSpeechText(question), { lang: "zh-CN", rate: 0.9 })
+      : null;
   }, [question]);
 
   useEffect(() => {
     replay();
+    return () => {
+      speechRef.current?.stop();
+      speechRef.current = null;
+    };
   }, [replay]);
 
   if (done) {
@@ -89,7 +91,6 @@ export function HanziRecognitionRound({
   if (!question) {
     return (
       <div className="space-y-5 text-center">
-        <HanziLevelTabs level={level} onChange={onLevelChange} />
         <div className="rounded-3xl bg-emerald-50 p-6 text-emerald-700 ring-1 ring-emerald-100">
           <div className="text-4xl">✅</div>
           <div className="mt-2 text-lg font-bold">这个年级暂时都掌握了</div>
@@ -104,6 +105,8 @@ export function HanziRecognitionRound({
 
   const choose = (choiceId: string) => {
     if (feedback) return;
+    speechRef.current?.stop();
+    speechRef.current = null;
     const ok = choiceId === question.answerId;
     onResult(question.answerId, ok);
     setFeedback(ok ? "correct" : "wrong");
@@ -134,9 +137,9 @@ export function HanziRecognitionRound({
 
   return (
     <div className="space-y-5">
-      <HanziLevelTabs level={level} onChange={onLevelChange} />
+      <HanziScreenHeader title={title} subtitle="识字校验" onBack={onExit} progress={`${qi + 1}/${round.length}`} />
 
-      <div className="rounded-3xl bg-pink-50 p-5 text-center ring-1 ring-pink-100">
+      <div className="rounded-3xl bg-sky-50 p-5 text-center ring-1 ring-sky-100">
         <div className="text-sm font-bold text-pink-500">第 {qi + 1} 题 / 共 {round.length} 题</div>
         <div className="mt-2 text-2xl font-bold text-slate-800">{question.prompt}</div>
         <button
@@ -158,18 +161,14 @@ export function HanziRecognitionRound({
               type="button"
               onClick={() => choose(choice.id)}
               disabled={!!feedback}
-              className={`rounded-3xl bg-white p-4 text-left shadow ring-2 transition ${
+                className={`rounded-3xl bg-white p-5 text-center shadow ring-2 transition ${
                 feedback && answer
                   ? "ring-emerald-300 bg-emerald-50 anim-correct"
                   : "ring-slate-100 hover:bg-sky-50"
               }`}
-            >
-              <span className="block text-center text-5xl font-bold text-slate-800">{choice.char}</span>
-              <span className="mt-2 block text-center text-sm font-bold text-sky-500">
-                {choice.pinyin}
-              </span>
-              <span className="mt-1 block text-center text-xs text-slate-500">{choice.label}</span>
-            </button>
+                >
+                  <span className="block text-center text-5xl font-bold text-slate-800">{choice.char}</span>
+                </button>
           );
         })}
       </div>

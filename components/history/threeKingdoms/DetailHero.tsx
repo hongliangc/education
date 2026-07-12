@@ -3,7 +3,7 @@
 import type { DynastyDetail } from "@/content/history/three-kingdoms-detail";
 import { TK, TITLE_PLAQUE, MAP_IMG, panelStyle } from "./theme";
 
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const SERIF = "var(--font-history)";
 
 export function DetailHero({
   detail,

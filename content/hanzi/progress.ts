@@ -5,6 +5,8 @@ export interface HanziProgressEntry {
   correctStreak: number;
   lastPracticedAt: number;
   nextReviewAt?: number;
+  explainCount?: number;
+  stage?: "learning" | "explaining" | "mastered";
 }
 
 export type HanziProgressMap = Record<string, HanziProgressEntry>;
@@ -39,7 +41,28 @@ export function recordHanziResult(
       attempts: (previous?.attempts ?? 0) + 1,
       correctStreak,
       lastPracticedAt: now,
+      explainCount: previous?.explainCount ?? 0,
+      stage: correctStreak >= 3 ? "mastered" : previous?.stage ?? "learning",
       ...(nextReviewAt ? { nextReviewAt } : {}),
+    },
+  };
+}
+
+export function recordHanziExplanation(
+  progress: HanziProgressMap,
+  hanziId: string,
+  now = Date.now(),
+): HanziProgressMap {
+  const previous = progress[hanziId];
+  return {
+    ...progress,
+    [hanziId]: {
+      attempts: previous?.attempts ?? 0,
+      correctStreak: previous?.correctStreak ?? 0,
+      lastPracticedAt: now,
+      explainCount: (previous?.explainCount ?? 0) + 1,
+      stage: "explaining",
+      ...(previous?.nextReviewAt ? { nextReviewAt: previous.nextReviewAt } : {}),
     },
   };
 }
@@ -69,8 +92,9 @@ export function selectDueHanzi<T extends HanziRef>(
 }
 
 function reviewDelayMs(correctStreak: number): number {
-  if (correctStreak >= 6) return 30 * DAY_MS;
-  if (correctStreak === 5) return 14 * DAY_MS;
-  if (correctStreak === 4) return 7 * DAY_MS;
-  return 3 * DAY_MS;
+  if (correctStreak >= 7) return 30 * DAY_MS;
+  if (correctStreak === 6) return 14 * DAY_MS;
+  if (correctStreak === 5) return 7 * DAY_MS;
+  if (correctStreak === 4) return 3 * DAY_MS;
+  return DAY_MS;
 }

@@ -8,7 +8,7 @@ import { CharacterCard, type CardState } from "./CharacterCard";
 import { CharacterModal } from "./CharacterModal";
 import { TK } from "./theme";
 
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const SERIF = "var(--font-history)";
 const { people, factions } = THREE_KINGDOMS_DETAIL;
 const chapters = THREE_KINGDOMS.chapters;
 const coreKeys = people.filter((p) => p.core).map((p) => p.key);

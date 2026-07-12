@@ -1,0 +1,19 @@
+{
+  "course_id": "replace-me",
+  "plan_version": 1,
+  "current_unit": "U1",
+  "current_gate": "UNDERSTAND",
+  "remediation_cycles_this_session": 0,
+  "nodes": {
+    "U1": {
+      "level": "UNKNOWN",
+      "scores": [],
+      "hint_count": 0,
+      "errors": [],
+      "evidence": [],
+      "last_assessed_at": null
+    }
+  },
+  "review_queue": [],
+  "next_action": "Run U1 UNDERSTAND session"
+}

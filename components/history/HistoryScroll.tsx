@@ -8,8 +8,8 @@ import { DYNASTY_TIMELINE, type DynastyItem } from "@/content/history/dynastyTim
 import { DynastyCard } from "@/components/history/DynastyCard";
 
 const KIT = "/history/kit/png/";
-const BRUSH = "'Ma Shan Zheng', var(--font-history), serif";
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const BRUSH = "var(--font-history)";
+const SERIF = "var(--font-history)";
 const CARD_H = 440;
 const CARD_W = 320;
 const DESK_H = "510px"; // 卷轴可视高度（单排，卡片放大突出插图）

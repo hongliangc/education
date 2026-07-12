@@ -29,8 +29,8 @@ test("/history/three-kingdoms 装配详情页 5 Tab 并复用 ChapterReader", ()
   assert.match(reader, /\/api\/sessions/);
 });
 
-test("注入历史展示字体变量 --font-history", () => {
-  const layout = readFileSync("app/layout.tsx", "utf8");
-  assert.match(layout, /Noto_Serif_SC/);
-  assert.match(layout, /--font-history/);
+test("全站字体变量统一使用微软雅黑", () => {
+  const globals = readFileSync("app/globals.css", "utf8");
+  assert.match(globals, /--font-sans: "Microsoft YaHei", "微软雅黑", sans-serif/);
+  assert.match(globals, /--font-history: var\(--font-sans\)/);
 });

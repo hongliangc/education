@@ -9,6 +9,8 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
+    "e2e:seed": "node scripts/ensure-e2e-fixture.mjs",
+    "e2e:hanzi": "playwright test e2e/hanzi-learning.spec.ts",
     "videos:verify-openlist": "node scripts/verify-openlist-video.mjs"
   },
   "prisma": {

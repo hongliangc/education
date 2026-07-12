@@ -5,7 +5,7 @@ import { THREE_KINGDOMS_DETAIL, type HistEvent } from "@/content/history/three-k
 import { eventStatus, type EventStatus } from "@/lib/history/threeKingdomsProgress";
 import { TK } from "./theme";
 
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const SERIF = "var(--font-history)";
 
 const DOT: Record<EventStatus, string> = {
   cleared: TK.gold,

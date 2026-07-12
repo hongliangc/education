@@ -6,7 +6,7 @@ import { THREE_KINGDOMS_DETAIL } from "@/content/history/three-kingdoms-detail";
 import { knownCount, badgeEarned } from "@/lib/history/threeKingdomsProgress";
 import { TK, panelStyle } from "./theme";
 
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const SERIF = "var(--font-history)";
 const chapters = THREE_KINGDOMS.chapters;
 const coreKeys = THREE_KINGDOMS_DETAIL.people.filter((p) => p.core).map((p) => p.key);
 

@@ -12,11 +12,14 @@ test("episodeNumber parses the common collection markers", () => {
   assert.equal(episodeNumber("The Green Planet S02E01"), 2001);
   assert.equal(episodeNumber("Show EP12"), 12);
   assert.equal(episodeNumber("81.仙履奇缘国语"), 81);
+  assert.equal(episodeNumber("01桃园三结义"), 1);
+  assert.equal(episodeNumber("20孙策之死"), 20);
 });
 
 test("episodeNumber returns null for movies and bare years", () => {
   assert.equal(episodeNumber("冰雪奇缘"), null);
   assert.equal(episodeNumber("The Boy and the Heron 2023"), null);
+  assert.equal(episodeNumber("2023电影"), null);
 });
 
 test("compareEpisodes sorts a collection ascending, numbered before un-numbered", () => {

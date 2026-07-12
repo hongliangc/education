@@ -12,6 +12,7 @@
 #      deploy-stack.sh；prod 唯一区别是 deploy.sh 会先把镜像与配置上传到服务器。
 #
 # 变量（均可覆盖）：DOCKER_IMAGE / IMAGE_TAG / PUSH_HUB / DEPLOY_MODE / DOCKER_CMD。
+# 发布成功后会清理同仓库旧本地镜像标签；设 RELEASE_CLEANUP_IMAGES=0 可临时关闭。
 # local 的 LOCAL_ENV_FILE / LOCAL_PROJECT_NAME / LOCAL_PUBLIC_URL 等覆盖项见 scripts/deploy.sh。
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -52,6 +53,7 @@ DOCKER_IMAGE="${DOCKER_IMAGE:-hlc2012/mlk}"
 IMAGE_TAG="${IMAGE_TAG:-$(date +%Y%m%d-%H%M%S)}"
 PUSH_HUB="${PUSH_HUB:-0}"
 DEPLOY_MODE="${DEPLOY_MODE:-transfer}"
+RELEASE_CLEANUP_IMAGES="${RELEASE_CLEANUP_IMAGES:-1}"
 read -r -a DOCKER_CMD <<< "${DOCKER_CMD:-docker}"
 
 if ! "${DOCKER_CMD[@]}" info >/dev/null 2>&1; then
@@ -72,6 +74,26 @@ build_image() {
   fi
 }
 
+cleanup_old_images() {
+  if [ "$RELEASE_CLEANUP_IMAGES" != "1" ]; then
+    echo "▶ 跳过旧镜像清理（RELEASE_CLEANUP_IMAGES=${RELEASE_CLEANUP_IMAGES}）"
+    return
+  fi
+
+  echo "▶ 清理旧本地镜像（保留 ${DOCKER_IMAGE}:${IMAGE_TAG} 和 ${DOCKER_IMAGE}:latest）"
+  "${DOCKER_CMD[@]}" image ls "$DOCKER_IMAGE" --format '{{.Repository}}:{{.Tag}}' |
+    while IFS= read -r ref; do
+      case "$ref" in
+        "${DOCKER_IMAGE}:${IMAGE_TAG}"|"${DOCKER_IMAGE}:latest"|*":<none>")
+          ;;
+        *)
+          "${DOCKER_CMD[@]}" image rm "$ref" >/dev/null 2>&1 ||
+            echo "  - 保留 ${ref}（仍被容器使用或删除失败）"
+          ;;
+      esac
+    done
+}
+
 # ── 第 2 段：部署 ──────────────────────────────────────────────────────────
 # local 与 prod 都交给同一个 deploy.sh：按 target 渲染参数、是否上传、以及在本机还是
 # 服务器跑同一个 deploy-stack.sh，全部由 deploy.sh 内部处理。release.sh 不含 local/prod 部署分支。
@@ -79,5 +101,7 @@ build_image
 echo "▶ [2/2] 部署 ${DOCKER_IMAGE}:${IMAGE_TAG}（target=${target}）"
 DOCKER_IMAGE="$DOCKER_IMAGE" IMAGE_TAG="$IMAGE_TAG" DEPLOY_MODE="$DEPLOY_MODE" \
   bash scripts/deploy.sh "$target"
+
+cleanup_old_images
 
 echo "✅ 发布完成：${target} ${DOCKER_IMAGE}:${IMAGE_TAG}"

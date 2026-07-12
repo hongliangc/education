@@ -1,0 +1,20 @@
+domain: replace-me
+learner_band: replace-me
+session_limits:
+  max_minutes: 10
+  max_new_items: 3
+content_representations: []
+activity_types: []
+input_modalities: []
+output_modalities: []
+recognition_requirements: []
+production_requirements: []
+stage_evidence:
+  understand: []
+  fluent: []
+  master: []
+  apply: []
+equivalent_explanation_evidence: []
+fatigue_signals: []
+fatigue_response: Shorten the session and persist the current gap.
+common_errors: []

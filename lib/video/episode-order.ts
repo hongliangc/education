@@ -4,7 +4,8 @@
 
 /**
  * Pull a sortable sequence number out of a (already-cleaned) video title.
- * Handles SxxExx (season-major), 第N集/话/期/回, EPxx, and a leading "81." number.
+ * Handles SxxExx (season-major), 第N集/话/期/回, EPxx, a leading "81." number,
+ * and Chinese collection files like "01桃园三结义".
  * Returns null when the title carries no episode/sequence marker (e.g. a movie).
  */
 export function episodeNumber(title: string): number | null {
@@ -19,6 +20,9 @@ export function episodeNumber(title: string): number | null {
 
   const lead = title.match(/^\s*0*(\d{1,4})\s*[.,、_\-]/);
   if (lead) return Number(lead[1]);
+
+  const directLead = title.match(/^\s*0*(\d{1,3})(?=\D)/);
+  if (directLead) return Number(directLead[1]);
 
   return null;
 }

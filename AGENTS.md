@@ -71,3 +71,9 @@ bash scripts/check-agent-context.sh
 ## Bugfix
 
 用户报告缺陷、异常、回归或要求修复时，先按 `bugfix/README.md` 创建记录，再诊断和修改。同一 bug 最终只形成一个 commit，且不得混入其他需求。
+
+## 外部 Wiki 路径
+
+- WSL：`/mnt/e/workspace/knowledge-wiki/`（Windows：`E:\workspace\knowledge-wiki\`）
+- 设计/计划：`wiki/projects/mlk/specs/`、`wiki/projects/mlk/plans/`；通用知识：`wiki/domains/`
+- 本地 `docs/superpowers/` 仅在工具兼容需要时留 1-3 行 pointer stub，不复制正文。

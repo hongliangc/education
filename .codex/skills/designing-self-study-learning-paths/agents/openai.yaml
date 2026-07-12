@@ -1,0 +1,4 @@
+interface:
+  display_name: "设计自主学习路径"
+  short_description: "为儿童和成人单人学习构建有序大纲、分阶段考核及复习闭环"
+  default_prompt: "使用 $designing-self-study-learning-paths 为这个主题设计可独立学习、考核和复习的课程路径。"

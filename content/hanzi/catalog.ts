@@ -1,4 +1,6 @@
 import { pinyin } from "pinyin-pro";
+// @ts-expect-error Node's native TypeScript tests require the explicit extension.
+import { EXPANDED_HANZI_SEEDS, HSK_WORDS_BY_CHAR } from "./expanded-catalog.ts";
 
 export const HANZI_LEVELS = ["G1", "G2", "G3", "G4", "G5", "G6"] as const;
 export type PrimaryGradeLevel = (typeof HANZI_LEVELS)[number];
@@ -27,7 +29,7 @@ export interface HanziMemoryGroup {
   chars: readonly string[];
 }
 
-export const HANZI_MEMORY_GROUPS: readonly HanziMemoryGroup[] = [
+const CORE_HANZI_MEMORY_GROUPS: readonly HanziMemoryGroup[] = [
   group("G1", "numbers", "数字歌", "一二三四五六七八九十", "一二三四五六七八九十"),
   group("G1", "people", "身体朋友", "人口手足耳目牙", "人口"),
   group("G1", "nature-base", "自然小景", "日月水火山木田土", "日月水火山木田土"),
@@ -59,6 +61,11 @@ export const HANZI_MEMORY_GROUPS: readonly HanziMemoryGroup[] = [
   group("G6", "future", "坚持希望梦愿世界未来", "坚持希望梦愿世界未来", "坚持希望梦愿世界未来"),
 ] as const;
 
+export const HANZI_MEMORY_GROUPS: readonly HanziMemoryGroup[] = [
+  ...CORE_HANZI_MEMORY_GROUPS,
+  ...expandedMemoryGroups(),
+];
+
 const LEVEL_CHARS: Record<PrimaryGradeLevel, readonly string[]> = {
   G1: charsForLevel("G1"),
   G2: charsForLevel("G2"),
@@ -81,9 +88,13 @@ const DETAILS: Record<string, { meaning: string; words: readonly string[]; story
   山: { meaning: "高山", words: ["大山", "山上"], story: "三个山尖连一起，远远看见高高山。", tags: ["nature"] },
 };
 
-export const HANZI_CATALOG: readonly HanziItem[] = HANZI_MEMORY_GROUPS.flatMap(
+const RAW_HANZI_CATALOG: readonly HanziItem[] = HANZI_MEMORY_GROUPS.flatMap(
   (memoryGroup, groupOrder) =>
     memoryGroup.chars.map((char, charOrder) => buildItem(memoryGroup, char, groupOrder, charOrder)),
+);
+
+export const HANZI_CATALOG: readonly HanziItem[] = RAW_HANZI_CATALOG.filter(
+  (item, index, items) => items.findIndex((candidate) => candidate.char === item.char) === index,
 );
 
 function buildItem(
@@ -92,9 +103,9 @@ function buildItem(
   groupOrder: number,
   charOrder: number,
 ): HanziItem {
-  const detail = DETAILS[char] ?? fallbackDetail(char);
+  const detail = DETAILS[char] ?? expandedDetail(char);
   return {
-    id: `${memoryGroup.level}-${char}`,
+    id: `hanzi:${char}`,
     level: memoryGroup.level,
     char,
     pinyin: pinyin(char, { toneType: "symbol" }),
@@ -123,16 +134,31 @@ function charsForLevel(level: PrimaryGradeLevel): string[] {
   );
 }
 
-function fallbackDetail(char: string): {
+function expandedDetail(char: string): {
   meaning: string;
   words: readonly string[];
   story: string;
   tags: readonly string[];
 } {
+  const words = HSK_WORDS_BY_CHAR[char];
+  if (!words || words.length < 2) throw new Error(`Missing real learning words for ${char}`);
   return {
-    meaning: `汉字「${char}」`,
-    words: [`${char}字`, `学习${char}`],
-    story: `今天认识「${char}」，把它放进词语里读一读。`,
+    meaning: `常见于“${words.slice(0, 2).join("、")}”`,
+    words,
+    story: `读一读“${words[0]}”和“${words[1]}”，找一找里面的“${char}”。`,
     tags: ["common"],
   };
+}
+
+function expandedMemoryGroups(): HanziMemoryGroup[] {
+  const result: HanziMemoryGroup[] = [];
+  for (const level of HANZI_LEVELS) {
+    const seeds = EXPANDED_HANZI_SEEDS.filter((seed) => seed.level === level);
+    for (let index = 0; index < seeds.length; index += 12) {
+      const chars = seeds.slice(index, index + 12).map((seed) => seed.char);
+      const part = Math.floor(index / 12) + 1;
+      result.push(group(level, `practical-${part}`, `生活常用字 ${part}`, chars.join(""), chars.join("")));
+    }
+  }
+  return result;
 }

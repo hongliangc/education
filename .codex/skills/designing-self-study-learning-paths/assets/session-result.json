@@ -1,0 +1,32 @@
+{
+  "session_id": "replace-me",
+  "course_id": "replace-me",
+  "unit_id": "U1",
+  "gate": "UNDERSTAND",
+  "target": "The learner can ...",
+  "actions_performed": [],
+  "evidence": {
+    "recall": [],
+    "learner_explanation": null,
+    "assessment_items": [],
+    "score": 0,
+    "independent": false,
+    "hints": 0,
+    "set_scores": [],
+    "explanation_passed": false,
+    "delayed_pass": false,
+    "novel_task_pass": false,
+    "transfer_dimensions": {
+      "result": 0,
+      "method_selection": 0,
+      "explanation": 0,
+      "adaptation": 0
+    }
+  },
+  "errors": [],
+  "remediation_cycles_this_session": 0,
+  "decision": "RETRY",
+  "review_action": "NONE",
+  "next_action": "",
+  "review_updates": []
+}

@@ -1,7 +1,7 @@
 import type { HanziItem, PrimaryGradeLevel } from "./catalog";
 import type { HanziProgressMap } from "./progress";
 
-export type HanziRecognitionMode = "char-meaning" | "meaning-char" | "pinyin-char" | "word-char";
+export type HanziRecognitionMode = "meaning-char" | "pinyin-char" | "word-char";
 
 export interface HanziChoice {
   id: string;
@@ -54,16 +54,24 @@ export function generateHanziChallenges(
 ): HanziChallenge[] {
   const fullPool = getHanziForPrimaryGrade(catalog, levels, level);
   const pool = progress ? selectRoundCandidates(fullPool, progress, now) : fullPool;
-  const answers = pickRound(pool, count, rng);
+  return generateHanziChallengesFromPool(pool, pool, count, rng);
+}
+
+export function generateHanziChallengesFromPool(
+  answerPool: readonly HanziItem[],
+  distractorPool: readonly HanziItem[],
+  count = 8,
+  rng: () => number = Math.random,
+): HanziChallenge[] {
+  const answers = pickRound(answerPool, count, rng);
   const modes: readonly HanziRecognitionMode[] = [
-    "char-meaning",
     "meaning-char",
     "pinyin-char",
     "word-char",
   ];
 
   return answers.map((answer, index) =>
-    buildChallenge(answer, pool, modes[index % modes.length], index, rng),
+    buildChallenge(answer, distractorPool, modes[index % modes.length], index, rng),
   );
 }
 
@@ -79,6 +87,14 @@ export function pickHanziWritingRound(
   const fullPool = getHanziForPrimaryGrade(catalog, levels, level);
   const pool = progress ? selectRoundCandidates(fullPool, progress, now) : fullPool;
   return pickRound(pool, count, rng);
+}
+
+export function pickHanziWritingRoundFromPool(
+  items: readonly HanziItem[],
+  count = 4,
+  rng: () => number = Math.random,
+): HanziItem[] {
+  return pickRound(items, count, rng);
 }
 
 function buildChallenge(
@@ -98,10 +114,9 @@ function buildChallenge(
 
   const word = answer.words[0] ?? answer.char;
   const promptByMode: Record<HanziRecognitionMode, string> = {
-    "char-meaning": `「${answer.char}」是什么意思？`,
-    "meaning-char": `哪个字表示：${answer.meaning}`,
-    "pinyin-char": `听拼音：${answer.pinyin}`,
-    "word-char": `词语「${word}」里学的是哪个字？`,
+    "meaning-char": `找出表示“${answer.meaning}”的字`,
+    "pinyin-char": `找出读“${answer.pinyin}”的字`,
+    "word-char": `找出词语“${word}”里的“${answer.char}”字`,
   };
 
   return {

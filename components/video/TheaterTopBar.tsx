@@ -1,6 +1,7 @@
 "use client";
 
 import { BackButton } from "@/components/BackButton";
+import { RefreshIcon } from "@/components/video/icons";
 import { cn } from "@/lib/utils";
 import { THEATER_THEMES } from "@/lib/video/theater-theme";
 
@@ -15,13 +16,14 @@ interface TheaterTopBarProps {
   onExitCategory: () => void;
   themeId: string;
   onThemeChange: (id: string) => void;
+  refreshing: boolean;
+  onRefresh: () => void;
 }
 
 /**
- * Sticky theater bar: back control, search box and theme switcher stay reachable no
- * matter how far the viewer has scrolled. The back control is context-aware — it
- * leaves the world from the home surface, or steps back one level out of a category
- * (whose title it then shows). Sits below the global HUD (top-16).
+ * Theater bar: context-aware back control, current category title, search box,
+ * refresh and theme switcher. It stays in normal page flow so scrolling down
+ * naturally moves it out of view.
  */
 export function TheaterTopBar({
   query,
@@ -31,11 +33,13 @@ export function TheaterTopBar({
   onExitCategory,
   themeId,
   onThemeChange,
+  refreshing,
+  onRefresh,
 }: TheaterTopBarProps) {
   const inCategory = activeCategoryTitle !== null;
 
   return (
-    <div className="sticky top-[calc(env(safe-area-inset-top)_+_3.5rem)] z-20 mb-4 sm:top-[calc(env(safe-area-inset-top)_+_4rem)] sm:mb-6">
+    <div className="mb-4 sm:mb-6">
       <div className="rounded-2xl bg-black/50 px-3 py-2.5 ring-1 ring-white/10 backdrop-blur-xl sm:flex sm:flex-wrap sm:items-center sm:gap-3 sm:py-3">
         <div className="flex min-w-0 items-center gap-2">
           {inCategory ? (
@@ -95,6 +99,19 @@ export function TheaterTopBar({
               />
             ))}
           </div>
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={refreshing}
+            aria-label="同步云盘视频"
+            title="同步云盘视频"
+            className={cn(
+              "ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-white/85 ring-1 ring-white/15 transition hover:bg-white/15 hover:text-white disabled:cursor-wait disabled:opacity-60 sm:h-10 sm:w-10",
+              refreshing && "animate-spin",
+            )}
+          >
+            <RefreshIcon className="h-5 w-5 sm:h-6 sm:w-6" />
+          </button>
         </div>
 
         <div className="relative mt-2 w-full sm:order-none sm:ml-auto sm:mt-0 sm:w-56 md:w-72">

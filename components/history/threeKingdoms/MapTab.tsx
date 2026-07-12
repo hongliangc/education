@@ -5,7 +5,7 @@ import { THREE_KINGDOMS_DETAIL, type FactionKey, type Person } from "@/content/h
 import { CharacterModal } from "./CharacterModal";
 import { TK, MAP_IMG, peopleThumb, panelStyle } from "./theme";
 
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const SERIF = "var(--font-history)";
 const { factions, people } = THREE_KINGDOMS_DETAIL;
 const colorOf = (k: FactionKey) => factions.find((f) => f.key === k)!.color;
 

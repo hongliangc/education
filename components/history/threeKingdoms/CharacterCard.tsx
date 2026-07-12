@@ -4,8 +4,8 @@ import { useState, type CSSProperties } from "react";
 import type { Person } from "@/content/history/three-kingdoms-detail";
 import { TK, peopleThumb } from "./theme";
 
-const BRUSH = "'Ma Shan Zheng', var(--font-history), serif";
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const BRUSH = "var(--font-history)";
+const SERIF = "var(--font-history)";
 
 export type CardState = "locked" | "met" | "known" | "gallery";
 

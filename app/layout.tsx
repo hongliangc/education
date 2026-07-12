@@ -1,22 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { AntdRegistry } from "@ant-design/nextjs-registry";
-import { ZCOOL_KuaiLe, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/Providers";
-
-const kidFont = ZCOOL_KuaiLe({
-  weight: "400",
-  subsets: ["latin"],
-  variable: "--font-kid",
-  display: "swap",
-});
-
-const historyFont = Noto_Serif_SC({
-  weight: "900",
-  subsets: ["latin"],
-  variable: "--font-history",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: "魔法学习王国 · 3-10 岁儿童学习乐园",
@@ -51,7 +36,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="zh-CN" className={`${kidFont.variable} ${historyFont.variable} h-full`}>
+    <html lang="zh-CN" className="h-full">
       <body className="min-h-full">
         <AntdRegistry>
           <Providers>{children}</Providers>

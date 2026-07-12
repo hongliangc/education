@@ -80,6 +80,21 @@ test("release builds once then delegates the whole deploy to deploy.sh", () => {
   assert.doesNotMatch(script, /\bscp\b/);
 });
 
+test("release cleans old local image tags after a successful deploy", () => {
+  const script = fs.readFileSync(releaseScript, "utf8");
+
+  assert.match(script, /RELEASE_CLEANUP_IMAGES/);
+  assert.match(script, /cleanup_old_images/);
+  assert.match(script, /image ls "\$DOCKER_IMAGE"/);
+  assert.match(script, /image rm "\$ref"/);
+  assert.match(script, /\$\{DOCKER_IMAGE\}:\$\{IMAGE_TAG\}/);
+  assert.match(script, /\$\{DOCKER_IMAGE\}:latest/);
+
+  const cleanupIndex = script.lastIndexOf("cleanup_old_images");
+  const deployIndex = script.indexOf('bash scripts/deploy.sh "$target"');
+  assert.ok(cleanupIndex > deployIndex, "cleanup must run only after deploy succeeds");
+});
+
 test("deploy stack script is parameter driven without local prod branches", () => {
   const script = fs.readFileSync(deployStackScript, "utf8");
 

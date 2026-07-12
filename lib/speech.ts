@@ -15,6 +15,7 @@ export interface SpeakOptions {
   onWord?: (index: number, word: string) => void;
   onEnd?: () => void;
   onFirstAudio?: () => void; // 首个有声样本（真正听到声音）时回调一次，用于端到端总等待埋点
+  fallbackText?: string;
 }
 
 /** 一次朗读的控制器：支持暂停/继续/停止（暂停保留进度，可从原处继续）。 */
@@ -180,7 +181,8 @@ let cloudTtsUnavailable = false;
  */
 export function speakText(text: string, opts: SpeakOptions = {}): SpeechController {
   const lang = opts.lang ?? "zh-CN";
-  const tokens = tokenize(text, lang);
+  const fallbackText = opts.fallbackText ?? text;
+  const tokens = tokenize(fallbackText, lang);
 
   let aborted = false;
   let userPaused = false;
@@ -237,7 +239,7 @@ export function speakText(text: string, opts: SpeakOptions = {}): SpeechControll
     }
     await ensureVoicesLoaded();
     if (aborted) return;
-    const spoken = sanitizeForSpeech(text);
+    const spoken = sanitizeForSpeech(fallbackText);
     if (!spoken) {
       // 纯 emoji（极罕见）：无可朗读内容，直接收尾，别让 UI 卡在「说话中」。
       opts.onEnd?.();
@@ -358,6 +360,10 @@ export function speakText(text: string, opts: SpeakOptions = {}): SpeechControll
       if (isSpeechSupported()) window.speechSynthesis.cancel();
     },
   };
+}
+
+export function speakPinyin(ssml: string, fallbackText: string): SpeechController {
+  return speakText(ssml, { lang: "zh-CN", rate: 0.8, fallbackText });
 }
 
 /** 立即停掉所有朗读（云音频 + Web Speech）。用于切场景 / 单字点读前清场。 */

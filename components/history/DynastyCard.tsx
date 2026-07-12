@@ -4,8 +4,8 @@
 import { useState, type CSSProperties } from "react";
 import type { DynastyItem } from "@/content/history/dynastyTimeline";
 
-const BRUSH = "'Ma Shan Zheng', var(--font-history), serif";
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const BRUSH = "var(--font-history)";
+const SERIF = "var(--font-history)";
 const CARD_W = 320;
 const CARD_H = 440;
 

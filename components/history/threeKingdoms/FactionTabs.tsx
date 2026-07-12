@@ -2,7 +2,7 @@
 "use client";
 import { TK } from "./theme";
 
-const SERIF = "var(--font-history), 'Noto Serif SC', serif";
+const SERIF = "var(--font-history)";
 
 export type TabKey = "story" | "people" | "events" | "map" | "tasks";
 

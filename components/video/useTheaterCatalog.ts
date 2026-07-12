@@ -49,6 +49,7 @@ function groupByCategory(videos: TheaterVideoItem[]): TheaterCategory[] {
 export function useTheaterCatalog(childId: string | undefined) {
   const [videos, setVideos] = useState<TheaterVideoItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,18 +57,24 @@ export function useTheaterCatalog(childId: string | undefined) {
     const activeChildId = childId;
     let cancelled = false;
 
-    async function loadVideos() {
-      setLoading(true);
+    async function loadVideos(forceRefresh = false) {
+      if (forceRefresh) setRefreshing(true);
+      else setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`/api/videos?childId=${encodeURIComponent(activeChildId)}`);
+        const res = await fetch(
+          `/api/videos?childId=${encodeURIComponent(activeChildId)}${forceRefresh ? "&refresh=1" : ""}`,
+        );
         if (!res.ok) throw new Error("catalog_failed");
         const json = (await res.json()) as { videos?: TheaterVideoItem[] };
         if (!cancelled) setVideos(json.videos ?? []);
       } catch {
         if (!cancelled) setError("视频暂时看不了，等一下再试试。");
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          if (forceRefresh) setRefreshing(false);
+          else setLoading(false);
+        }
       }
     }
 
@@ -77,7 +84,23 @@ export function useTheaterCatalog(childId: string | undefined) {
     };
   }, [childId]);
 
+  async function refreshCatalog() {
+    if (!childId || refreshing) return;
+    setRefreshing(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/videos?childId=${encodeURIComponent(childId)}&refresh=1`);
+      if (!res.ok) throw new Error("catalog_failed");
+      const json = (await res.json()) as { videos?: TheaterVideoItem[] };
+      setVideos(json.videos ?? []);
+    } catch {
+      setError("同步失败了，等一下再试试。");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   const categories = useMemo(() => groupByCategory(videos), [videos]);
 
-  return { categories, setVideos, loading, error };
+  return { categories, setVideos, loading, refreshing, error, refreshCatalog };
 }

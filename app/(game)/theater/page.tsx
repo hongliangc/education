@@ -12,6 +12,7 @@ import { useTheaterCatalog } from "@/components/video/useTheaterCatalog";
 import { useTheaterPlayback } from "@/components/video/useTheaterPlayback";
 import { useSFX } from "@/components/audio/useSFX";
 import { useGameStore } from "@/store/gameStore";
+import { readResumePosition, rememberResumePosition } from "@/lib/video/resume-storage";
 import {
   DEFAULT_THEATER_THEME,
   readTheaterThemeId,
@@ -24,7 +25,14 @@ export default function TheaterPage() {
   const child = useGameStore((state) => state.activeChild);
   const setStars = useGameStore((state) => state.setStars);
   const { sfx } = useSFX();
-  const { categories, setVideos, loading, error: catalogError } = useTheaterCatalog(child?.id);
+  const {
+    categories,
+    setVideos,
+    loading,
+    refreshing,
+    error: catalogError,
+    refreshCatalog,
+  } = useTheaterCatalog(child?.id);
   const {
     activeVideo,
     playInfo,
@@ -71,7 +79,7 @@ export default function TheaterPage() {
       setPendingUnlock(video);
       return;
     }
-    void startPlayback(video);
+    void startPlayback(video, readResumePosition(video.id));
   };
 
   const confirmUnlock = async () => {
@@ -106,7 +114,7 @@ export default function TheaterPage() {
       );
       setPendingUnlock(null);
       sfx.coin();
-      void startPlayback(unlockedVideo);
+      void startPlayback(unlockedVideo, readResumePosition(unlockedVideo.id));
     } catch {
       setUnlockError("解锁失败了，再试一次。");
     } finally {
@@ -152,6 +160,8 @@ export default function TheaterPage() {
           onExitCategory={() => changeCategory(null)}
           themeId={themeId}
           onThemeChange={changeTheme}
+          refreshing={refreshing}
+          onRefresh={() => void refreshCatalog()}
         />
         <TheaterBrowse
           categories={categories}
@@ -177,8 +187,18 @@ export default function TheaterPage() {
           episodes={episodeSiblings.map((video) => ({ id: video.id, title: video.title }))}
           currentEpisodeId={activeVideo.id}
           onRefreshSource={refreshSource}
-          onBack={stopPlayback}
-          onNext={nextEpisode ? () => openVideo(nextEpisode) : undefined}
+          onRememberPosition={(currentTimeSec, durationSec) =>
+            rememberResumePosition(activeVideo.id, currentTimeSec, undefined, durationSec)
+          }
+          onBack={(currentTimeSec = 0, durationSec = 0) => {
+            rememberResumePosition(activeVideo.id, currentTimeSec, undefined, durationSec);
+            stopPlayback();
+          }}
+          onNext={
+            nextEpisode
+              ? () => openVideo(nextEpisode)
+              : undefined
+          }
           onSelectEpisode={(id) => {
             const target = episodeSiblings.find((video) => video.id === id);
             if (target) openVideo(target);

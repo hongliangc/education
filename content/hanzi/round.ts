@@ -1,11 +1,13 @@
-import { HANZI_CATALOG, HANZI_LEVELS, type PrimaryGradeLevel } from "./catalog";
+import { HANZI_CATALOG, HANZI_LEVELS, type HanziItem, type PrimaryGradeLevel } from "./catalog";
 import type { HanziProgressMap } from "./progress";
 import {
   generateHanziChallenges as generateCoreChallenges,
+  generateHanziChallengesFromPool as generateCoreChallengesFromPool,
   getHanziForLevel as getCoreHanziForLevel,
   getHanziForPrimaryGrade as getCoreHanziForPrimaryGrade,
   isPrimaryGradeLevel as isCorePrimaryGradeLevel,
   pickHanziWritingRound as pickCoreHanziWritingRound,
+  pickHanziWritingRoundFromPool as pickCoreHanziWritingRoundFromPool,
 } from "./round-core";
 
 export type {
@@ -42,6 +44,15 @@ export function generateHanziChallenges(
   return generateCoreChallenges(HANZI_CATALOG, HANZI_LEVELS, level, count, rng, progress, now);
 }
 
+export function generateHanziChallengesFromPool(
+  answerPool: readonly HanziItem[],
+  distractorPool: readonly HanziItem[],
+  count = 8,
+  rng: () => number = Math.random,
+) {
+  return generateCoreChallengesFromPool(answerPool, distractorPool, count, rng);
+}
+
 export function pickHanziWritingRound(
   level: PrimaryGradeLevel,
   count = 4,
@@ -50,4 +61,12 @@ export function pickHanziWritingRound(
   now = Date.now(),
 ) {
   return pickCoreHanziWritingRound(HANZI_CATALOG, HANZI_LEVELS, level, count, rng, progress, now);
+}
+
+export function pickHanziWritingRoundFromPool(
+  items: readonly HanziItem[],
+  count = 4,
+  rng: () => number = Math.random,
+) {
+  return pickCoreHanziWritingRoundFromPool(items, count, rng);
 }

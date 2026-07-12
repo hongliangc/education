@@ -159,3 +159,14 @@ export function AspectFillIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function RefreshIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" {...props}>
+      <path d="M20 6v5h-5" />
+      <path d="M4 18v-5h5" />
+      <path d="M18.2 9A7 7 0 0 0 6.7 6.3L4 9" />
+      <path d="M5.8 15a7 7 0 0 0 11.5 2.7L20 15" />
+    </svg>
+  );
+}

@@ -13,7 +13,9 @@
   --color-ink: #1f2937;
   --color-paper: #fff7ed;
   --color-cream: #fef3c7;
-  --font-sans: var(--font-kid), "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-sans: "Microsoft YaHei", "微软雅黑", sans-serif;
+  --font-kid: var(--font-sans);
+  --font-history: var(--font-sans);
 }
 
 html, body {
@@ -103,7 +105,7 @@ body {
 .scroll-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
 /* 历史板块：碑刻/史册展示字 */
-.font-history { font-family: var(--font-history), serif; }
+.font-history { font-family: var(--font-history); }
 
 /* 朝代卷轴展开（进三国页一次性） */
 @keyframes scroll-unfurl {
