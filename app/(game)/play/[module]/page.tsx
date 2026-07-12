@@ -48,10 +48,20 @@ export default function PlayPage({
   // as secondary modes, including for grades without a guided curriculum.
   const mathHasPath = slug === "math" && getMathCurriculum(grade) !== null;
   const [mathMode, setMathMode] = useState<"categories" | "path" | "classic">("categories");
+  const [storeHydrated, setStoreHydrated] = useState(false);
 
   useEffect(() => {
-    if (!child) router.replace("/child-select");
-  }, [child, router]);
+    const persist = useGameStore.persist;
+    if (persist.hasHydrated()) {
+      setStoreHydrated(true);
+      return;
+    }
+    return persist.onFinishHydration(() => setStoreHydrated(true));
+  }, []);
+
+  useEffect(() => {
+    if (storeHydrated && !child) router.replace("/child-select");
+  }, [child, router, storeHydrated]);
 
   // 故事模块已迁移到全屏 /story（B1）；/play/story 重定向过去
   useEffect(() => {
@@ -59,7 +69,7 @@ export default function PlayPage({
   }, [slug, router]);
 
   if (!moduleId) return notFound();
-  if (!child) return null;
+  if (!storeHydrated || !child) return null;
   if (slug === "story") return null; // 已重定向到 /story
 
   const meta = MODULE_META[moduleId];
