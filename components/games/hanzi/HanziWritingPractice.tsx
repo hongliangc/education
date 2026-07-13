@@ -125,46 +125,49 @@ export function HanziWritingPractice({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="h-[min(94vh,64rem)] space-y-3 overflow-y-auto bg-[#fffdf9] p-4 sm:p-6">
       <HanziScreenHeader title="汉字书写" subtitle="跟着笔顺写一写" onBack={onExit} progress={`${idx + 1}/${round.length}`} />
-      <div className="grid grid-cols-2 gap-2"><button type="button" className="rounded-2xl bg-sky-500 py-3 font-black text-white">单字练习</button><button type="button" onClick={() => setWritingMode("words")} className="rounded-2xl bg-white py-3 font-black text-slate-600 ring-1 ring-slate-200">词语练习</button></div>
+      <div className="grid grid-cols-2 gap-2"><button type="button" className="rounded-2xl bg-sky-500 py-2.5 font-black text-white">单字练习</button><button type="button" onClick={() => setWritingMode("words")} className="rounded-2xl bg-white py-2.5 font-black text-slate-600 ring-1 ring-slate-200">词语练习</button></div>
 
-      <div className="text-center">
-        <div className="text-6xl font-bold text-slate-800">{item.char}</div>
-        <div className="mt-1 text-2xl font-bold text-pink-500">{item.pinyin}</div>
-        <div className="mt-1 text-sm text-slate-500">
-          {item.meaning} · {item.words.join(" / ")}
-        </div>
-        <div className="mt-2 flex flex-wrap justify-center gap-2">
+      <div className="grid items-start gap-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_minmax(0,0.9fr)]">
+        <section className="rounded-3xl bg-sky-50 p-4 text-center ring-1 ring-sky-100">
+          <div className="text-xs font-black text-sky-600">✦ 当前汉字 ✦</div>
+          <div className="mx-auto mt-3 grid aspect-square max-w-52 place-items-center rounded-3xl bg-white text-8xl font-black text-slate-800 shadow-sm ring-1 ring-sky-100">{item.char}</div>
+          <div className="mt-3 text-3xl font-black text-pink-500">{item.pinyin}</div>
+          <div className="mt-1 text-sm font-bold text-slate-500">{item.meaning}</div>
+          <div className="mt-3 text-left text-sm font-black text-sky-700">📖 常见词语</div>
+          <div className="mt-2 flex flex-wrap justify-center gap-2">{item.words.map((word) => <span key={word} className="rounded-full bg-white px-3 py-1.5 text-sm font-black text-sky-700 ring-1 ring-sky-100">{word}</span>)}</div>
+          <div className="mt-3 grid gap-2">
           <button
             type="button"
             onClick={() => {
               speechRef.current?.stop();
               speechRef.current = speakText(item.char, { lang: "zh-CN" });
             }}
-            className="rounded-full bg-sky-100 px-4 py-2 text-sm font-bold text-sky-700"
+            className="rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-sky-700 ring-1 ring-sky-200"
           >
             🔊 听这个字
           </button>
           <button
             type="button"
             onClick={() => setDemoRequest((value) => value + 1)}
-            className="rounded-full bg-pink-100 px-4 py-2 text-sm font-bold text-pink-700"
+            className="rounded-2xl bg-pink-50 px-4 py-2.5 text-sm font-bold text-pink-700 ring-1 ring-pink-200"
           >
             ✍️ 演示笔顺
           </button>
-        </div>
+          </div>
+        </section>
+        <section className="min-w-0 rounded-3xl bg-white p-3 ring-1 ring-slate-200"><HanziWriterPad item={item} demoRequest={demoRequest} onStrokeCorrect={strokeCorrect} /></section>
+        <aside className="space-y-3">
+          <InfoPanel title="💡 笔顺提示"><div className="flex gap-2">{Array.from({ length: Math.min(4, Math.max(1, item.char.length + 2)) }, (_, step) => <span key={step} className="grid h-12 flex-1 place-items-center rounded-xl bg-white text-xl font-black text-slate-700 ring-1 ring-pink-100">{step + 1}</span>)}</div></InfoPanel>
+          <InfoPanel title="🎯 当前任务"><p className="text-sm font-bold leading-6 text-slate-600">请按照正确的笔顺，在中间的田字格中写出这个字。</p></InfoPanel>
+          <InfoPanel title="✏️ 笔画进度"><div className="flex justify-between text-sm font-black text-slate-600"><span>已写对</span><span>{strokeTicks} 笔</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200"><div className="h-full rounded-full bg-pink-400" style={{ width: `${Math.min(100, strokeTicks * 20)}%` }} /></div></InfoPanel>
+          <InfoPanel title="💗 记忆小提示"><p className="text-sm font-bold leading-6 text-slate-600">{item.story}</p></InfoPanel>
+        </aside>
       </div>
 
-      <HanziWriterPad
-        item={item}
-        demoRequest={demoRequest}
-        onStrokeCorrect={strokeCorrect}
-      />
-
-      <div className="rounded-3xl bg-amber-50 p-4 text-center text-sm font-bold text-amber-700">
+      <div className="rounded-2xl bg-amber-50 p-3 text-center text-sm font-bold text-amber-700 ring-1 ring-amber-100">
         {item.story}
-        <div className="mt-1 text-xs text-amber-600">已写对 {strokeTicks} 笔，跟着提示完成描红。</div>
       </div>
 
       <div className="flex flex-wrap justify-center gap-3">
@@ -181,4 +184,8 @@ export function HanziWritingPractice({
       </p>
     </div>
   );
+}
+
+function InfoPanel({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="rounded-2xl bg-pink-50/70 p-4 ring-1 ring-pink-100"><h3 className="mb-3 font-black text-pink-600">{title}</h3>{children}</section>;
 }

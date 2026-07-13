@@ -37,7 +37,7 @@ export function HanziStoryLesson({ item, onBack }: { item: HanziItem; onBack: ()
   };
 
   return (
-    <section className="space-y-5 text-center">
+    <section className="h-[min(94vh,64rem)] space-y-5 overflow-y-auto bg-[#fffdf9] p-4 text-center sm:p-6">
       <HanziScreenHeader title={`${item.char}的小故事`} subtitle="听故事 · 说一说" onBack={() => { stop(); onBack(); }} />
       <div className="rounded-[2rem] bg-violet-50 p-6 ring-1 ring-violet-100">
         <div className="text-7xl font-black text-slate-800">{item.char}</div>

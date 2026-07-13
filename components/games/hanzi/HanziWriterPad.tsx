@@ -167,7 +167,7 @@ export function HanziWriterPad({
 
   return (
     <div className="space-y-3">
-      <div className="relative mx-auto aspect-square w-[min(300px,78vw)] rounded-3xl bg-white shadow-inner ring-2 ring-pink-100">
+      <div className="relative mx-auto aspect-square w-full max-w-[32rem] rounded-3xl bg-white shadow-inner ring-2 ring-pink-100">
         <div
           id={outlineTargetId}
           className="pointer-events-none absolute inset-0 z-0 h-full w-full touch-none"

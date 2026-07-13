@@ -59,7 +59,7 @@ export {
 export { selectNextIdiom } from "./idiom-scheduler";
 export { hanziQuestionSpeechText } from "./question-speech";
 export { PINYIN_FOUNDATIONS, type PinyinFoundation } from "./pinyin-foundation";
-export { pinyinSsml, repeatedPinyinSsml, type PinyinSsmlBase, type PinyinTone } from "./pinyin-speech";
+export { pinyinSsml, repeatedPinyinSsml, syllableToneSsml, toneMarkedSyllables, type PinyinSsmlBase, type PinyinTone } from "./pinyin-speech";
 export { PINYIN_CHART, type PinyinCategory, type PinyinChartItem } from "./pinyin-chart";
 export { shufflePinyinChoices } from "./pinyin-choices";
 export { PINYIN_SYLLABLES, type PinyinDifficulty, type PinyinSyllable } from "./pinyin-syllables";

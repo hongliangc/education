@@ -230,7 +230,7 @@ test("hanzi home shows direct lesson entries and pinyin controls have safe spaci
   const pinyin = readFileSync("components/games/hanzi/PinyinFoundationBoard.tsx", "utf8");
   const lesson = readFileSync("components/games/hanzi/HanziPinyinLesson.tsx", "utf8");
 
-  for (const label of ["汉字学习", "拼音乐园", "故事", "成语"]) {
+  for (const label of ["汉字学习", "拼音乐园", "成语"]) {
     assert.match(home, new RegExp(label));
   }
   assert.doesNotMatch(home, /toolsOpen/);
@@ -245,11 +245,11 @@ test("hanzi learning uses four first-level destinations and a dedicated characte
   const daily = readFileSync("components/games/hanzi/HanziDailyLesson.tsx", "utf8");
   const game = readFileSync("components/games/WritingGame.tsx", "utf8");
 
-  assert.equal((home.match(/<LessonEntry/g) ?? []).length, 4);
+  assert.equal((home.match(/<LessonEntry/g) ?? []).length, 3);
   assert.match(home, /label="汉字学习"/);
   assert.match(home, /label="拼音乐园"/);
   assert.match(home, /label="成语"/);
-  assert.match(home, /label="故事"/);
+  assert.doesNotMatch(home, /label="故事"/);
   assert.match(daily, /组词/);
   assert.match(daily, /例句/);
   assert.match(daily, /写一写/);
@@ -269,4 +269,56 @@ test("clicking a curriculum character opens that character in the dedicated less
   assert.match(game, /openCharacterLesson/);
   assert.match(game, /initialItemId=\{learningItemId/);
   assert.match(daily, /initialItemId/);
+});
+
+test("writing and pinyin use the approved dense learning-workspace layouts", () => {
+  const writing = readFileSync("components/games/hanzi/HanziWritingPractice.tsx", "utf8");
+  const pinyin = readFileSync("components/games/hanzi/PinyinFoundationBoard.tsx", "utf8");
+
+  assert.match(writing, /md:grid-cols-\[minmax\(0,0\.8fr\)_minmax\(0,1\.4fr\)_minmax\(0,0\.9fr\)\]/);
+  assert.match(writing, /笔顺提示/);
+  assert.match(writing, /笔画进度/);
+  assert.match(writing, /当前任务/);
+  assert.match(pinyin, /lg:grid-cols-\[18rem_minmax\(0,1fr\)\]/);
+  assert.match(pinyin, /学习顺序/);
+  assert.match(pinyin, /学习进度/);
+});
+
+test("other hanzi child lessons use the same bounded viewport shell", () => {
+  for (const file of ["HanziRecognitionRound.tsx", "HanziWordWritingPractice.tsx", "HanziStoryLesson.tsx", "HanziIdiomLesson.tsx"]) {
+    const source = readFileSync(`components/games/hanzi/${file}`, "utf8");
+    assert.match(source, /h-\[min\(94vh,64rem\)\]/, `${file} should fill the learning workspace`);
+  }
+});
+
+test("thin story content is folded into hanzi learning and tones have distinct fallbacks", () => {
+  const home = readFileSync("components/games/hanzi/HanziLearningHome.tsx", "utf8");
+  const pinyin = readFileSync("components/games/hanzi/PinyinFoundationBoard.tsx", "utf8");
+  const daily = readFileSync("components/games/hanzi/HanziDailyLesson.tsx", "utf8");
+  const idiom = readFileSync("components/games/hanzi/HanziIdiomLesson.tsx", "utf8");
+
+  assert.equal((home.match(/<LessonEntry/g) ?? []).length, 3);
+  assert.doesNotMatch(home, /label="故事"/);
+  assert.match(pinyin, /toneNarration\(tone\.label, index\)/);
+  assert.match(pinyin, /第一声/);
+  assert.match(pinyin, /第四声/);
+  assert.match(daily, /md:grid-cols-\[12rem_minmax\(0,1fr\)\]/);
+  assert.match(daily, /min-h-0 flex-1/);
+  assert.match(idiom, /lg:grid-cols-2/);
+});
+
+test("the character lesson uses a short two-column rail and fills the hero horizontally", () => {
+  const daily = readFileSync("components/games/hanzi/HanziDailyLesson.tsx", "utf8");
+  assert.match(daily, /md:grid-cols-\[12rem_minmax\(0,1fr\)\]/);
+  assert.match(daily, /md:grid-cols-2 md:content-start/);
+  assert.match(daily, /lg:grid-cols-3/);
+  assert.match(daily, /记忆提示/);
+});
+
+test("every pinyin category shares the tone-learning template", () => {
+  const board = readFileSync("components/games/hanzi/PinyinFoundationBoard.tsx", "utf8");
+  assert.match(board, /toneChoices/);
+  assert.match(board, /拼读四声/);
+  assert.match(board, /toneMarkedSyllables/);
+  assert.match(board, /toneChoices\.map/);
 });

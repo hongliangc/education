@@ -136,7 +136,7 @@ export function HanziRecognitionRound({
   };
 
   return (
-    <div className="space-y-5">
+    <div className="h-[min(94vh,64rem)] space-y-5 overflow-y-auto bg-[#fffdf9] p-4 sm:p-6">
       <HanziScreenHeader title={title} subtitle="识字校验" onBack={onExit} progress={`${qi + 1}/${round.length}`} />
 
       <div className="rounded-3xl bg-sky-50 p-5 text-center ring-1 ring-sky-100">

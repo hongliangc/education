@@ -62,7 +62,6 @@ export function HanziLearningHome({
         <LessonEntry icon="字" label="汉字学习" onClick={onStartDaily} />
         <LessonEntry icon="🔤" label="拼音乐园" onClick={onStartPinyin} />
         <LessonEntry icon="📜" label="成语" onClick={onStartIdiom} />
-        <LessonEntry icon="📖" label="故事" onClick={onStartStory} />
       </nav>
       <div className="min-h-0 flex-1 p-3 sm:p-4">
         <HanziCurriculumBrowser progress={progress} currentUnitId={currentUnitId} selectedIds={selectedIds} onUnitChange={onUnitChange} onSelectionChange={onSelectionChange} onStartSelection={onStartSelection} onOpenCharacter={onOpenCharacter} />

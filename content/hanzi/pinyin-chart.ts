@@ -10,6 +10,7 @@ export interface PinyinChartItem {
   ssml: string;
   lessonSsml: string;
   fallback: string;
+  phonemeBase: string;
 }
 
 type Seed = readonly [display: string, ph: string, soundText: string, exampleChar: string, exampleWord: string];
@@ -48,5 +49,6 @@ export const PINYIN_CHART: readonly PinyinChartItem[] = (Object.entries(SEEDS) a
     ssml: `<speak><phoneme alphabet="py" ph="${ph}">${soundText}</phoneme></speak>`,
     lessonSsml: `<speak>${HINT[category]}<break time="300ms"/><phoneme alphabet="py" ph="${ph}">${soundText}</phoneme><break time="250ms"/><phoneme alphabet="py" ph="${ph}">${soundText}</phoneme></speak>`,
     fallback: soundText,
+    phonemeBase: ph.replace(/\d$/, ""),
   })),
 );

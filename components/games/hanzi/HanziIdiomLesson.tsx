@@ -80,8 +80,9 @@ export function HanziIdiomLesson({
   };
 
   return (
-    <section className="space-y-5">
+    <section className="h-[min(94vh,64rem)] space-y-5 overflow-y-auto bg-[#fffdf9] p-4 sm:p-6">
       <HanziScreenHeader title={lesson.idiom} subtitle="成语学习" onBack={onBack} progress={`${quizIndex + 1}/${lesson.quiz.length}`} />
+      <div className="grid items-stretch gap-4 lg:grid-cols-2">
       <div className="rounded-[1.75rem] bg-purple-50 p-5 ring-1 ring-purple-100">
         <div className="text-sm font-black text-purple-500">成语典故</div>
         <h3 className="mt-1 text-4xl font-black text-slate-800">{lesson.idiom}</h3>
@@ -160,6 +161,7 @@ export function HanziIdiomLesson({
           全部题目完成啦！🌟
         </div>
       ) : null}
+      </div>
 
       <div className="flex justify-center">
         <Btn variant="ghost" onClick={onBack}>

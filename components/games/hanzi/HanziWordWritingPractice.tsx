@@ -54,7 +54,7 @@ export function HanziWordWritingPractice({ items, onResult, onComplete, onExit, 
     setDone(true);
   };
 
-  return <div className="space-y-5">
+  return <div className="h-[min(94vh,64rem)] space-y-4 overflow-y-auto bg-[#fffdf9] p-4 sm:p-6">
     <HanziScreenHeader title="词语书写" subtitle="在词语中练汉字" onBack={onExit} progress={`${wordIndex + 1}/${words.length}`} />
     <div className="grid grid-cols-2 gap-2"><button type="button" onClick={onCharacters} className="rounded-2xl bg-white py-3 font-black text-slate-600 ring-1 ring-slate-200">单字练习</button><button type="button" className="rounded-2xl bg-pink-500 py-3 font-black text-white">词语练习</button></div>
     <section className="rounded-3xl bg-amber-50 p-4 text-center ring-1 ring-amber-100"><div className="text-xs font-black text-amber-600">重点词语 {wordIndex + 1}/{words.length}</div><div className="mt-1 text-4xl font-black tracking-widest text-slate-800">{currentWord.items.map((wordItem, index) => <span key={`${wordItem.id}-${index}`} className={index === charIndex ? "text-pink-600 underline decoration-amber-300 decoration-4 underline-offset-8" : ""}>{wordItem.char}</span>)}</div><p className="mt-4 text-sm font-bold text-slate-500">{currentWord.example}</p><button type="button" onClick={() => { speechRef.current?.stop(); speechRef.current = speakText(currentWord.word, { lang: "zh-CN" }); }} className="mt-3 rounded-full bg-white px-4 py-2 text-sm font-black text-amber-700">🔊 朗读词语</button></section>
