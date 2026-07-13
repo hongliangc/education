@@ -1,5 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 
 // @ts-expect-error Node's native TypeScript test runner requires the explicit extension.
 import { HANZI_CATALOG, HANZI_LEVELS } from "../../content/hanzi/catalog.ts";
@@ -29,6 +31,14 @@ test("every hanzi entry has a unique id and required learning fields", () => {
     assert.ok(item.groupTitle.length > 0, `${item.id} missing memory group title`);
     assert.ok(item.groupPhrase.length > 0, `${item.id} missing memory phrase`);
   }
+});
+
+test("every learnable hanzi has local stroke-order data", () => {
+  const missing = HANZI_CATALOG.filter(
+    (item) => !existsSync(join("public", "hanzi-data", `${item.char}.json`)),
+  ).map((item) => item.char);
+
+  assert.deepEqual(missing, [], `missing stroke data: ${missing.join("")}`);
 });
 
 test("primary grade pools grow cumulatively from grade one to grade six", () => {
@@ -95,7 +105,7 @@ test("pinyin foundation starts with simple finals and four tones", () => {
 });
 
 test("pinyin SSML pins every final to each real tone", () => {
-  assert.equal(pinyinSsml("a", 1), '<speak><phoneme alphabet="py" ph="a1">啊</phoneme></speak>');
+  assert.equal(pinyinSsml("a", 1), '<speak><phoneme alphabet="py" ph="a1">妈</phoneme></speak>');
   for (const item of PINYIN_FOUNDATIONS) {
     for (const tone of [1, 2, 3, 4] as const) {
       assert.match(pinyinSsml(item.ssmlBase, tone), new RegExp(`ph="${item.ssmlBase}${tone}"`));
