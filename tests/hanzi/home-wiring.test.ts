@@ -84,7 +84,7 @@ test("pinyin learning starts with a foundation stage before character pinyin", (
   assert.match(source, /第一阶段/);
   assert.match(source, /第二阶段/);
   assert.match(source, /单韵母/);
-  assert.match(source, /四声/);
+  assert.match(source, /声调例字/);
   assert.match(source, /PinyinFoundationBoard/);
   assert.match(source, /它们拼成什么/);
   assert.match(source, /第二阶段完成/);
@@ -299,9 +299,9 @@ test("thin story content is folded into hanzi learning and tones have distinct f
 
   assert.equal((home.match(/<LessonEntry/g) ?? []).length, 3);
   assert.doesNotMatch(home, /label="故事"/);
-  assert.match(pinyin, /toneNarration\(tone\.label, index\)/);
-  assert.match(pinyin, /第一声/);
-  assert.match(pinyin, /第四声/);
+  assert.match(pinyin, /playPinyinClip\(tone\.path\)/);
+  assert.match(pinyin, /pinyinToneAudioPath/);
+  assert.match(pinyin, /tone\.character/);
   assert.match(daily, /md:grid-cols-\[12rem_minmax\(0,1fr\)\]/);
   assert.match(daily, /min-h-0 flex-1/);
   assert.match(idiom, /lg:grid-cols-2/);
@@ -315,10 +315,10 @@ test("the character lesson uses a short two-column rail and fills the hero horiz
   assert.match(daily, /记忆提示/);
 });
 
-test("every pinyin category shares the tone-learning template", () => {
+test("finals use tone examples while initials keep their short base sound", () => {
   const board = readFileSync("components/games/hanzi/PinyinFoundationBoard.tsx", "utf8");
   assert.match(board, /toneChoices/);
-  assert.match(board, /拼读四声/);
-  assert.match(board, /toneMarkedSyllables/);
+  assert.match(board, /pinyinToneExamples/);
+  assert.match(board, /声母本身没有声调/);
   assert.match(board, /toneChoices\.map/);
 });

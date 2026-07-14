@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Btn } from "@/components/Btn";
 import { PINYIN_SYLLABLES, shufflePinyinChoices, type PinyinSyllable } from "@/content/hanzi";
-import { speakPinyin, speakText, type SpeechController } from "@/lib/speech";
+import { playClip, playClipSequence, speakPinyin, speakText, type SpeechController } from "@/lib/speech";
 import { PinyinFoundationBoard } from "./PinyinFoundationBoard";
 import { HanziScreenHeader } from "./HanziScreenHeader";
 
@@ -27,6 +27,14 @@ export function HanziPinyinLesson({ childId, onBack }: { childId: string; onBack
     stopSpeech();
     speechRef.current = speakPinyin(ssml, fallback);
   };
+  const playStaticPinyin = (path: string) => {
+    stopSpeech();
+    speechRef.current = playClip(path);
+  };
+  const playStaticSequence = (paths: readonly string[]) => {
+    stopSpeech();
+    speechRef.current = playClipSequence(paths);
+  };
   const leave = () => {
     stopSpeech();
     onBack();
@@ -38,7 +46,7 @@ export function HanziPinyinLesson({ childId, onBack }: { childId: string; onBack
     <section className="h-[min(94vh,64rem)] space-y-5 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
       <HanziScreenHeader title="拼音学习" subtitle="先认基础，再练拼读" onBack={leave} />
       {stage === "foundation" ? (
-        <PinyinFoundationBoard speakPinyin={speakExactPinyin} speakExample={speak} onComplete={beginCharacters} />
+        <PinyinFoundationBoard playPinyinClip={playStaticPinyin} playPinyinSequence={playStaticSequence} speakExample={speak} onComplete={beginCharacters} />
       ) : (
         <SyllableStage childId={childId} speak={speak} speakExact={speakExactPinyin} stopSpeech={stopSpeech} onFoundation={backToFoundation} />
       )}

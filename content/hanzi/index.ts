@@ -61,6 +61,7 @@ export { hanziQuestionSpeechText } from "./question-speech";
 export { PINYIN_FOUNDATIONS, type PinyinFoundation } from "./pinyin-foundation";
 export { pinyinSsml, repeatedPinyinSsml, syllableToneSsml, toneMarkedSyllables, type PinyinSsmlBase, type PinyinTone } from "./pinyin-speech";
 export { PINYIN_CHART, type PinyinCategory, type PinyinChartItem } from "./pinyin-chart";
+export { PINYIN_AUDIO_ITEMS, pinyinAudioPath, pinyinToneAudioPath, pinyinToneExamples, type PinyinAudioItem, type PinyinToneExample } from "./pinyin-audio";
 export { shufflePinyinChoices } from "./pinyin-choices";
 export { PINYIN_SYLLABLES, type PinyinDifficulty, type PinyinSyllable } from "./pinyin-syllables";
 export { HANZI_KEY_WORDS, getKeyWordsForPrimaryGrade, type HanziKeyWord } from "./words";

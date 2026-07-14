@@ -418,6 +418,45 @@ export function playClip(url: string): SpeechController {
   };
 }
 
+/** 顺序播放一组已生成的静态学习音频；单个文件失败时跳到下一个。 */
+export function playClipSequence(urls: readonly string[]): SpeechController {
+  stopSpeaking();
+  let index = 0;
+  let active: HTMLAudioElement | null = null;
+  let stopped = false;
+
+  const playNext = () => {
+    if (stopped || index >= urls.length) {
+      if (currentAudio === active) currentAudio = null;
+      active = null;
+      return;
+    }
+    const audio = new Audio(urls[index]);
+    index += 1;
+    active = audio;
+    currentAudio = audio;
+    audio.onended = playNext;
+    audio.onerror = playNext;
+    void audio.play().catch(playNext);
+  };
+
+  playNext();
+  return {
+    pause() {
+      active?.pause();
+    },
+    resume() {
+      void active?.play().catch(() => {});
+    },
+    stop() {
+      stopped = true;
+      active?.pause();
+      if (currentAudio === active) currentAudio = null;
+      active = null;
+    },
+  };
+}
+
 // ---------- 英文预生成音频（字母名/音/例词，AWS Polly 美式童声，离线生成、静态文件） ----------
 // 必须与 scripts/dump-en-audio-items.ts 的 slug() 保持一致。
 export function enAudioSlug(text: string): string {

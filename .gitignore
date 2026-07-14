@@ -63,3 +63,6 @@ Resources/
 # build cache & downloaded media (never commit)
 /.cache/
 /资源下载/
+
+# local service credentials (never commit)
+/todo/账号.md

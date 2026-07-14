@@ -1,0 +1,1486 @@
+[
+  {
+    "id": "initial-b-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-b/base.mp3",
+    "phoneme": "bo1",
+    "fallback": "玻"
+  },
+  {
+    "id": "initial-p-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-p/base.mp3",
+    "phoneme": "po1",
+    "fallback": "坡"
+  },
+  {
+    "id": "initial-m-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-m/base.mp3",
+    "phoneme": "mo1",
+    "fallback": "摸"
+  },
+  {
+    "id": "initial-f-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-f/base.mp3",
+    "phoneme": "fo1",
+    "fallback": "佛"
+  },
+  {
+    "id": "initial-d-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-d/base.mp3",
+    "phoneme": "de1",
+    "fallback": "得"
+  },
+  {
+    "id": "initial-t-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-t/base.mp3",
+    "phoneme": "te1",
+    "fallback": "特"
+  },
+  {
+    "id": "initial-n-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-n/base.mp3",
+    "phoneme": "ne1",
+    "fallback": "呢"
+  },
+  {
+    "id": "initial-l-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-l/base.mp3",
+    "phoneme": "le1",
+    "fallback": "勒"
+  },
+  {
+    "id": "initial-g-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-g/base.mp3",
+    "phoneme": "ge1",
+    "fallback": "哥"
+  },
+  {
+    "id": "initial-k-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-k/base.mp3",
+    "phoneme": "ke1",
+    "fallback": "科"
+  },
+  {
+    "id": "initial-h-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-h/base.mp3",
+    "phoneme": "he1",
+    "fallback": "喝"
+  },
+  {
+    "id": "initial-j-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-j/base.mp3",
+    "phoneme": "ji1",
+    "fallback": "鸡"
+  },
+  {
+    "id": "initial-q-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-q/base.mp3",
+    "phoneme": "qi1",
+    "fallback": "七"
+  },
+  {
+    "id": "initial-x-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-x/base.mp3",
+    "phoneme": "xi1",
+    "fallback": "西"
+  },
+  {
+    "id": "initial-zh-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-zh/base.mp3",
+    "phoneme": "zhi1",
+    "fallback": "知"
+  },
+  {
+    "id": "initial-ch-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-ch/base.mp3",
+    "phoneme": "chi1",
+    "fallback": "吃"
+  },
+  {
+    "id": "initial-sh-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-sh/base.mp3",
+    "phoneme": "shi1",
+    "fallback": "诗"
+  },
+  {
+    "id": "initial-r-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-r/base.mp3",
+    "phoneme": "ri1",
+    "fallback": "日"
+  },
+  {
+    "id": "initial-z-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-z/base.mp3",
+    "phoneme": "zi1",
+    "fallback": "资"
+  },
+  {
+    "id": "initial-c-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-c/base.mp3",
+    "phoneme": "ci1",
+    "fallback": "词"
+  },
+  {
+    "id": "initial-s-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-s/base.mp3",
+    "phoneme": "si1",
+    "fallback": "丝"
+  },
+  {
+    "id": "initial-y-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-y/base.mp3",
+    "phoneme": "yi1",
+    "fallback": "衣"
+  },
+  {
+    "id": "initial-w-base",
+    "kind": "base",
+    "path": "/audio/pinyin/initial-w/base.mp3",
+    "phoneme": "wu1",
+    "fallback": "乌"
+  },
+  {
+    "id": "simple-final-a-base",
+    "kind": "base",
+    "path": "/audio/pinyin/simple-final-a/base.mp3",
+    "phoneme": "a1",
+    "fallback": "啊"
+  },
+  {
+    "id": "simple-final-a-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-a/tone-1.mp3",
+    "phoneme": "ma1",
+    "fallback": "妈"
+  },
+  {
+    "id": "simple-final-a-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-a/tone-2.mp3",
+    "phoneme": "ma2",
+    "fallback": "麻"
+  },
+  {
+    "id": "simple-final-a-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-a/tone-3.mp3",
+    "phoneme": "ma3",
+    "fallback": "马"
+  },
+  {
+    "id": "simple-final-a-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-a/tone-4.mp3",
+    "phoneme": "ma4",
+    "fallback": "骂"
+  },
+  {
+    "id": "simple-final-o-base",
+    "kind": "base",
+    "path": "/audio/pinyin/simple-final-o/base.mp3",
+    "phoneme": "o1",
+    "fallback": "喔"
+  },
+  {
+    "id": "simple-final-o-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-o/tone-1.mp3",
+    "phoneme": "bo1",
+    "fallback": "波"
+  },
+  {
+    "id": "simple-final-o-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-o/tone-2.mp3",
+    "phoneme": "bo2",
+    "fallback": "伯"
+  },
+  {
+    "id": "simple-final-o-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-o/tone-3.mp3",
+    "phoneme": "wo3",
+    "fallback": "我"
+  },
+  {
+    "id": "simple-final-o-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-o/tone-4.mp3",
+    "phoneme": "wo4",
+    "fallback": "卧"
+  },
+  {
+    "id": "simple-final-e-base",
+    "kind": "base",
+    "path": "/audio/pinyin/simple-final-e/base.mp3",
+    "phoneme": "e1",
+    "fallback": "鹅"
+  },
+  {
+    "id": "simple-final-e-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-e/tone-1.mp3",
+    "phoneme": "ge1",
+    "fallback": "哥"
+  },
+  {
+    "id": "simple-final-e-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-e/tone-2.mp3",
+    "phoneme": "e2",
+    "fallback": "鹅"
+  },
+  {
+    "id": "simple-final-e-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-e/tone-3.mp3",
+    "phoneme": "ke3",
+    "fallback": "可"
+  },
+  {
+    "id": "simple-final-e-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-e/tone-4.mp3",
+    "phoneme": "e4",
+    "fallback": "饿"
+  },
+  {
+    "id": "simple-final-i-base",
+    "kind": "base",
+    "path": "/audio/pinyin/simple-final-i/base.mp3",
+    "phoneme": "yi1",
+    "fallback": "衣"
+  },
+  {
+    "id": "simple-final-i-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-i/tone-1.mp3",
+    "phoneme": "yi1",
+    "fallback": "衣"
+  },
+  {
+    "id": "simple-final-i-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-i/tone-2.mp3",
+    "phoneme": "yi2",
+    "fallback": "姨"
+  },
+  {
+    "id": "simple-final-i-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-i/tone-3.mp3",
+    "phoneme": "yi3",
+    "fallback": "椅"
+  },
+  {
+    "id": "simple-final-i-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-i/tone-4.mp3",
+    "phoneme": "yi4",
+    "fallback": "意"
+  },
+  {
+    "id": "simple-final-u-base",
+    "kind": "base",
+    "path": "/audio/pinyin/simple-final-u/base.mp3",
+    "phoneme": "wu1",
+    "fallback": "乌"
+  },
+  {
+    "id": "simple-final-u-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-u/tone-1.mp3",
+    "phoneme": "wu1",
+    "fallback": "屋"
+  },
+  {
+    "id": "simple-final-u-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-u/tone-2.mp3",
+    "phoneme": "wu2",
+    "fallback": "无"
+  },
+  {
+    "id": "simple-final-u-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-u/tone-3.mp3",
+    "phoneme": "wu3",
+    "fallback": "五"
+  },
+  {
+    "id": "simple-final-u-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-u/tone-4.mp3",
+    "phoneme": "wu4",
+    "fallback": "物"
+  },
+  {
+    "id": "simple-final-ü-base",
+    "kind": "base",
+    "path": "/audio/pinyin/simple-final-v/base.mp3",
+    "phoneme": "yu1",
+    "fallback": "鱼"
+  },
+  {
+    "id": "simple-final-ü-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-v/tone-2.mp3",
+    "phoneme": "yu2",
+    "fallback": "鱼"
+  },
+  {
+    "id": "simple-final-ü-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-v/tone-3.mp3",
+    "phoneme": "yu3",
+    "fallback": "雨"
+  },
+  {
+    "id": "simple-final-ü-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/simple-final-v/tone-4.mp3",
+    "phoneme": "yu4",
+    "fallback": "玉"
+  },
+  {
+    "id": "compound-final-ai-base",
+    "kind": "base",
+    "path": "/audio/pinyin/compound-final-ai/base.mp3",
+    "phoneme": "ai1",
+    "fallback": "哎"
+  },
+  {
+    "id": "compound-final-ai-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ai/tone-1.mp3",
+    "phoneme": "pai1",
+    "fallback": "拍"
+  },
+  {
+    "id": "compound-final-ai-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ai/tone-2.mp3",
+    "phoneme": "pai2",
+    "fallback": "排"
+  },
+  {
+    "id": "compound-final-ai-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ai/tone-3.mp3",
+    "phoneme": "mai3",
+    "fallback": "买"
+  },
+  {
+    "id": "compound-final-ai-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ai/tone-4.mp3",
+    "phoneme": "mai4",
+    "fallback": "卖"
+  },
+  {
+    "id": "compound-final-ei-base",
+    "kind": "base",
+    "path": "/audio/pinyin/compound-final-ei/base.mp3",
+    "phoneme": "ei1",
+    "fallback": "诶"
+  },
+  {
+    "id": "compound-final-ei-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ei/tone-1.mp3",
+    "phoneme": "fei1",
+    "fallback": "飞"
+  },
+  {
+    "id": "compound-final-ei-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ei/tone-2.mp3",
+    "phoneme": "fei2",
+    "fallback": "肥"
+  },
+  {
+    "id": "compound-final-ei-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ei/tone-3.mp3",
+    "phoneme": "bei3",
+    "fallback": "北"
+  },
+  {
+    "id": "compound-final-ei-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ei/tone-4.mp3",
+    "phoneme": "lei4",
+    "fallback": "泪"
+  },
+  {
+    "id": "compound-final-ui-base",
+    "kind": "base",
+    "path": "/audio/pinyin/compound-final-ui/base.mp3",
+    "phoneme": "wei1",
+    "fallback": "威"
+  },
+  {
+    "id": "compound-final-ui-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ui/tone-1.mp3",
+    "phoneme": "gui1",
+    "fallback": "龟"
+  },
+  {
+    "id": "compound-final-ui-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ui/tone-2.mp3",
+    "phoneme": "hui2",
+    "fallback": "回"
+  },
+  {
+    "id": "compound-final-ui-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ui/tone-3.mp3",
+    "phoneme": "shui3",
+    "fallback": "水"
+  },
+  {
+    "id": "compound-final-ui-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ui/tone-4.mp3",
+    "phoneme": "dui4",
+    "fallback": "对"
+  },
+  {
+    "id": "compound-final-ao-base",
+    "kind": "base",
+    "path": "/audio/pinyin/compound-final-ao/base.mp3",
+    "phoneme": "ao1",
+    "fallback": "凹"
+  },
+  {
+    "id": "compound-final-ao-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ao/tone-1.mp3",
+    "phoneme": "mao1",
+    "fallback": "猫"
+  },
+  {
+    "id": "compound-final-ao-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ao/tone-2.mp3",
+    "phoneme": "tao2",
+    "fallback": "桃"
+  },
+  {
+    "id": "compound-final-ao-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ao/tone-3.mp3",
+    "phoneme": "hao3",
+    "fallback": "好"
+  },
+  {
+    "id": "compound-final-ao-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ao/tone-4.mp3",
+    "phoneme": "dao4",
+    "fallback": "到"
+  },
+  {
+    "id": "compound-final-ou-base",
+    "kind": "base",
+    "path": "/audio/pinyin/compound-final-ou/base.mp3",
+    "phoneme": "ou1",
+    "fallback": "欧"
+  },
+  {
+    "id": "compound-final-ou-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ou/tone-1.mp3",
+    "phoneme": "dou1",
+    "fallback": "都"
+  },
+  {
+    "id": "compound-final-ou-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ou/tone-2.mp3",
+    "phoneme": "lou2",
+    "fallback": "楼"
+  },
+  {
+    "id": "compound-final-ou-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ou/tone-3.mp3",
+    "phoneme": "gou3",
+    "fallback": "狗"
+  },
+  {
+    "id": "compound-final-ou-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ou/tone-4.mp3",
+    "phoneme": "dou4",
+    "fallback": "豆"
+  },
+  {
+    "id": "compound-final-iu-base",
+    "kind": "base",
+    "path": "/audio/pinyin/compound-final-iu/base.mp3",
+    "phoneme": "you1",
+    "fallback": "优"
+  },
+  {
+    "id": "compound-final-iu-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-iu/tone-1.mp3",
+    "phoneme": "qiu1",
+    "fallback": "秋"
+  },
+  {
+    "id": "compound-final-iu-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-iu/tone-2.mp3",
+    "phoneme": "liu2",
+    "fallback": "流"
+  },
+  {
+    "id": "compound-final-iu-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-iu/tone-3.mp3",
+    "phoneme": "jiu3",
+    "fallback": "九"
+  },
+  {
+    "id": "compound-final-iu-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-iu/tone-4.mp3",
+    "phoneme": "liu4",
+    "fallback": "六"
+  },
+  {
+    "id": "compound-final-ie-base",
+    "kind": "base",
+    "path": "/audio/pinyin/compound-final-ie/base.mp3",
+    "phoneme": "ye1",
+    "fallback": "耶"
+  },
+  {
+    "id": "compound-final-ie-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ie/tone-1.mp3",
+    "phoneme": "tie1",
+    "fallback": "贴"
+  },
+  {
+    "id": "compound-final-ie-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ie/tone-2.mp3",
+    "phoneme": "die2",
+    "fallback": "蝶"
+  },
+  {
+    "id": "compound-final-ie-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ie/tone-3.mp3",
+    "phoneme": "xie3",
+    "fallback": "写"
+  },
+  {
+    "id": "compound-final-ie-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ie/tone-4.mp3",
+    "phoneme": "ye4",
+    "fallback": "叶"
+  },
+  {
+    "id": "compound-final-üe-base",
+    "kind": "base",
+    "path": "/audio/pinyin/compound-final-ve/base.mp3",
+    "phoneme": "yue1",
+    "fallback": "约"
+  },
+  {
+    "id": "compound-final-üe-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ve/tone-1.mp3",
+    "phoneme": "yue1",
+    "fallback": "约"
+  },
+  {
+    "id": "compound-final-üe-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ve/tone-2.mp3",
+    "phoneme": "xue2",
+    "fallback": "学"
+  },
+  {
+    "id": "compound-final-üe-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ve/tone-3.mp3",
+    "phoneme": "xue3",
+    "fallback": "雪"
+  },
+  {
+    "id": "compound-final-üe-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-ve/tone-4.mp3",
+    "phoneme": "yue4",
+    "fallback": "月"
+  },
+  {
+    "id": "compound-final-er-base",
+    "kind": "base",
+    "path": "/audio/pinyin/compound-final-er/base.mp3",
+    "phoneme": "er2",
+    "fallback": "儿"
+  },
+  {
+    "id": "compound-final-er-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-er/tone-2.mp3",
+    "phoneme": "er2",
+    "fallback": "儿"
+  },
+  {
+    "id": "compound-final-er-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-er/tone-3.mp3",
+    "phoneme": "er3",
+    "fallback": "耳"
+  },
+  {
+    "id": "compound-final-er-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/compound-final-er/tone-4.mp3",
+    "phoneme": "er4",
+    "fallback": "二"
+  },
+  {
+    "id": "nasal-final-an-base",
+    "kind": "base",
+    "path": "/audio/pinyin/nasal-final-an/base.mp3",
+    "phoneme": "an1",
+    "fallback": "安"
+  },
+  {
+    "id": "nasal-final-an-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-an/tone-1.mp3",
+    "phoneme": "ban1",
+    "fallback": "班"
+  },
+  {
+    "id": "nasal-final-an-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-an/tone-2.mp3",
+    "phoneme": "lan2",
+    "fallback": "蓝"
+  },
+  {
+    "id": "nasal-final-an-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-an/tone-3.mp3",
+    "phoneme": "wan3",
+    "fallback": "碗"
+  },
+  {
+    "id": "nasal-final-an-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-an/tone-4.mp3",
+    "phoneme": "dan4",
+    "fallback": "蛋"
+  },
+  {
+    "id": "nasal-final-en-base",
+    "kind": "base",
+    "path": "/audio/pinyin/nasal-final-en/base.mp3",
+    "phoneme": "en1",
+    "fallback": "恩"
+  },
+  {
+    "id": "nasal-final-en-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-en/tone-1.mp3",
+    "phoneme": "fen1",
+    "fallback": "分"
+  },
+  {
+    "id": "nasal-final-en-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-en/tone-2.mp3",
+    "phoneme": "men2",
+    "fallback": "门"
+  },
+  {
+    "id": "nasal-final-en-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-en/tone-3.mp3",
+    "phoneme": "fen3",
+    "fallback": "粉"
+  },
+  {
+    "id": "nasal-final-en-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-en/tone-4.mp3",
+    "phoneme": "ben4",
+    "fallback": "笨"
+  },
+  {
+    "id": "nasal-final-in-base",
+    "kind": "base",
+    "path": "/audio/pinyin/nasal-final-in/base.mp3",
+    "phoneme": "yin1",
+    "fallback": "音"
+  },
+  {
+    "id": "nasal-final-in-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-in/tone-1.mp3",
+    "phoneme": "jin1",
+    "fallback": "今"
+  },
+  {
+    "id": "nasal-final-in-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-in/tone-2.mp3",
+    "phoneme": "lin2",
+    "fallback": "林"
+  },
+  {
+    "id": "nasal-final-in-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-in/tone-3.mp3",
+    "phoneme": "pin3",
+    "fallback": "品"
+  },
+  {
+    "id": "nasal-final-in-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-in/tone-4.mp3",
+    "phoneme": "jin4",
+    "fallback": "进"
+  },
+  {
+    "id": "nasal-final-un-base",
+    "kind": "base",
+    "path": "/audio/pinyin/nasal-final-un/base.mp3",
+    "phoneme": "wen1",
+    "fallback": "温"
+  },
+  {
+    "id": "nasal-final-un-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-un/tone-1.mp3",
+    "phoneme": "chun1",
+    "fallback": "春"
+  },
+  {
+    "id": "nasal-final-un-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-un/tone-2.mp3",
+    "phoneme": "lun2",
+    "fallback": "轮"
+  },
+  {
+    "id": "nasal-final-un-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-un/tone-3.mp3",
+    "phoneme": "gun3",
+    "fallback": "滚"
+  },
+  {
+    "id": "nasal-final-un-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-un/tone-4.mp3",
+    "phoneme": "kun4",
+    "fallback": "困"
+  },
+  {
+    "id": "nasal-final-ün-base",
+    "kind": "base",
+    "path": "/audio/pinyin/nasal-final-vn/base.mp3",
+    "phoneme": "yun1",
+    "fallback": "晕"
+  },
+  {
+    "id": "nasal-final-ün-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-vn/tone-1.mp3",
+    "phoneme": "jun1",
+    "fallback": "军"
+  },
+  {
+    "id": "nasal-final-ün-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-vn/tone-2.mp3",
+    "phoneme": "qun2",
+    "fallback": "群"
+  },
+  {
+    "id": "nasal-final-ün-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-vn/tone-3.mp3",
+    "phoneme": "yun3",
+    "fallback": "允"
+  },
+  {
+    "id": "nasal-final-ün-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-vn/tone-4.mp3",
+    "phoneme": "jun4",
+    "fallback": "俊"
+  },
+  {
+    "id": "nasal-final-ang-base",
+    "kind": "base",
+    "path": "/audio/pinyin/nasal-final-ang/base.mp3",
+    "phoneme": "ang1",
+    "fallback": "肮"
+  },
+  {
+    "id": "nasal-final-ang-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ang/tone-1.mp3",
+    "phoneme": "fang1",
+    "fallback": "方"
+  },
+  {
+    "id": "nasal-final-ang-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ang/tone-2.mp3",
+    "phoneme": "tang2",
+    "fallback": "糖"
+  },
+  {
+    "id": "nasal-final-ang-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ang/tone-3.mp3",
+    "phoneme": "xiang3",
+    "fallback": "想"
+  },
+  {
+    "id": "nasal-final-ang-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ang/tone-4.mp3",
+    "phoneme": "bang4",
+    "fallback": "棒"
+  },
+  {
+    "id": "nasal-final-eng-base",
+    "kind": "base",
+    "path": "/audio/pinyin/nasal-final-eng/base.mp3",
+    "phoneme": "eng1",
+    "fallback": "鞥"
+  },
+  {
+    "id": "nasal-final-eng-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-eng/tone-1.mp3",
+    "phoneme": "feng1",
+    "fallback": "风"
+  },
+  {
+    "id": "nasal-final-eng-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-eng/tone-2.mp3",
+    "phoneme": "neng2",
+    "fallback": "能"
+  },
+  {
+    "id": "nasal-final-eng-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-eng/tone-3.mp3",
+    "phoneme": "deng3",
+    "fallback": "等"
+  },
+  {
+    "id": "nasal-final-eng-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-eng/tone-4.mp3",
+    "phoneme": "peng4",
+    "fallback": "碰"
+  },
+  {
+    "id": "nasal-final-ing-base",
+    "kind": "base",
+    "path": "/audio/pinyin/nasal-final-ing/base.mp3",
+    "phoneme": "ying1",
+    "fallback": "英"
+  },
+  {
+    "id": "nasal-final-ing-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ing/tone-1.mp3",
+    "phoneme": "xing1",
+    "fallback": "星"
+  },
+  {
+    "id": "nasal-final-ing-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ing/tone-2.mp3",
+    "phoneme": "ping2",
+    "fallback": "平"
+  },
+  {
+    "id": "nasal-final-ing-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ing/tone-3.mp3",
+    "phoneme": "qing3",
+    "fallback": "请"
+  },
+  {
+    "id": "nasal-final-ing-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ing/tone-4.mp3",
+    "phoneme": "ding4",
+    "fallback": "定"
+  },
+  {
+    "id": "nasal-final-ong-base",
+    "kind": "base",
+    "path": "/audio/pinyin/nasal-final-ong/base.mp3",
+    "phoneme": "weng1",
+    "fallback": "翁"
+  },
+  {
+    "id": "nasal-final-ong-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ong/tone-1.mp3",
+    "phoneme": "dong1",
+    "fallback": "东"
+  },
+  {
+    "id": "nasal-final-ong-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ong/tone-2.mp3",
+    "phoneme": "hong2",
+    "fallback": "红"
+  },
+  {
+    "id": "nasal-final-ong-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ong/tone-3.mp3",
+    "phoneme": "kong3",
+    "fallback": "孔"
+  },
+  {
+    "id": "nasal-final-ong-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/nasal-final-ong/tone-4.mp3",
+    "phoneme": "dong4",
+    "fallback": "动"
+  },
+  {
+    "id": "whole-syllable-zhi-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-zhi/base.mp3",
+    "phoneme": "zhi1",
+    "fallback": "知"
+  },
+  {
+    "id": "whole-syllable-zhi-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-zhi/tone-1.mp3",
+    "phoneme": "zhi1",
+    "fallback": "知"
+  },
+  {
+    "id": "whole-syllable-zhi-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-zhi/tone-2.mp3",
+    "phoneme": "zhi2",
+    "fallback": "直"
+  },
+  {
+    "id": "whole-syllable-zhi-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-zhi/tone-3.mp3",
+    "phoneme": "zhi3",
+    "fallback": "纸"
+  },
+  {
+    "id": "whole-syllable-zhi-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-zhi/tone-4.mp3",
+    "phoneme": "zhi4",
+    "fallback": "至"
+  },
+  {
+    "id": "whole-syllable-chi-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-chi/base.mp3",
+    "phoneme": "chi1",
+    "fallback": "吃"
+  },
+  {
+    "id": "whole-syllable-chi-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-chi/tone-1.mp3",
+    "phoneme": "chi1",
+    "fallback": "吃"
+  },
+  {
+    "id": "whole-syllable-chi-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-chi/tone-2.mp3",
+    "phoneme": "chi2",
+    "fallback": "池"
+  },
+  {
+    "id": "whole-syllable-chi-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-chi/tone-3.mp3",
+    "phoneme": "chi3",
+    "fallback": "尺"
+  },
+  {
+    "id": "whole-syllable-chi-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-chi/tone-4.mp3",
+    "phoneme": "chi4",
+    "fallback": "翅"
+  },
+  {
+    "id": "whole-syllable-shi-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-shi/base.mp3",
+    "phoneme": "shi1",
+    "fallback": "诗"
+  },
+  {
+    "id": "whole-syllable-shi-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-shi/tone-1.mp3",
+    "phoneme": "shi1",
+    "fallback": "师"
+  },
+  {
+    "id": "whole-syllable-shi-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-shi/tone-2.mp3",
+    "phoneme": "shi2",
+    "fallback": "十"
+  },
+  {
+    "id": "whole-syllable-shi-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-shi/tone-3.mp3",
+    "phoneme": "shi3",
+    "fallback": "使"
+  },
+  {
+    "id": "whole-syllable-shi-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-shi/tone-4.mp3",
+    "phoneme": "shi4",
+    "fallback": "是"
+  },
+  {
+    "id": "whole-syllable-ri-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-ri/base.mp3",
+    "phoneme": "ri1",
+    "fallback": "日"
+  },
+  {
+    "id": "whole-syllable-ri-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ri/tone-4.mp3",
+    "phoneme": "ri4",
+    "fallback": "日"
+  },
+  {
+    "id": "whole-syllable-zi-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-zi/base.mp3",
+    "phoneme": "zi1",
+    "fallback": "资"
+  },
+  {
+    "id": "whole-syllable-zi-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-zi/tone-1.mp3",
+    "phoneme": "zi1",
+    "fallback": "资"
+  },
+  {
+    "id": "whole-syllable-zi-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-zi/tone-3.mp3",
+    "phoneme": "zi3",
+    "fallback": "子"
+  },
+  {
+    "id": "whole-syllable-zi-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-zi/tone-4.mp3",
+    "phoneme": "zi4",
+    "fallback": "字"
+  },
+  {
+    "id": "whole-syllable-ci-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-ci/base.mp3",
+    "phoneme": "ci1",
+    "fallback": "词"
+  },
+  {
+    "id": "whole-syllable-ci-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ci/tone-1.mp3",
+    "phoneme": "ci1",
+    "fallback": "疵"
+  },
+  {
+    "id": "whole-syllable-ci-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ci/tone-2.mp3",
+    "phoneme": "ci2",
+    "fallback": "词"
+  },
+  {
+    "id": "whole-syllable-ci-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ci/tone-3.mp3",
+    "phoneme": "ci3",
+    "fallback": "此"
+  },
+  {
+    "id": "whole-syllable-ci-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ci/tone-4.mp3",
+    "phoneme": "ci4",
+    "fallback": "次"
+  },
+  {
+    "id": "whole-syllable-si-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-si/base.mp3",
+    "phoneme": "si1",
+    "fallback": "丝"
+  },
+  {
+    "id": "whole-syllable-si-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-si/tone-1.mp3",
+    "phoneme": "si1",
+    "fallback": "思"
+  },
+  {
+    "id": "whole-syllable-si-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-si/tone-3.mp3",
+    "phoneme": "si3",
+    "fallback": "死"
+  },
+  {
+    "id": "whole-syllable-si-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-si/tone-4.mp3",
+    "phoneme": "si4",
+    "fallback": "四"
+  },
+  {
+    "id": "whole-syllable-yi-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-yi/base.mp3",
+    "phoneme": "yi1",
+    "fallback": "衣"
+  },
+  {
+    "id": "whole-syllable-yi-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yi/tone-1.mp3",
+    "phoneme": "yi1",
+    "fallback": "衣"
+  },
+  {
+    "id": "whole-syllable-yi-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yi/tone-2.mp3",
+    "phoneme": "yi2",
+    "fallback": "姨"
+  },
+  {
+    "id": "whole-syllable-yi-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yi/tone-3.mp3",
+    "phoneme": "yi3",
+    "fallback": "椅"
+  },
+  {
+    "id": "whole-syllable-yi-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yi/tone-4.mp3",
+    "phoneme": "yi4",
+    "fallback": "意"
+  },
+  {
+    "id": "whole-syllable-wu-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-wu/base.mp3",
+    "phoneme": "wu1",
+    "fallback": "乌"
+  },
+  {
+    "id": "whole-syllable-wu-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-wu/tone-1.mp3",
+    "phoneme": "wu1",
+    "fallback": "屋"
+  },
+  {
+    "id": "whole-syllable-wu-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-wu/tone-2.mp3",
+    "phoneme": "wu2",
+    "fallback": "无"
+  },
+  {
+    "id": "whole-syllable-wu-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-wu/tone-3.mp3",
+    "phoneme": "wu3",
+    "fallback": "五"
+  },
+  {
+    "id": "whole-syllable-wu-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-wu/tone-4.mp3",
+    "phoneme": "wu4",
+    "fallback": "物"
+  },
+  {
+    "id": "whole-syllable-yu-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-yu/base.mp3",
+    "phoneme": "yu1",
+    "fallback": "鱼"
+  },
+  {
+    "id": "whole-syllable-yu-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yu/tone-2.mp3",
+    "phoneme": "yu2",
+    "fallback": "鱼"
+  },
+  {
+    "id": "whole-syllable-yu-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yu/tone-3.mp3",
+    "phoneme": "yu3",
+    "fallback": "雨"
+  },
+  {
+    "id": "whole-syllable-yu-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yu/tone-4.mp3",
+    "phoneme": "yu4",
+    "fallback": "玉"
+  },
+  {
+    "id": "whole-syllable-ye-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-ye/base.mp3",
+    "phoneme": "ye1",
+    "fallback": "耶"
+  },
+  {
+    "id": "whole-syllable-ye-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ye/tone-1.mp3",
+    "phoneme": "ye1",
+    "fallback": "耶"
+  },
+  {
+    "id": "whole-syllable-ye-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ye/tone-2.mp3",
+    "phoneme": "ye2",
+    "fallback": "爷"
+  },
+  {
+    "id": "whole-syllable-ye-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ye/tone-3.mp3",
+    "phoneme": "ye3",
+    "fallback": "也"
+  },
+  {
+    "id": "whole-syllable-ye-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ye/tone-4.mp3",
+    "phoneme": "ye4",
+    "fallback": "叶"
+  },
+  {
+    "id": "whole-syllable-yue-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-yue/base.mp3",
+    "phoneme": "yue1",
+    "fallback": "约"
+  },
+  {
+    "id": "whole-syllable-yue-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yue/tone-1.mp3",
+    "phoneme": "yue1",
+    "fallback": "约"
+  },
+  {
+    "id": "whole-syllable-yue-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yue/tone-4.mp3",
+    "phoneme": "yue4",
+    "fallback": "月"
+  },
+  {
+    "id": "whole-syllable-yuan-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-yuan/base.mp3",
+    "phoneme": "yuan1",
+    "fallback": "渊"
+  },
+  {
+    "id": "whole-syllable-yuan-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yuan/tone-2.mp3",
+    "phoneme": "yuan2",
+    "fallback": "元"
+  },
+  {
+    "id": "whole-syllable-yuan-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yuan/tone-3.mp3",
+    "phoneme": "yuan3",
+    "fallback": "远"
+  },
+  {
+    "id": "whole-syllable-yuan-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yuan/tone-4.mp3",
+    "phoneme": "yuan4",
+    "fallback": "院"
+  },
+  {
+    "id": "whole-syllable-yin-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-yin/base.mp3",
+    "phoneme": "yin1",
+    "fallback": "音"
+  },
+  {
+    "id": "whole-syllable-yin-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yin/tone-1.mp3",
+    "phoneme": "yin1",
+    "fallback": "音"
+  },
+  {
+    "id": "whole-syllable-yin-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yin/tone-2.mp3",
+    "phoneme": "yin2",
+    "fallback": "银"
+  },
+  {
+    "id": "whole-syllable-yin-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yin/tone-3.mp3",
+    "phoneme": "yin3",
+    "fallback": "引"
+  },
+  {
+    "id": "whole-syllable-yin-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yin/tone-4.mp3",
+    "phoneme": "yin4",
+    "fallback": "印"
+  },
+  {
+    "id": "whole-syllable-yun-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-yun/base.mp3",
+    "phoneme": "yun1",
+    "fallback": "晕"
+  },
+  {
+    "id": "whole-syllable-yun-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yun/tone-1.mp3",
+    "phoneme": "yun1",
+    "fallback": "晕"
+  },
+  {
+    "id": "whole-syllable-yun-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yun/tone-2.mp3",
+    "phoneme": "yun2",
+    "fallback": "云"
+  },
+  {
+    "id": "whole-syllable-yun-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yun/tone-3.mp3",
+    "phoneme": "yun3",
+    "fallback": "允"
+  },
+  {
+    "id": "whole-syllable-yun-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-yun/tone-4.mp3",
+    "phoneme": "yun4",
+    "fallback": "运"
+  },
+  {
+    "id": "whole-syllable-ying-base",
+    "kind": "base",
+    "path": "/audio/pinyin/whole-syllable-ying/base.mp3",
+    "phoneme": "ying1",
+    "fallback": "英"
+  },
+  {
+    "id": "whole-syllable-ying-tone-1",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ying/tone-1.mp3",
+    "phoneme": "ying1",
+    "fallback": "英"
+  },
+  {
+    "id": "whole-syllable-ying-tone-2",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ying/tone-2.mp3",
+    "phoneme": "ying2",
+    "fallback": "营"
+  },
+  {
+    "id": "whole-syllable-ying-tone-3",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ying/tone-3.mp3",
+    "phoneme": "ying3",
+    "fallback": "影"
+  },
+  {
+    "id": "whole-syllable-ying-tone-4",
+    "kind": "tone",
+    "path": "/audio/pinyin/whole-syllable-ying/tone-4.mp3",
+    "phoneme": "ying4",
+    "fallback": "硬"
+  }
+]

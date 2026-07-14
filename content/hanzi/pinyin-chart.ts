@@ -10,6 +10,7 @@ export interface PinyinChartItem {
   ssml: string;
   lessonSsml: string;
   fallback: string;
+  phoneme: string;
   phonemeBase: string;
 }
 
@@ -31,7 +32,7 @@ const SEEDS: Record<PinyinCategory, readonly Seed[]> = {
 };
 
 const HINT: Record<PinyinCategory, string> = {
-  initial: "声音短一点，和后面的韵母快速连起来。",
+  initial: "先用清晰的教学读音认声母，真正拼读时要轻短。",
   "simple-final": "看清口型，声音响亮并保持不变。",
   "compound-final": "嘴形从第一个韵母滑向第二个韵母。",
   "nasal-final": "先读韵母，结尾让声音轻轻进入鼻腔。",
@@ -39,16 +40,20 @@ const HINT: Record<PinyinCategory, string> = {
 };
 
 export const PINYIN_CHART: readonly PinyinChartItem[] = (Object.entries(SEEDS) as [PinyinCategory, readonly Seed[]][]).flatMap(([category, seeds]) =>
-  seeds.map(([display, ph, soundText, exampleChar, exampleWord]) => ({
-    id: `${category}-${display}`,
-    display,
-    category,
-    mouthHint: HINT[category],
-    exampleChar,
-    exampleWord,
-    ssml: `<speak><phoneme alphabet="py" ph="${ph}">${soundText}</phoneme></speak>`,
-    lessonSsml: `<speak>${HINT[category]}<break time="300ms"/><phoneme alphabet="py" ph="${ph}">${soundText}</phoneme><break time="250ms"/><phoneme alphabet="py" ph="${ph}">${soundText}</phoneme></speak>`,
-    fallback: soundText,
-    phonemeBase: ph.replace(/\d$/, ""),
-  })),
+  seeds.map(([display, ph, soundText, exampleChar, exampleWord]) => {
+    const phoneme = ph;
+    return {
+      id: `${category}-${display}`,
+      display,
+      category,
+      mouthHint: HINT[category],
+      exampleChar,
+      exampleWord,
+      ssml: `<speak><phoneme alphabet="py" ph="${phoneme}">${soundText}</phoneme></speak>`,
+      lessonSsml: `<speak>${HINT[category]}<break time="300ms"/><phoneme alphabet="py" ph="${phoneme}">${soundText}</phoneme><break time="250ms"/><phoneme alphabet="py" ph="${phoneme}">${soundText}</phoneme></speak>`,
+      fallback: soundText,
+      phoneme,
+      phonemeBase: phoneme.replace(/\d$/, ""),
+    };
+  }),
 );
