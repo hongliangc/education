@@ -15,11 +15,9 @@ export function VideoStatusOverlay({ loading, error, onBack }: VideoStatusOverla
         <p className="mb-4 text-lg font-bold">
           {error ?? (loading ? "视频正在准备..." : "选一个视频开始播放")}
         </p>
-        {error && (
-          <Btn variant="secondary" onClick={onBack}>
-            返回片库
-          </Btn>
-        )}
+        <Btn variant="secondary" onClick={onBack}>
+          返回片库
+        </Btn>
       </div>
     </div>
   );

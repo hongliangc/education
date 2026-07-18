@@ -186,12 +186,7 @@ export function VideoPlayer({
       )}
 
       {!locked && (
-        <div
-          className={cn(
-            "pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 via-black/30 to-transparent px-4 py-4 transition-all duration-300 sm:px-6",
-            controlsVisible ? "opacity-100" : "-translate-y-2 opacity-0",
-          )}
-        >
+        <div className="pointer-events-none absolute inset-x-0 top-0 bg-gradient-to-b from-black/80 via-black/30 to-transparent px-4 py-4 sm:px-6">
           <div className="pointer-events-auto flex items-center gap-3">
             <button
               type="button"

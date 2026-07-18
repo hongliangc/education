@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import type { TheaterVideoItem } from "@/components/video/TheaterCatalog";
 import { TheaterBrowse } from "@/components/video/TheaterBrowse";
@@ -49,8 +50,10 @@ export default function TheaterPage() {
   const [query, setQuery] = useState("");
   const [themeId, setThemeId] = useState(DEFAULT_THEATER_THEME.id);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
+    setPortalRoot(document.body);
     const saved = readTheaterThemeId();
     if (saved) setThemeId(saved);
   }, []);
@@ -175,8 +178,11 @@ export default function TheaterPage() {
       </div>
       <BackToTop />
 
-      {activeVideo && (
-        <VideoPlayer
+      {activeVideo &&
+        portalRoot &&
+        createPortal(
+          <VideoPlayer
+            key={activeVideo.id}
           title={activeVideo.title}
           posterUrl={activeVideo.posterUrl}
           src={playInfo?.url}
@@ -203,8 +209,9 @@ export default function TheaterPage() {
             const target = episodeSiblings.find((video) => video.id === id);
             if (target) openVideo(target);
           }}
-        />
-      )}
+          />,
+          portalRoot,
+        )}
 
       {pendingUnlock && (
         <TheaterUnlockModal
