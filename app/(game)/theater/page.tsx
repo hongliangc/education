@@ -79,6 +79,7 @@ export default function TheaterPage() {
     sfx.click();
     setUnlockError(null);
     if (!video.unlocked) {
+      stopPlayback();
       setPendingUnlock(video);
       return;
     }

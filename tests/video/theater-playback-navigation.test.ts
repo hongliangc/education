@@ -13,3 +13,12 @@ test("theater resets player between episodes and keeps loading-state back naviga
   assert.doesNotMatch(overlay, /\{error && \(/);
   assert.doesNotMatch(player, /controlsVisible \? "opacity-100" : "-translate-y-2 opacity-0"/);
 });
+
+test("locked next episode closes the player before showing its unlock prompt", () => {
+  const page = readFileSync("app/(game)/theater/page.tsx", "utf8");
+
+  assert.match(
+    page,
+    /if \(!video\.unlocked\) \{\s*stopPlayback\(\);\s*setPendingUnlock\(video\);/,
+  );
+});
