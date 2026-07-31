@@ -13,6 +13,7 @@ import { StoryQuestion } from "@/components/games/story/StoryQuestion";
 import { startQuestionNarration } from "@/components/games/story/questionNarration";
 import { questionSpeechText } from "@/components/games/story/questionSpeech";
 import { QuoteCardView } from "./QuoteCardView";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 type Phase = "card" | "question";
 
@@ -66,11 +67,17 @@ export function QuoteDeckPlayer({
 
   // 答完一题：累计对错，翻下一张；最后一张答完结算得星。
   const onAnswered = (ok: boolean) => {
+    showFairyGuide({
+      event: ok ? "correct" : "incorrect",
+      text: ok ? "理解得真好，这句话已经被你记住啦！" : "没关系，看看解释再想一次就会明白。",
+      autoHideMs: 2600,
+    });
     const nextCorrect = correct + (ok ? 1 : 0);
     setCorrect(nextCorrect);
     qSpeechRef.current?.stop();
     if (i + 1 >= total) {
       stopSpeaking();
+      showFairyGuide({ event: "complete", text: "整组名句读完啦，今天的你很有智慧！", autoHideMs: 4200 });
       onComplete({
         score: total ? Math.round((nextCorrect / total) * 100) : 0,
         totalQ: total,

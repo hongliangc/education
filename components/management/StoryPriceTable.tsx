@@ -129,6 +129,8 @@ export function StoryPriceTable({
       dataSource={data}
       pagination={{ pageSize: 20, hideOnSinglePage: true }}
       size="small"
+      scroll={{ x: "max-content" }}
+      locale={{ emptyText: "暂无可设置价格的故事。" }}
     />
   );
 }

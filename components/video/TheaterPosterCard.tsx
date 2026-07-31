@@ -15,8 +15,8 @@ export function TheaterPosterCard({ video, onOpen, className }: TheaterPosterCar
   const showImage = Boolean(video.posterUrl) && !imgFailed;
 
   return (
-    <button type="button" onClick={() => onOpen(video)} className={cn("group block text-left", className)}>
-      <div className="relative aspect-video overflow-hidden rounded-xl bg-slate-800 ring-1 ring-white/10 transition duration-300 group-hover:ring-white/40">
+    <button type="button" onClick={() => onOpen(video)} className={cn("group block min-h-11 text-left focus-visible:outline-none", className)}>
+      <div className="relative aspect-video overflow-hidden rounded-2xl bg-slate-800 shadow-lg ring-1 ring-white/15 transition duration-300 group-hover:ring-white/50 group-focus-visible:ring-4 group-focus-visible:ring-[var(--theater-accent)]">
         {showImage ? (
           <img
             src={video.posterUrl}

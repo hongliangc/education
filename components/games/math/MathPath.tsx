@@ -86,7 +86,7 @@ export function MathPath({
               aria-label={lesson.title}
               className={`flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left ring-1 transition ${
                 unlocked
-                  ? "bg-white ring-amber-200 hover:bg-amber-50"
+                  ? "bg-white ring-indigo-200 hover:bg-indigo-50"
                   : "bg-slate-50 opacity-60 ring-slate-200"
               }`}
             >

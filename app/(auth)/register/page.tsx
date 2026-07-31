@@ -1,11 +1,12 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Btn } from "@/components/Btn";
-import { CloudBG } from "@/components/CloudBG";
+import { KingdomBG } from "@/components/KingdomBG";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -52,44 +53,55 @@ export default function RegisterPage() {
 
   return (
     <>
-      <CloudBG />
-      <main className="min-h-screen flex items-center justify-center px-5 py-10">
+      <KingdomBG priority />
+      <main className="relative z-10 flex min-h-screen items-center justify-center px-5 py-6 sm:py-10">
         <div className={`w-full max-w-sm ${shake ? "anim-shake" : ""} anim-slide-up`}>
-          <div className="text-center mb-5">
-            <div className="text-6xl anim-float inline-block">🌟</div>
-            <h1 className="text-3xl font-bold text-white drop-shadow-lg mt-2">
+          <div className="mb-4 text-center sm:mb-6">
+            <Image
+              src="/ui/mascot/fairy-guide.webp"
+              alt="向导精灵小星"
+              width={128}
+              height={174}
+              priority
+              className="anim-float mx-auto h-24 w-auto object-contain sm:h-28"
+            />
+            <h1 className="mt-1 text-3xl font-bold text-white drop-shadow-lg sm:text-4xl">
               创建家长账号
             </h1>
+            <p className="mt-1 text-white/90">创建账号，保存小冒险家的成长 ✨</p>
           </div>
 
           <form
             onSubmit={submit}
-            className="rounded-3xl bg-white/80 backdrop-blur p-6 shadow-2xl ring-1 ring-white/40"
+            className="rounded-[2rem] bg-white/88 p-6 shadow-2xl ring-2 ring-white/70 backdrop-blur"
           >
             <label className="block mb-3">
-              <span className="text-sm text-slate-600">手机号或邮箱</span>
+              <span className="text-sm font-bold text-slate-600">手机号或邮箱</span>
               <input
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
-                className="mt-1 w-full rounded-xl border-2 border-sky-200 bg-white px-4 py-3 outline-none focus:border-sky-400"
+                className="mt-1 w-full rounded-2xl border-2 border-pink-200 bg-white px-4 py-3 outline-none focus:border-pink-400"
+                autoComplete="username"
               />
             </label>
             <label className="block mb-3">
-              <span className="text-sm text-slate-600">密码</span>
+              <span className="text-sm font-bold text-slate-600">密码</span>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 w-full rounded-xl border-2 border-sky-200 bg-white px-4 py-3 outline-none focus:border-sky-400"
+                className="mt-1 w-full rounded-2xl border-2 border-pink-200 bg-white px-4 py-3 outline-none focus:border-pink-400"
+                autoComplete="new-password"
               />
             </label>
             <label className="block mb-2">
-              <span className="text-sm text-slate-600">再输一次密码</span>
+              <span className="text-sm font-bold text-slate-600">再输一次密码</span>
               <input
                 type="password"
                 value={password2}
                 onChange={(e) => setPassword2(e.target.value)}
-                className="mt-1 w-full rounded-xl border-2 border-sky-200 bg-white px-4 py-3 outline-none focus:border-sky-400"
+                className="mt-1 w-full rounded-2xl border-2 border-pink-200 bg-white px-4 py-3 outline-none focus:border-pink-400"
+                autoComplete="new-password"
               />
             </label>
 
@@ -100,7 +112,7 @@ export default function RegisterPage() {
             <Btn
               type="submit"
               size="lg"
-              variant="secondary"
+              variant="primary"
               disabled={pending}
               className="w-full mt-3"
             >

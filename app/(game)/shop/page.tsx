@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useSFX } from "@/components/audio/useSFX";
@@ -9,6 +10,8 @@ import { BackButton } from "@/components/BackButton";
 import { RedeemError, fetchRewardCatalog, redeemRewardResource } from "@/lib/rewards/client";
 import { RewardCard, type ShopReward } from "@/components/shop/RewardCard";
 import { MyRedemptions, type MyRedemptionItem } from "@/components/shop/MyRedemptions";
+import { useVisualQa } from "@/lib/visual-qa";
+import { VisualShop } from "@/components/visual-qa/VisualShop";
 
 interface RawRedemption {
   id: string;
@@ -28,6 +31,7 @@ export default function ShopPage() {
   const [mine, setMine] = useState<MyRedemptionItem[]>([]);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const visualQa = useVisualQa();
 
   const load = async (childId: string) => {
     const [catalog, redemptionsRes] = await Promise.all([
@@ -77,6 +81,10 @@ export default function ShopPage() {
 
   if (!child) return null;
 
+  if (visualQa) {
+    return <VisualShop onBack={() => router.push("/world?visual=1")} />;
+  }
+
   const redeem = async (reward: ShopReward) => {
     setBusyId(reward.resourceId);
     try {
@@ -106,9 +114,13 @@ export default function ShopPage() {
   return (
     <main className="min-h-screen pt-20 px-4 pb-10">
       <div className="max-w-5xl mx-auto">
-        <header className="mb-4 flex flex-wrap items-center gap-3">
+        <header className="storybook-paper mb-6 flex flex-wrap items-center gap-3 rounded-[2rem] p-4 backdrop-blur">
           <BackButton label="返回世界" onClick={() => { sfx.click(); router.push("/world"); }} />
-          <h1 className="text-2xl font-bold text-white drop-shadow">🏪 星星商店</h1>
+          <Image src="/ui/locations/shop.webp" alt="" width={80} height={80} className="h-16 w-16 object-contain drop-shadow-lg" />
+          <div>
+            <h1 className="text-2xl font-black text-slate-800">星星商店</h1>
+            <p className="text-sm font-bold text-purple-600">用冒险星星兑换心愿奖励</p>
+          </div>
           <span className="ml-auto rounded-full bg-white/85 px-4 py-2 font-bold text-amber-500 shadow">
             ⭐ {balance}
           </span>
@@ -133,12 +145,17 @@ export default function ShopPage() {
             ))}
           </div>
         ) : (
-          <p className="rounded-3xl bg-white/80 p-6 text-center font-bold text-slate-500">
-            家长还没有上架奖励哦，先去玩游戏多攒星星吧 ✨
-          </p>
+          <div className="storybook-paper rounded-[2rem] p-6 text-center sm:p-8">
+            <Image src="/ui/locations/shop.webp" alt="" width={112} height={112} className="mx-auto h-24 w-24 object-contain opacity-80" />
+            <h2 className="mt-2 text-xl font-black text-slate-700">新奖励正在准备中</h2>
+            <p className="mt-1 text-sm font-bold text-slate-500">先去完成学习任务，多攒一些星星吧！</p>
+            <button type="button" onClick={() => router.push("/world")} className="mt-4 min-h-12 rounded-full bg-gradient-to-b from-sky-400 to-blue-500 px-6 font-black text-white shadow-lg ring-2 ring-white/80 transition hover:-translate-y-0.5 active:translate-y-0">
+              返回世界继续冒险
+            </button>
+          </div>
         )}
 
-        <h2 className="mb-2 mt-8 px-1 text-xl font-bold text-white/90 drop-shadow">我的兑换</h2>
+        <h2 className="mb-2 mt-8 px-1 text-xl font-black text-slate-700">我的兑换</h2>
         <MyRedemptions items={mine} />
       </div>
     </main>

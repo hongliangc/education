@@ -199,12 +199,12 @@ export function HanziWriterPad({
         ) : null}
       </div>
 
-      <div className="flex justify-center gap-2">
+      <div className="flex flex-wrap justify-center gap-2">
         <button
           type="button"
           onClick={clearPractice}
           disabled={strokeCount === 0}
-          className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow ring-1 ring-slate-200 disabled:opacity-40"
+          className="min-h-11 rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow ring-1 ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:opacity-40"
         >
           🧽 清理
         </button>
@@ -212,7 +212,7 @@ export function HanziWriterPad({
           type="button"
           onClick={undoPractice}
           disabled={strokeCount === 0}
-          className="rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow ring-1 ring-slate-200 disabled:opacity-40"
+          className="min-h-11 rounded-full bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow ring-1 ring-slate-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 disabled:opacity-40"
         >
           ↩️ 回撤
         </button>

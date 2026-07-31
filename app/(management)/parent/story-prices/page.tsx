@@ -12,11 +12,12 @@ export default async function ParentStoryPricesPage() {
   const rows = await listStoryPrices({ ownerType: "FAMILY", ownerId: actor.id });
 
   return (
-    <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>故事价格</h1>
-      <p style={{ color: "#64748b", marginBottom: 16 }}>
-        留空表示沿用平台默认价；每本书的第一章永远免费。
-      </p>
+    <div className="space-y-6">
+      <header>
+        <p className="mb-1 text-sm font-medium text-blue-600">阅读设置</p>
+        <h1 className="text-2xl font-bold text-slate-950">故事价格</h1>
+        <p className="mt-2 text-sm text-slate-600">留空表示沿用平台默认价；每本书的第一章永远免费。</p>
+      </header>
       <StoryPriceTable rows={rows} putUrl="/api/parent/story-prices" mode="family" />
     </div>
   );

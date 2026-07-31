@@ -59,7 +59,7 @@ export function MathLesson({
 
   if (phase === "intro") {
     return (
-      <div className="py-4 text-center anim-pop-in">
+      <div className="rounded-3xl bg-[#fffdf7] px-4 py-5 text-center shadow-inner ring-2 ring-indigo-100 anim-pop-in">
         <div className="text-6xl">{lesson.icon}</div>
         <h3 className="mt-2 text-2xl font-bold text-slate-700">{lesson.title}</h3>
         <p className="mx-auto mt-3 max-w-sm rounded-2xl bg-sky-50 px-4 py-3 text-base font-bold text-slate-600 ring-1 ring-sky-100">
@@ -93,8 +93,8 @@ export function MathLesson({
     return (
       <div>
         <p className="text-center text-sm font-bold text-slate-500">老师先做个示范 👀</p>
-        <div className="mt-3 rounded-3xl bg-gradient-to-br from-amber-50 to-yellow-100 p-5 text-center">
-          <div className="text-3xl font-bold text-amber-700 sm:text-4xl">
+        <div className="mt-3 rounded-3xl bg-[#fffdf7] p-5 text-center shadow-inner ring-2 ring-indigo-100">
+          <div className="text-3xl font-bold text-indigo-700 sm:text-4xl">
             {example.prompt}
             {example.kind === "arithmetic" ? " = ?" : ""}
           </div>

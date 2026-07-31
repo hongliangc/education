@@ -2,11 +2,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { useSFX } from "@/components/audio/useSFX";
 import { BackButton } from "@/components/BackButton";
 import { PARABLES, QUOTE_DECKS } from "@/content/classics";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 export default function LiteratureHomePage() {
   const router = useRouter();
@@ -31,6 +33,11 @@ export default function LiteratureHomePage() {
     })();
   }, [child, router]);
 
+  useEffect(() => {
+    if (!child) return;
+    showFairyGuide({ event: "enter", text: "古人的智慧藏在小故事和名句里，我们一起找一找吧！", autoHideMs: 5200 });
+  }, [child]);
+
   if (!child) return null;
 
   const openParable = (id: string) => {
@@ -45,20 +52,21 @@ export default function LiteratureHomePage() {
   return (
     <main className="min-h-screen pt-20 px-4 pb-10">
       <div className="max-w-5xl mx-auto">
-        <header className="mb-4 flex flex-wrap items-center gap-3">
+        <header className="mb-5 flex flex-wrap items-center gap-3 rounded-[2rem] bg-white/88 p-4 shadow-xl ring-2 ring-white/70 backdrop-blur">
           <BackButton label="返回世界" onClick={() => { sfx.click(); router.push("/world"); }} />
+          <Image src="/ui/islands/literature.webp" alt="" width={80} height={80} className="ml-auto h-16 w-16 object-contain drop-shadow-lg sm:ml-0" />
           <div>
-            <h1 className="text-2xl font-bold text-white drop-shadow">
-              🪷 诸子智慧
+            <h1 className="text-2xl font-black text-slate-800">
+              诸子智慧
             </h1>
-            <p className="mt-1 text-sm text-white/90 drop-shadow">
+            <p className="mt-1 text-sm font-medium text-slate-500">
               听一听古人的小故事，读一读了不起的名句～
             </p>
           </div>
         </header>
 
         {/* 寓言故事 */}
-        <div className="mb-2 px-1 text-sm font-bold text-white/90 drop-shadow">
+        <div className="mb-2 px-1 text-sm font-bold text-emerald-900 drop-shadow-[0_1px_0_rgba(255,255,255,.8)]">
           📖 智慧小故事（庄子）
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
@@ -67,9 +75,12 @@ export default function LiteratureHomePage() {
               key={b.id}
               onClick={() => openParable(b.id)}
               aria-label={`阅读《${b.title}》`}
-              className="rounded-3xl bg-white/85 backdrop-blur p-4 shadow ring-1 ring-white/60 text-left transition hover:scale-[1.03]"
+              className="storybook-paper overflow-hidden rounded-3xl p-3 text-left transition hover:-translate-y-1 hover:scale-[1.02]"
             >
-              <div className="text-5xl text-center">{b.emoji}</div>
+              <div className="relative h-28 overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-100 to-amber-50">
+                <Image src="/ui/islands/literature.webp" alt="" fill sizes="(max-width: 639px) 45vw, 220px" className="object-contain p-3 opacity-90" />
+                <span className="absolute bottom-2 left-2 rounded-full bg-emerald-800/85 px-2 py-1 text-xs font-black text-white">智慧故事</span>
+              </div>
               <div className="mt-2 font-bold text-slate-700 text-center">
                 {b.title}
               </div>
@@ -81,7 +92,7 @@ export default function LiteratureHomePage() {
         </div>
 
         {/* 名句卡组 */}
-        <div className="mb-2 px-1 text-sm font-bold text-white/90 drop-shadow">
+        <div className="mb-2 px-1 text-sm font-bold text-emerald-900 drop-shadow-[0_1px_0_rgba(255,255,255,.8)]">
           🌸 名句卡组（诸子百家）
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -90,9 +101,12 @@ export default function LiteratureHomePage() {
               key={d.id}
               onClick={() => openDeck(d.id)}
               aria-label={`翻看${d.philosopher}的名句卡`}
-              className="rounded-3xl bg-white/85 backdrop-blur p-4 shadow ring-1 ring-white/60 text-left transition hover:scale-[1.03]"
+              className="storybook-paper overflow-hidden rounded-3xl p-3 text-left transition hover:-translate-y-1 hover:scale-[1.02]"
             >
-              <div className="text-5xl text-center">{d.emoji}</div>
+              <div className="relative flex h-28 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-amber-100 via-white to-rose-100 p-3 ring-1 ring-amber-200/70">
+                <Image src="/ui/islands/literature.webp" alt="" fill sizes="(max-width: 639px) 45vw, 220px" className="object-cover opacity-15" />
+                <span className="relative rounded-xl border-2 border-amber-700/30 bg-[#fffaf0]/90 px-3 py-2 text-center text-lg font-black text-amber-900 shadow-sm">{d.philosopher}<br /><small className="text-xs text-amber-700">名句卡</small></span>
+              </div>
               <div className="mt-2 font-bold text-slate-700 text-center">
                 {d.title}
               </div>

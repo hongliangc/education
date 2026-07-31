@@ -98,6 +98,8 @@ export function RedemptionTable({ rows, baseUrl }: { rows: RedemptionRow[]; base
       dataSource={data}
       pagination={{ pageSize: 15, hideOnSinglePage: true }}
       size="small"
+      scroll={{ x: "max-content" }}
+      locale={{ emptyText: "暂无兑换记录。" }}
     />
   );
 }

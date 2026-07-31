@@ -26,11 +26,11 @@ export function TheaterRow({ title, videos, onOpen, onSeeAll }: TheaterRowProps)
   return (
     <section>
       <div className="mb-2 flex items-center gap-1.5 sm:gap-2">
-        <h2 className="min-w-0 truncate text-base font-black text-white sm:text-2xl">{title}</h2>
+        <h2 className="min-w-0 flex-1 truncate text-base font-black text-white sm:text-2xl">{title}</h2>
         <span className="shrink-0 text-xs font-bold text-[var(--theater-accent)] sm:text-lg">
           {videos.length} 部
         </span>
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ml-auto flex shrink-0 items-center gap-1">
           <button type="button" onClick={() => scrollByPage(-1)} aria-label="向左滚动" className={chevron}>
             ‹
           </button>

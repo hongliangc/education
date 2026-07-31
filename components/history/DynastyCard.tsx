@@ -34,6 +34,8 @@ export function DynastyCard({
     border: "1.5px solid #c89b3c",
     background: "#241509",
     cursor: "pointer",
+    padding: 0,
+    textAlign: "left",
     transition: "transform .25s ease, box-shadow .25s ease",
     animation: "cardRise .6s cubic-bezier(.2,.7,.2,1) both",
     animationDelay: delay,
@@ -88,12 +90,12 @@ export function DynastyCard({
   };
 
   return (
-    <div
+    <button
+      type="button"
       style={cardStyle}
       onClick={() => onSelect(item)}
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
-      role="button"
       aria-label={`进入${item.name}`}
     >
       <div style={mediaStyle}>
@@ -141,6 +143,6 @@ export function DynastyCard({
           {item.time}
         </span>
       </div>
-    </div>
+    </button>
   );
 }

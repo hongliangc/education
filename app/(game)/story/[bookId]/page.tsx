@@ -17,6 +17,9 @@ import {
   fetchRewardCatalog,
   redeemRewardResource,
 } from "@/lib/rewards/client";
+import { useVisualQa } from "@/lib/visual-qa";
+import { VisualStoryReader } from "@/components/visual-qa/VisualStoryReader";
+import { BookChapterCatalog } from "@/components/story/BookChapterCatalog";
 
 interface ChapterCatalog {
   chapterIdx: number;
@@ -59,6 +62,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ bookId: s
   const setStars = useGameStore((s) => s.setStars);
   const { sfx } = useSFX();
   const book = getBook(bookId);
+  const visualQa = useVisualQa();
 
   const [completed, setCompleted] = useState(0);
   const [lastIdx, setLastIdx] = useState(0);
@@ -132,6 +136,10 @@ export default function BookDetailPage({ params }: { params: Promise<{ bookId: s
         </div>
       </main>
     );
+  }
+
+  if (visualQa) {
+    return <VisualStoryReader onBack={() => router.push("/story?visual=1")} />;
   }
 
   const total = book.chapters.length;
@@ -224,18 +232,20 @@ export default function BookDetailPage({ params }: { params: Promise<{ bookId: s
   if (reading !== null) {
     const chapter = book.chapters[reading];
     return (
-      <main className="min-h-screen pt-20 px-4 pb-10">
-        <div className="max-w-2xl mx-auto rounded-3xl bg-white/90 backdrop-blur p-5 shadow-xl ring-1 ring-white/60">
+      <main className="min-h-screen px-3 pb-10 pt-20 sm:px-4">
+        <div className="mx-auto max-w-2xl rounded-[2rem] bg-[#fffaf0]/95 p-4 shadow-2xl ring-2 ring-white/80 backdrop-blur sm:p-6">
+          <div className="sticky top-16 z-20 mb-3 flex justify-end">
+            <BackButton
+              label="返回目录"
+              onClick={() => { sfx.click(); setReading(null); }}
+              className="px-4 py-2 text-sm sm:text-base"
+            />
+          </div>
           <ChapterReader
             key={chapter.idx}
             chapter={chapter}
             onChapterComplete={(r) => onChapterComplete(chapter.idx, r)}
           />
-          <div className="mt-4 text-center">
-            <Btn variant="secondary" onClick={() => { sfx.click(); setReading(null); }}>
-              ← 返回目录
-            </Btn>
-          </div>
         </div>
       </main>
     );
@@ -252,63 +262,7 @@ export default function BookDetailPage({ params }: { params: Promise<{ bookId: s
           onClick={() => { sfx.click(); router.push("/story"); }}
           className="mb-3"
         />
-        <div className="rounded-3xl bg-white/85 backdrop-blur p-5 shadow-xl ring-1 ring-white/60">
-          <div className="text-center">
-            <div className="text-6xl">{book.emoji}</div>
-            <h1 className="mt-2 text-2xl font-bold text-slate-700">{book.title}</h1>
-            {book.author && <p className="text-xs text-slate-400 mt-1">{book.author}</p>}
-            <p className="mt-1 text-sm font-bold text-amber-500">⭐ {balance}</p>
-          </div>
-
-          {notice && (
-            <p className="mt-3 anim-slide-up rounded-2xl bg-amber-50 px-4 py-2 text-center text-sm font-bold text-amber-600 ring-1 ring-amber-200">
-              {notice}
-            </p>
-          )}
-
-          {total > 1 && (
-            <Btn variant="primary" className="mt-4 w-full" onClick={() => handleChapterClick(lastIdx)}>
-              {completed === 0 ? "开始阅读 ▶" : `继续阅读 · 第 ${lastIdx + 1} 章 ▶`}
-            </Btn>
-          )}
-
-          <div className="mt-4 space-y-2">
-            {book.chapters.map((c) => {
-              const view = viewFor(c.idx);
-              const isDone = c.idx < completed;
-              const isCurrent = c.idx === lastIdx;
-              return (
-                <button
-                  key={c.idx}
-                  onClick={() => handleChapterClick(c.idx)}
-                  className={`w-full flex items-center gap-3 rounded-2xl px-4 py-3 ring-1 text-left transition hover:bg-purple-50 text-slate-700 ${
-                    isCurrent ? "bg-purple-50 ring-purple-300" : "bg-white ring-slate-200"
-                  } ${view.kind === "locked" ? "opacity-60" : ""}`}
-                >
-                  <span className="text-2xl">{view.kind === "locked" ? "🔒" : c.emoji}</span>
-                  <span className="flex-1 font-bold">
-                    {total > 1 ? `第 ${c.idx + 1} 章 · ` : ""}
-                    {c.title}
-                  </span>
-                  {isDone && <span className="text-emerald-500">✓</span>}
-                  {view.kind !== "unlocked" && (
-                    <span
-                      className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-bold ${
-                        view.kind === "free"
-                          ? "bg-emerald-100 text-emerald-600"
-                          : view.kind === "affordable"
-                            ? "bg-amber-100 text-amber-600"
-                            : "bg-slate-100 text-slate-400"
-                      }`}
-                    >
-                      {view.label}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <BookChapterCatalog book={book} balance={balance} notice={notice} completed={completed} lastIdx={lastIdx} viewFor={viewFor} onChapter={handleChapterClick} />
       </div>
 
       {unlockTarget !== null && targetChapter && (

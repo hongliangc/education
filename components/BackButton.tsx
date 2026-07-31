@@ -16,7 +16,7 @@ export function BackButton({
       type="button"
       onClick={onClick}
       aria-label={label}
-      className={`inline-flex items-center gap-1.5 rounded-full bg-white/80 px-5 py-2.5 text-lg font-black text-slate-700 shadow ring-1 ring-white transition hover:scale-105 active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${className}`}
+      className={`inline-flex min-h-11 items-center gap-1.5 rounded-full bg-white/90 px-5 py-2.5 text-lg font-black text-slate-700 shadow-md ring-2 ring-amber-200/80 transition hover:scale-105 active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white ${className}`}
     >
       <span aria-hidden>←</span>
       {label}

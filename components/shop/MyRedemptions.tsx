@@ -12,7 +12,7 @@ export interface MyRedemptionItem {
 
 export function MyRedemptions({ items }: { items: MyRedemptionItem[] }) {
   if (items.length === 0) {
-    return <p className="text-center text-sm text-white/80">还没有兑换记录哦，快去挑一个奖励吧 ✨</p>;
+    return <p className="storybook-paper rounded-2xl px-4 py-5 text-center text-sm font-bold text-slate-500">还没有兑换记录哦，攒够星星后再来挑一个心愿奖励吧 ✨</p>;
   }
   return (
     <div className="space-y-2">

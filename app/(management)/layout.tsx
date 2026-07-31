@@ -7,8 +7,10 @@ export default function ManagementLayout({ children }: { children: React.ReactNo
       locale={zhCN}
       theme={{
         token: {
-          borderRadius: 10,
-          colorPrimary: "#7c3aed",
+          borderRadius: 12,
+          colorPrimary: "#2563eb",
+          colorText: "#0f172a",
+          controlHeight: 44,
         },
       }}
     >

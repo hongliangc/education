@@ -85,7 +85,7 @@ export default function ParableReadPage({
           className="mb-3"
           onClick={() => router.push("/literature")}
         />
-        <div className="rounded-3xl bg-white/90 backdrop-blur p-5 shadow-xl ring-1 ring-white/60">
+        <div className="rounded-[2rem] bg-[#fffdf7] p-4 shadow-xl ring-2 ring-emerald-100 sm:p-6">
           {book.author && (
             <p className="text-xs text-slate-400 text-center mb-2">{book.author}</p>
           )}
@@ -95,6 +95,7 @@ export default function ParableReadPage({
               <Btn
                 size="sm"
                 variant={version === "adapted" ? "primary" : "ghost"}
+                ariaPressed={version === "adapted"}
                 onClick={() => setVersion("adapted")}
               >
                 📖 故事版
@@ -102,6 +103,7 @@ export default function ParableReadPage({
               <Btn
                 size="sm"
                 variant={version === "classic" ? "primary" : "ghost"}
+                ariaPressed={version === "classic"}
                 onClick={() => setVersion("classic")}
               >
                 🏛️ 经典原文
@@ -124,6 +126,7 @@ export default function ParableReadPage({
             <ChapterReader
               key={chapter.idx}
               chapter={chapter}
+              fallbackImage="/ui/islands/literature.webp"
               onChapterComplete={onChapterComplete}
             />
           )}

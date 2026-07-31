@@ -31,7 +31,7 @@ export function redrawCanvas(canvas: HTMLCanvasElement | null, strokes: Point[][
 }
 
 export function applyStrokeStyle(ctx: CanvasRenderingContext2D) {
-  ctx.lineWidth = 16;
+  ctx.lineWidth = 10;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
   ctx.strokeStyle = "#ec4899";

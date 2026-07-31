@@ -20,6 +20,7 @@ import {
   rememberTheaterThemeId,
   themeById,
 } from "@/lib/video/theater-theme";
+import { FAIRY_OVERLAY_STATE_EVENT } from "@/lib/fairy-guide";
 
 export default function TheaterPage() {
   const router = useRouter();
@@ -51,6 +52,13 @@ export default function TheaterPage() {
   const [themeId, setThemeId] = useState(DEFAULT_THEATER_THEME.id);
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(FAIRY_OVERLAY_STATE_EVENT, { detail: Boolean(activeVideo) }));
+    return () => {
+      window.dispatchEvent(new CustomEvent(FAIRY_OVERLAY_STATE_EVENT, { detail: false }));
+    };
+  }, [activeVideo]);
 
   useEffect(() => {
     setPortalRoot(document.body);

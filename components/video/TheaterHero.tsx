@@ -32,7 +32,7 @@ export function TheaterHero({ video, onOpen, eyebrow = "精选" }: TheaterHeroPr
         <span className="text-sm font-black tracking-widest text-[var(--theater-accent)] sm:text-lg">
           {eyebrow} · {video.categoryTitle}
         </span>
-        <h1 className="line-clamp-2 text-2xl font-black leading-tight drop-shadow sm:text-5xl">{video.title}</h1>
+        <h1 className="line-clamp-2 text-2xl font-black leading-tight text-white drop-shadow sm:text-5xl">{video.title}</h1>
         {video.summary && (
           <p className="line-clamp-2 text-sm text-white/70 sm:text-lg">{video.summary}</p>
         )}

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Avatar, Layout, Menu, Space, Tag, Typography } from "antd";
+import { Avatar, Layout, Menu, Tag } from "antd";
 import type { ManagementArea, ManagementRole } from "@/lib/auth/management";
 import { resolveSelectedMenuKey } from "@/components/management/menuSelection";
 
@@ -39,62 +39,80 @@ export function ManagementShell({
   );
 
   return (
-    <Layout style={{ minHeight: "100vh" }}>
-      <Sider breakpoint="lg" collapsedWidth={0} theme="dark">
-        <div
-          style={{
-            color: "white",
-            fontSize: 18,
-            fontWeight: 700,
-            padding: "20px 24px 12px",
-          }}
-        >
-          魔法学习王国
+    <Layout className="management-shell min-h-screen">
+      <Sider className="hidden! lg:block!" theme="dark" width={240}>
+        <div className="px-6 pb-3 pt-6 text-lg font-bold text-white">
+          <span aria-hidden="true">✦ </span>魔法学习王国
         </div>
-        <Menu
-          mode="inline"
-          theme="dark"
-          selectedKeys={[activeMenuKey]}
-          items={menuItems.map((item) => ({
-            key: item.key,
-            label: <Link href={item.href}>{item.label}</Link>,
-          }))}
-        />
+        <nav aria-label="管理导航">
+          <Menu
+            mode="inline"
+            theme="dark"
+            selectedKeys={[activeMenuKey]}
+            items={menuItems.map((item) => ({
+              key: item.key,
+              label: (
+                <Link
+                  href={item.href}
+                  aria-current={activeMenuKey === item.key ? "page" : undefined}
+                >
+                  {item.label}
+                </Link>
+              ),
+            }))}
+          />
+        </nav>
+        <Link
+          href="/world"
+          className="mx-4 mt-6 flex min-h-11 items-center rounded-xl border border-white/15 px-4 text-sm font-medium text-slate-200 transition hover:border-white/30 hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+        >
+          ← 返回儿童端
+        </Link>
       </Sider>
 
-      <Layout>
+      <Layout className="min-w-0 bg-slate-100">
         <Header
-          style={{
-            alignItems: "center",
-            background: "#fff",
-            display: "flex",
-            justifyContent: "space-between",
-            paddingInline: 24,
-          }}
+          className="management-header flex h-auto min-h-16 items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6"
+          style={{ background: "#fff" }}
         >
-          <Typography.Title level={4} style={{ margin: 0 }}>
+          <p className="m-0 min-w-0 truncate text-base font-bold text-slate-900 sm:text-lg">
             {area === "admin" ? "平台管理后台" : "家长管理中心"}
-          </Typography.Title>
-          <Space>
+          </p>
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <Tag color={role === "ADMIN" ? "gold" : "blue"}>
               {role === "ADMIN" ? "管理员" : "家长"}
             </Tag>
             <Avatar>{displayName.slice(0, 1).toUpperCase()}</Avatar>
-            <Typography.Text>{displayName}</Typography.Text>
-          </Space>
+            <span className="hidden max-w-48 truncate text-sm text-slate-600 sm:inline">
+              {displayName}
+            </span>
+          </div>
         </Header>
 
-        <Content style={{ margin: 24 }}>
-          <div
-            style={{
-              background: "#fff",
-              borderRadius: 12,
-              minHeight: 280,
-              padding: 24,
-            }}
-          >
+        <nav
+          aria-label="移动管理导航"
+          className="flex gap-2 overflow-x-auto border-b border-slate-200 bg-white px-3 py-2 lg:hidden"
+        >
+          {menuItems.map((item) => (
+            <Link
+              key={item.key}
+              href={item.href}
+              aria-current={activeMenuKey === item.key ? "page" : undefined}
+              className={`flex min-h-11 shrink-0 items-center rounded-xl px-4 text-sm font-medium transition focus-visible:outline-2 focus-visible:outline-blue-500 ${
+                activeMenuKey === item.key
+                  ? "bg-blue-600 text-white"
+                  : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+              }`}
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <Content className="min-w-0 p-3 sm:p-5 lg:p-6">
+          <main className="mx-auto min-h-72 max-w-7xl rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
             {children}
-          </div>
+          </main>
         </Content>
       </Layout>
     </Layout>

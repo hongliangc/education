@@ -5,7 +5,7 @@ import { Btn } from "@/components/Btn";
 import { PINYIN_SYLLABLES, shufflePinyinChoices, type PinyinSyllable } from "@/content/hanzi";
 import { playClip, playClipSequence, speakPinyin, speakText, type SpeechController } from "@/lib/speech";
 import { PinyinFoundationBoard } from "./PinyinFoundationBoard";
-import { HanziScreenHeader } from "./HanziScreenHeader";
+import { HanziShell } from "./HanziShell";
 
 const LESSON_SIZE = 10;
 const CURSOR_KEY = "mlk-pinyin-syllable-cursor";
@@ -43,14 +43,13 @@ export function HanziPinyinLesson({ childId, onBack }: { childId: string; onBack
   const backToFoundation = () => { stopSpeech(); setStage("foundation"); };
 
   return (
-    <section className="h-[min(94vh,64rem)] space-y-5 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
-      <HanziScreenHeader title="拼音学习" subtitle="先认基础，再练拼读" onBack={leave} />
+    <HanziShell title="拼音学习" subtitle="先认基础，再练拼读" onBack={leave} contentClassName="flex flex-col">
       {stage === "foundation" ? (
         <PinyinFoundationBoard playPinyinClip={playStaticPinyin} playPinyinSequence={playStaticSequence} speakExample={speak} onComplete={beginCharacters} />
       ) : (
         <SyllableStage childId={childId} speak={speak} speakExact={speakExactPinyin} stopSpeech={stopSpeech} onFoundation={backToFoundation} />
       )}
-    </section>
+    </HanziShell>
   );
 }
 
@@ -81,7 +80,7 @@ function SyllableStage({ childId, speak, speakExact, stopSpeech, onFoundation }:
   if (!ready) return <div className="py-10 text-center font-bold text-slate-400">正在准备拼音题…</div>;
   if (!item || done) return <div className="space-y-4 py-8 text-center"><div className="text-6xl">🎉</div><h3 className="text-2xl font-black text-slate-800">第二阶段完成！</h3><p className="font-bold text-slate-500">本次完成 10 个拼音，下一关继续新组合。</p><Btn onClick={onFoundation}>回到拼音表</Btn></div>;
   return (
-    <div className="space-y-5">
+    <div className="mx-auto w-full max-w-3xl space-y-5 rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-4 shadow-[0_6px_0_#cfad70] sm:p-6">
       <div className="flex items-center justify-between gap-3">
         <button type="button" onClick={onFoundation} className="text-sm font-black text-sky-600">← 第一阶段</button>
         <span className="text-sm font-black text-purple-600">第二阶段 · 拼音组合 {index + 1}/{lesson.length}</span>

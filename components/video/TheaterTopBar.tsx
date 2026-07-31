@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { BackButton } from "@/components/BackButton";
 import { RefreshIcon } from "@/components/video/icons";
 import { cn } from "@/lib/utils";
@@ -61,16 +62,14 @@ export function TheaterTopBar({
                 className="px-3 py-2 text-sm sm:px-5 sm:py-2.5 sm:text-lg"
               />
               <span className="flex min-w-0 items-center gap-2" aria-label="视频影院">
-                <span
-                  aria-hidden="true"
-                  style={{
-                    background:
-                      "linear-gradient(135deg, var(--theater-accent), rgba(255,255,255,0.18))",
-                  }}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl text-lg shadow-lg ring-1 ring-white/30 sm:h-9 sm:w-9 sm:text-xl"
-                >
-                  🎬
-                </span>
+                <Image
+                  src="/ui/locations/cinema.webp"
+                  alt="视频影院"
+                  width={48}
+                  height={48}
+                  loading="eager"
+                  className="h-10 w-10 shrink-0 object-contain drop-shadow-lg sm:h-12 sm:w-12"
+                />
                 <span
                   aria-hidden="true"
                   style={{ backgroundImage: "linear-gradient(90deg,#ffffff,var(--theater-accent))" }}

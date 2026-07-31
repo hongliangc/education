@@ -94,6 +94,38 @@ test("pinyin learning starts with a foundation stage before character pinyin", (
   assert.match(source, /PINYIN_SYLLABLES/);
 });
 
+test("approved hanzi redesign keeps the real curriculum and interactive learning views", () => {
+  const home = readFileSync("components/games/hanzi/HanziLearningHome.tsx", "utf8");
+  const curriculum = readFileSync("components/games/hanzi/HanziCurriculumBrowser.tsx", "utf8");
+  const pinyin = readFileSync("components/games/hanzi/PinyinFoundationBoard.tsx", "utf8");
+  const idiom = readFileSync("components/games/hanzi/HanziIdiomLesson.tsx", "utf8");
+  const game = readFileSync("components/games/WritingGame.tsx", "utf8");
+
+  assert.match(home, /继续上次学习/);
+  assert.match(home, /课程目录/);
+  assert.match(curriculum, /全选/);
+  assert.match(curriculum, /清空/);
+  assert.match(curriculum, /进入单字学习/);
+  assert.match(pinyin, /四声练习/);
+  assert.match(pinyin, /一声/);
+  assert.match(pinyin, /四声/);
+  assert.match(idiom, /读成语/);
+  assert.match(idiom, /听典故/);
+  assert.match(idiom, /成语目录/);
+  assert.match(idiom, /onSelectLesson/);
+  assert.match(game, /lessons=\{HANZI_IDIOMS\}/);
+  assert.match(game, /onSelectLesson=\{setIdiomId\}/);
+});
+
+test("hanzi home consumes the approved storybook slice assets", () => {
+  const home = readFileSync("components/games/hanzi/HanziLearningHome.tsx", "utf8");
+
+  assert.match(home, /\/ui\/hanzi\/storybook-v3/);
+  for (const asset of ["title-plaque.webp", "mission-frame.png", "icon-hanzi.webp", "icon-pinyin.webp", "icon-idiom.webp"]) {
+    assert.match(home, new RegExp(asset.replace(".", "\\.")));
+  }
+});
+
 test("writing practice supports both character and word lessons", () => {
   const source = readFileSync("components/games/hanzi/HanziWritingPractice.tsx", "utf8") + readFileSync("components/games/hanzi/HanziWordWritingPractice.tsx", "utf8");
 
@@ -196,7 +228,7 @@ test("hanzi child lessons share one screen header and semantic progress colors",
   ];
   for (const file of lessonFiles) {
     const source = readFileSync(`components/games/hanzi/${file}`, "utf8");
-    assert.match(source, /HanziScreenHeader/, `${file} should use the shared header`);
+    assert.match(source, /HanziShell|HanziScreenHeader/, `${file} should use the shared header`);
   }
 
   const browser = readFileSync("components/games/hanzi/HanziCurriculumBrowser.tsx", "utf8");
@@ -229,13 +261,15 @@ test("hanzi home shows direct lesson entries and pinyin controls have safe spaci
   const home = readFileSync("components/games/hanzi/HanziLearningHome.tsx", "utf8");
   const pinyin = readFileSync("components/games/hanzi/PinyinFoundationBoard.tsx", "utf8");
   const lesson = readFileSync("components/games/hanzi/HanziPinyinLesson.tsx", "utf8");
+  const shell = readFileSync("components/games/hanzi/HanziShell.tsx", "utf8");
 
   for (const label of ["汉字学习", "拼音乐园", "成语"]) {
     assert.match(home, new RegExp(label));
   }
   assert.doesNotMatch(home, /toolsOpen/);
   assert.match(home, /学习入口/);
-  assert.match(lesson, /px-4.*sm:px-6/);
+  assert.match(lesson, /HanziShell/);
+  assert.match(shell, /px-2.*sm:px-6/);
   assert.match(pinyin, /min-h-11/);
   assert.match(pinyin, /px-5/);
 });
@@ -287,7 +321,7 @@ test("writing and pinyin use the approved dense learning-workspace layouts", () 
 test("other hanzi child lessons use the same bounded viewport shell", () => {
   for (const file of ["HanziRecognitionRound.tsx", "HanziWordWritingPractice.tsx", "HanziStoryLesson.tsx", "HanziIdiomLesson.tsx"]) {
     const source = readFileSync(`components/games/hanzi/${file}`, "utf8");
-    assert.match(source, /h-\[min\(94vh,64rem\)\]/, `${file} should fill the learning workspace`);
+    assert.match(source, /HanziShell/, `${file} should fill the learning workspace`);
   }
 });
 
@@ -302,16 +336,16 @@ test("thin story content is folded into hanzi learning and tones have distinct f
   assert.match(pinyin, /playPinyinClip\(tone\.path\)/);
   assert.match(pinyin, /pinyinToneAudioPath/);
   assert.match(pinyin, /tone\.character/);
-  assert.match(daily, /md:grid-cols-\[12rem_minmax\(0,1fr\)\]/);
-  assert.match(daily, /min-h-0 flex-1/);
+  assert.match(daily, /sm:grid-cols-\[minmax\(0,1fr\)_minmax\(12rem,.85fr\)\]/);
+  assert.match(daily, /HanziShell/);
   assert.match(idiom, /lg:grid-cols-2/);
 });
 
 test("the character lesson uses a short two-column rail and fills the hero horizontally", () => {
   const daily = readFileSync("components/games/hanzi/HanziDailyLesson.tsx", "utf8");
-  assert.match(daily, /md:grid-cols-\[12rem_minmax\(0,1fr\)\]/);
-  assert.match(daily, /md:grid-cols-2 md:content-start/);
-  assert.match(daily, /lg:grid-cols-3/);
+  assert.match(daily, /sm:grid-cols-\[minmax\(0,1fr\)_minmax\(12rem,.85fr\)\]/);
+  assert.match(daily, /aria-label="本单元汉字"/);
+  assert.match(daily, /grid-cols-3/);
   assert.match(daily, /记忆提示/);
 });
 
@@ -321,4 +355,26 @@ test("finals use tone examples while initials keep their short base sound", () =
   assert.match(board, /pinyinToneExamples/);
   assert.match(board, /声母本身没有声调/);
   assert.match(board, /toneChoices\.map/);
+});
+
+test("every hanzi learning mode uses the implementation-grade storybook shell", () => {
+  const shell = readFileSync("components/games/hanzi/HanziShell.tsx", "utf8");
+  assert.match(shell, /world-bg-mobile-v1/);
+  assert.match(shell, /world-bg-desktop-v1/);
+  assert.match(shell, /aria-label="学习进度"/);
+  assert.match(shell, /env\(safe-area-inset-bottom\)/);
+
+  for (const file of [
+    "HanziDailyLesson.tsx",
+    "HanziRecognitionRound.tsx",
+    "HanziWritingPractice.tsx",
+    "HanziWordWritingPractice.tsx",
+    "HanziStoryLesson.tsx",
+    "HanziPinyinLesson.tsx",
+    "HanziIdiomLesson.tsx",
+    "HanziLibraryProgress.tsx",
+  ]) {
+    const source = readFileSync(`components/games/hanzi/${file}`, "utf8");
+    assert.match(source, /HanziShell/, `${file} should use HanziShell`);
+  }
 });

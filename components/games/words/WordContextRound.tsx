@@ -8,6 +8,7 @@ import { generateChallenges, type WordChallenge } from "@/content/words";
 import { GRADE_LABELS, type Grade } from "@/lib/grades";
 import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 const ROUND_SIZE = 5;
 
@@ -70,6 +71,11 @@ export function WordContextRound({
     if (feedback) return;
     const ok = choiceId === question.answerId;
     setFeedback(ok ? "correct" : "wrong");
+    showFairyGuide({
+      event: ok ? "correct" : "incorrect",
+      text: ok ? "选对啦！把这个词再读一遍。" : "再听一次，想想这个词在句子里的意思。",
+      autoHideMs: 3400,
+    });
     if (ok) {
       sfx.correct();
       setCorrectQ((c) => c + 1);
@@ -86,6 +92,11 @@ export function WordContextRound({
           durationSec: Math.round((Date.now() - startedAt.current) / 1000),
           starsEarned: stars,
         });
+        showFairyGuide({
+          event: "complete",
+          text: `词语闯关完成！答对 ${correct} 题，获得 ${stars} 颗星。`,
+          autoHideMs: 6000,
+        });
         setDone(true);
       } else {
         setQi((i) => i + 1);
@@ -96,10 +107,10 @@ export function WordContextRound({
   const isEmoji = question.choiceMode === "emoji";
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <ProgressBar value={qi / round.length} />
 
-      <div className="mt-4 flex items-center justify-center gap-3">
+      <div className="mt-5 flex min-h-20 items-center justify-center gap-3 rounded-3xl bg-sky-50 px-4 py-3 ring-1 ring-sky-100">
         <p className="text-center text-2xl font-bold text-slate-700">{question.prompt}</p>
         <button
           onClick={replay}
@@ -119,13 +130,14 @@ export function WordContextRound({
               onClick={() => choose(choice.id)}
               disabled={!!feedback}
               aria-label={`选择：${choice.label}`}
-              className={`rounded-2xl py-6 text-5xl shadow ring-2 transition ${
+              className={`min-h-28 rounded-2xl py-5 text-4xl shadow ring-2 transition ${
                 feedback && isAnswer
                   ? "bg-emerald-100 ring-emerald-300 anim-correct"
                   : "bg-white ring-sky-200 hover:bg-sky-50"
               }`}
             >
-              {choice.emoji}
+              <span aria-hidden="true">{choice.emoji}</span>
+              <span className="mt-1 block text-sm font-black text-slate-700">{choice.label}</span>
             </button>
           ) : (
             <Btn

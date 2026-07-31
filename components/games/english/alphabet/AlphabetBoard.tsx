@@ -159,7 +159,7 @@ function AlphabetCard({
       <button
         type="button"
         onClick={onClose}
-        className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-white/70 text-sm font-black text-slate-500 ring-1 ring-slate-200 transition hover:bg-white"
+        className="absolute right-2 top-2 flex h-11 w-11 items-center justify-center rounded-full bg-white/80 text-base font-black text-slate-500 ring-1 ring-slate-200 transition hover:bg-white focus-visible:ring-4 focus-visible:ring-amber-300"
         aria-label="关闭"
       >
         ✕

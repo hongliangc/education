@@ -12,11 +12,12 @@ export default async function ParentRewardsPage() {
   const rewards = await listRewards({ ownerType: "FAMILY", ownerId: actor.id });
 
   return (
-    <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>奖励商店</h1>
-      <p style={{ color: "#64748b", marginBottom: 16 }}>
-        设置孩子可以用星星兑换的家庭奖励，兑换后会进入「兑换审批」等你发放。
-      </p>
+    <div className="space-y-6">
+      <header>
+        <p className="mb-1 text-sm font-medium text-blue-600">家庭奖励</p>
+        <h1 className="text-2xl font-bold text-slate-950">奖励商店</h1>
+        <p className="mt-2 text-sm text-slate-600">设置孩子可以用星星兑换的家庭奖励，兑换后会进入「兑换审批」等你发放。</p>
+      </header>
       <RewardEditor
         rewards={rewards.map((r) => ({
           id: r.id,

@@ -7,8 +7,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { BackButton } from "@/components/BackButton";
-import { FairyBubble } from "@/components/fairy/FairyBubble";
-import { FairyChat } from "@/components/fairy/FairyChat";
 import { ThreeKingdomsReader } from "@/components/history/ThreeKingdomsReader";
 import { THREE_KINGDOMS } from "@/content/storybooks/three-kingdoms";
 import { THREE_KINGDOMS_DETAIL } from "@/content/history/three-kingdoms-detail";
@@ -20,6 +18,7 @@ import { EventsTab } from "@/components/history/threeKingdoms/EventsTab";
 import { MapTab } from "@/components/history/threeKingdoms/MapTab";
 import { TasksTab } from "@/components/history/threeKingdoms/TasksTab";
 import { TK, BG_TILE } from "@/components/history/threeKingdoms/theme";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 const TOTAL = THREE_KINGDOMS.chapters.length;
 
@@ -29,7 +28,6 @@ export default function ThreeKingdomsPage() {
   const [unlockedThrough, setUnlockedThrough] = useState(0);
   const [reading, setReading] = useState<number | null>(null);
   const [tab, setTab] = useState<TabKey>("story");
-  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     if (!child) {
@@ -49,6 +47,11 @@ export default function ThreeKingdomsPage() {
       }
     })();
   }, [child, router]);
+
+  useEffect(() => {
+    if (!child) return;
+    showFairyGuide({ event: "enter", text: "从“听故事”开始吧，人物、事件和地图会随着阅读慢慢解锁！", autoHideMs: 5600 });
+  }, [child]);
 
   if (!child) return null;
 
@@ -77,10 +80,6 @@ export default function ThreeKingdomsPage() {
     <main className="min-h-screen px-3 pb-12 pt-20 sm:px-4">
       <div className="mx-auto max-w-4xl">
         <BackButton label="历史长卷" className="mb-3" onClick={() => router.push("/history")} />
-        <button onClick={() => setChatOpen(true)} className="mb-2 block text-left" aria-label="问历史向导精灵">
-          <FairyBubble text="我是历史向导！草船借箭是真的吗？点我问问看 🏯" mood="excited" />
-        </button>
-
         {/* 三国卷面 */}
         <div
           className="rounded-[2rem] p-3 sm:p-5"
@@ -113,14 +112,6 @@ export default function ThreeKingdomsPage() {
         </div>
       </div>
 
-      {chatOpen && (
-        <FairyChat
-          child={{ name: child.name, totalStars: child.totalStars }}
-          guide="history"
-          suggestions={["草船借箭是真的吗？", "诸葛亮是个怎样的人？", "三国是哪三个国家？"]}
-          onClose={() => setChatOpen(false)}
-        />
-      )}
     </main>
   );
 }

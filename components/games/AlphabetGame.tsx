@@ -10,6 +10,7 @@ import type { OnComplete } from "./types";
 import { GameDone } from "./GameDone";
 import { AlphabetRound } from "./alphabet/AlphabetRound";
 import { PhonicsRound } from "./alphabet/PhonicsRound";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 export function AlphabetGame({
   grade,
@@ -77,6 +78,11 @@ export function AlphabetGame({
     if (feedback) return;
     const ok = choice === question.answer;
     setFeedback(ok ? "correct" : "wrong");
+    showFairyGuide({
+      event: ok ? "correct" : "incorrect",
+      text: ok ? "答对啦！再听一遍，把这个词大声读出来吧。" : "再看看单词开头的字母，然后试一次。",
+      autoHideMs: 3600,
+    });
     if (ok) {
       sfx.correct();
       setCorrectQ((c) => c + 1);
@@ -92,6 +98,11 @@ export function AlphabetGame({
           correctQ: correct,
           durationSec: Math.round((Date.now() - startedAt.current) / 1000),
           starsEarned: stars,
+        });
+        showFairyGuide({
+          event: "complete",
+          text: `完成啦！你答对了 ${correct} 题，获得 ${stars} 颗星。`,
+          autoHideMs: 6500,
         });
         setDone(true);
       } else {

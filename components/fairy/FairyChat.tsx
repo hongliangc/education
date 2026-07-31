@@ -15,6 +15,7 @@ import {
 import { perfEnabled, beaconTurn } from "@/lib/speech/perf";
 import { createHoldToTalkSession } from "./holdToTalk";
 import { useRecordingAudioGuard } from "./useRecordingAudioGuard";
+import { FAIRY_CHAT_STATE_EVENT } from "@/lib/fairy-guide";
 
 type Status = "idle" | "listening" | "thinking" | "speaking";
 type Turn = { role: "user" | "fairy"; content: string };
@@ -74,6 +75,13 @@ export function FairyChat({
   const openedRef = useRef(false);
   const recordingAudio = useRecordingAudioGuard();
   holdSessionRef.current ??= createHoldToTalkSession(createRecorder);
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent(FAIRY_CHAT_STATE_EVENT, { detail: true }));
+    return () => {
+      window.dispatchEvent(new CustomEvent(FAIRY_CHAT_STATE_EVENT, { detail: false }));
+    };
+  }, []);
 
   // 新消息 / 状态变化时滚到底
   useEffect(() => {

@@ -15,7 +15,7 @@ export function QuoteCardView({
   onInterpret: () => void;
 }) {
   return (
-    <div className="anim-pop-in rounded-3xl bg-gradient-to-b from-teal-50 to-white p-5 ring-1 ring-teal-100 text-center">
+    <div className="anim-pop-in rounded-3xl bg-gradient-to-b from-teal-50 to-[#fffdf7] p-5 text-center shadow-inner ring-2 ring-teal-100">
       <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-white shadow-inner ring-1 ring-teal-100">
         {card.image ? (
           <Image

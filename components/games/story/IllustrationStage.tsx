@@ -7,14 +7,16 @@ function IllustrationStageImpl({
   images,
   imgIndex,
   fallbackEmoji,
+  fallbackImage,
   cover,
 }: {
   images: string[];
   imgIndex: number;
   fallbackEmoji: string;
+  fallbackImage: string;
   cover?: string;
 }) {
-  const src = imgIndex >= 0 ? images[imgIndex] : cover;
+  const src = imgIndex >= 0 ? images[imgIndex] : cover ?? fallbackImage;
   const [errored, setErrored] = useState(false);
 
   useEffect(() => {
@@ -22,7 +24,7 @@ function IllustrationStageImpl({
   }, [src]);
 
   return (
-    <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-b from-sky-100 to-amber-50 ring-1 ring-amber-100">
+    <div className="relative flex aspect-video w-full items-center justify-center overflow-hidden rounded-3xl bg-gradient-to-b from-sky-100 to-amber-50 shadow-lg ring-2 ring-white">
       {src && !errored ? (
         <Image
           key={src}
@@ -34,9 +36,10 @@ function IllustrationStageImpl({
           className="anim-pop-in object-contain"
         />
       ) : (
-        <span className="anim-pop-in text-7xl" aria-hidden>
-          {fallbackEmoji}
-        </span>
+        <div className="anim-pop-in text-center">
+          <span className="text-sm font-black text-amber-700">故事插画</span>
+          <p className="mt-1 text-xl font-black text-slate-700">{fallbackEmoji}</p>
+        </div>
       )}
     </div>
   );

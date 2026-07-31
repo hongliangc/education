@@ -2,7 +2,7 @@
 
 export function CloudBG() {
   return (
-    <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
+    <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden">
       {/* 云朵 */}
       <Cloud className="top-10 left-[5%] anim-float" delay={0} scale={1.2} />
       <Cloud className="top-24 right-[8%] anim-float" delay={1.2} scale={1} />

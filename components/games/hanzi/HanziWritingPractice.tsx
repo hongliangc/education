@@ -12,7 +12,8 @@ import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
 import { HanziWriterPad } from "./HanziWriterPad";
 import { HanziWordWritingPractice } from "./HanziWordWritingPractice";
-import { HanziScreenHeader } from "./HanziScreenHeader";
+import { HanziShell } from "./HanziShell";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 const ROUND_SIZE = 4;
 
@@ -73,30 +74,26 @@ export function HanziWritingPractice({
   if (done) {
     const stars = Math.max(1, Math.round((completedChars / round.length) * 3));
     return (
-      <GameDone
-        starsEarned={stars}
-        correctQ={completedChars}
-        totalQ={round.length}
-        onAgain={() => restart()}
-        onClose={onExit}
-        onChangeMode={onChangeMode}
-        changeModeLabel="去认汉字"
-      />
+      <HanziShell title="书写完成" subtitle="每一笔都更稳了" onBack={onExit}>
+        <div className="mx-auto max-w-2xl rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-5 shadow-[0_6px_0_#cfad70]">
+          <GameDone starsEarned={stars} correctQ={completedChars} totalQ={round.length} onAgain={() => restart()} onClose={onExit} onChangeMode={onChangeMode} changeModeLabel="去认汉字" />
+        </div>
+      </HanziShell>
     );
   }
 
   if (!item) {
     return (
-      <div className="space-y-5 text-center">
-        <div className="rounded-3xl bg-emerald-50 p-6 text-emerald-700 ring-1 ring-emerald-100">
-          <div className="text-4xl">✅</div>
-          <div className="mt-2 text-lg font-bold">所选内容暂时都掌握了</div>
-          <div className="mt-1 text-sm">到复习时间后，这些字会自动回到写字练习里。</div>
+      <HanziShell title="汉字书写" subtitle="复习已经完成" onBack={onExit}>
+        <div className="mx-auto max-w-2xl space-y-5 rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-5 text-center shadow-[0_6px_0_#cfad70]">
+          <div className="rounded-3xl bg-emerald-50 p-6 text-emerald-700 ring-1 ring-emerald-100">
+            <div className="text-4xl">✅</div>
+            <div className="mt-2 text-lg font-bold">所选内容暂时都掌握了</div>
+            <div className="mt-1 text-sm">到复习时间后，这些字会自动回到写字练习里。</div>
+          </div>
+          <Btn variant="ghost" onClick={onChangeMode}>🔍 去认汉字</Btn>
         </div>
-        <Btn variant="ghost" onClick={onChangeMode}>
-          🔍 去认汉字
-        </Btn>
-      </div>
+      </HanziShell>
     );
   }
 
@@ -107,6 +104,11 @@ export function HanziWritingPractice({
     onResult(item.id, true);
     const correct = completedChars + 1;
     setCompletedChars(correct);
+    showFairyGuide({
+      event: "correct",
+      text: `“${item.char}”写完啦！记住它的笔顺。`,
+      autoHideMs: 3200,
+    });
     if (idx + 1 >= round.length) {
       const stars = Math.max(1, Math.round((correct / round.length) * 3));
       onComplete({
@@ -115,6 +117,11 @@ export function HanziWritingPractice({
         correctQ: correct,
         durationSec: Math.round((Date.now() - startedAt.current) / 1000),
         starsEarned: stars,
+      });
+      showFairyGuide({
+        event: "complete",
+        text: `写字练习完成！你写了 ${correct} 个字，获得 ${stars} 颗星。`,
+        autoHideMs: 6500,
       });
       setDone(true);
     } else {
@@ -125,9 +132,9 @@ export function HanziWritingPractice({
   };
 
   return (
-    <div className="h-[min(94vh,64rem)] space-y-3 overflow-y-auto bg-[#fffdf9] p-4 sm:p-6">
-      <HanziScreenHeader title="汉字书写" subtitle="跟着笔顺写一写" onBack={onExit} progress={`${idx + 1}/${round.length}`} />
-      <div className="grid grid-cols-2 gap-2"><button type="button" className="rounded-2xl bg-sky-500 py-2.5 font-black text-white">单字练习</button><button type="button" onClick={() => setWritingMode("words")} className="rounded-2xl bg-white py-2.5 font-black text-slate-600 ring-1 ring-slate-200">词语练习</button></div>
+    <HanziShell title="汉字书写" subtitle="跟着笔顺写一写" onBack={onExit} progress={`${idx + 1}/${round.length}`}>
+      <div className="mx-auto space-y-3 rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-3 shadow-[0_6px_0_#cfad70] sm:p-6">
+      <div className="grid grid-cols-2 gap-2"><button type="button" className="min-h-11 rounded-2xl bg-rose-500 py-2.5 font-black text-white">单字练习</button><button type="button" onClick={() => setWritingMode("words")} className="min-h-11 rounded-2xl bg-white py-2.5 font-black text-slate-600 ring-1 ring-amber-200">词语练习</button></div>
 
       <div className="grid items-start gap-4 md:grid-cols-[minmax(0,0.8fr)_minmax(0,1.4fr)_minmax(0,0.9fr)]">
         <section className="rounded-3xl bg-sky-50 p-4 text-center ring-1 ring-sky-100">
@@ -142,16 +149,16 @@ export function HanziWritingPractice({
             type="button"
             onClick={() => {
               speechRef.current?.stop();
-              speechRef.current = speakText(item.char, { lang: "zh-CN" });
+              speechRef.current = speakText(`${item.char}。`, { lang: "zh-CN", fallbackText: item.char });
             }}
-            className="rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-sky-700 ring-1 ring-sky-200"
+            className="min-h-11 rounded-2xl bg-white px-4 py-2.5 text-sm font-bold text-sky-700 ring-1 ring-sky-200"
           >
             🔊 听这个字
           </button>
           <button
             type="button"
             onClick={() => setDemoRequest((value) => value + 1)}
-            className="rounded-2xl bg-pink-50 px-4 py-2.5 text-sm font-bold text-pink-700 ring-1 ring-pink-200"
+            className="min-h-11 rounded-2xl bg-pink-50 px-4 py-2.5 text-sm font-bold text-pink-700 ring-1 ring-pink-200"
           >
             ✍️ 演示笔顺
           </button>
@@ -182,7 +189,8 @@ export function HanziWritingPractice({
       <p className="text-center text-sm text-slate-400">
         第 {idx + 1} 个字 / 共 {round.length} 个
       </p>
-    </div>
+      </div>
+    </HanziShell>
   );
 }
 

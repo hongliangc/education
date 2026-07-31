@@ -12,9 +12,12 @@ export default async function AdminRedemptionsPage() {
   const redemptions = await listManagedRedemptions(actor);
 
   return (
-    <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>兑换记录</h1>
-      <p style={{ color: "#64748b", marginBottom: 16 }}>全平台所有家庭的兑换记录，可直接发放或退回。</p>
+    <div className="space-y-6">
+      <header>
+        <p className="mb-1 text-sm font-medium text-violet-600">平台审批</p>
+        <h1 className="text-2xl font-bold text-slate-950">兑换记录</h1>
+        <p className="mt-2 text-sm text-slate-600">全平台所有家庭的兑换记录，可直接发放或退回。</p>
+      </header>
       <RedemptionTable
         rows={redemptions.map((r) => ({
           id: r.id,

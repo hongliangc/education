@@ -21,42 +21,40 @@ export default async function AdminFamiliesPage() {
   });
 
   return (
-    <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 4 }}>家庭</h1>
-      <p style={{ color: "#64748b", marginBottom: 16 }}>平台上的家长账号与他们的孩子（只读）。</p>
+    <div className="space-y-6">
+      <header>
+        <p className="mb-1 text-sm font-medium text-violet-600">账号目录</p>
+        <h1 className="text-2xl font-bold text-slate-950">家庭</h1>
+        <p className="mt-2 text-sm text-slate-600">平台上的家长账号与他们的孩子（只读）。</p>
+      </header>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div className="space-y-3">
         {families.map((family) => (
-          <div
-            key={family.id}
-            style={{ padding: 16, borderRadius: 14, background: "#fff", border: "1px solid #f1f5f9" }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-              <span style={{ fontWeight: 600 }}>{family.email ?? family.phone ?? family.id}</span>
+          <article key={family.id} className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-5">
+            <div className="mb-3 flex flex-wrap items-center gap-2">
+              <h2 className="min-w-0 break-all font-semibold text-slate-900">{family.email ?? family.phone ?? family.id}</h2>
               {family.role === "ADMIN" && (
-                <span style={{ fontSize: 12, color: "#b45309", background: "#fef3c7", padding: "1px 8px", borderRadius: 999 }}>
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800">
                   管理员
                 </span>
               )}
+              <span className="text-xs text-slate-500">{family.children.length} 个孩子</span>
             </div>
             {family.children.length > 0 ? (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              <ul className="flex flex-wrap gap-2" aria-label="孩子列表">
                 {family.children.map((child) => (
-                  <span
-                    key={child.id}
-                    style={{ padding: "4px 12px", borderRadius: 999, background: "#f8fafc", border: "1px solid #f1f5f9" }}
-                  >
+                  <li key={child.id} className="rounded-full border border-slate-200 bg-slate-50 px-3 py-2 text-sm">
                     {child.avatar} {child.name}
-                    <span style={{ marginLeft: 6, color: "#f59e0b", fontWeight: 700 }}>⭐ {child.totalStars}</span>
-                  </span>
+                    <span className="ml-2 font-bold text-amber-600">⭐ {child.totalStars}</span>
+                  </li>
                 ))}
-              </div>
+              </ul>
             ) : (
-              <span style={{ color: "#94a3b8", fontSize: 13 }}>还没有孩子</span>
+              <p className="text-sm text-slate-500">还没有孩子</p>
             )}
-          </div>
+          </article>
         ))}
-        {families.length === 0 && <span style={{ color: "#94a3b8" }}>暂无家庭。</span>}
+        {families.length === 0 ? <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">暂无家庭账号。</p> : null}
       </div>
     </div>
   );

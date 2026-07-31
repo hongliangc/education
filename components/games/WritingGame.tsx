@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   buildHanziSession,
   HANZI_CATALOG,
@@ -63,6 +63,7 @@ export function WritingGame({
   const browserSelectedIds = selectionTouched ? selectedHanziIds : dailyItems.map((item) => item.id);
   const sessionInUse = activeSession ?? learningSession;
   const activeItems = sessionInUse.items.map(({ item }) => item);
+
   const backToMenu = () => { setActiveSession(null); setMode("menu"); };
   const beginRecognition = (session: HanziSession = learningSession) => {
     setActiveSession(session);
@@ -126,7 +127,7 @@ export function WritingGame({
   }
 
   if (mode === "idiom" && idiom) {
-    return <HanziIdiomLesson lesson={idiom} onExplained={() => recordIdiomExplanation(idiom.id)} onAnswer={(correct) => recordIdiomAnswer(idiom.id, correct)} onComplete={() => setIdiomId(selectNextIdiom(HANZI_IDIOMS, idiomProgress, idiom.id)?.id ?? null)} onBack={backToMenu} />;
+    return <HanziIdiomLesson lesson={idiom} lessons={HANZI_IDIOMS} onSelectLesson={setIdiomId} onExplained={() => recordIdiomExplanation(idiom.id)} onAnswer={(correct) => recordIdiomAnswer(idiom.id, correct)} onComplete={() => setIdiomId(selectNextIdiom(HANZI_IDIOMS, idiomProgress, idiom.id)?.id ?? null)} onBack={backToMenu} />;
   }
 
   if (mode === "story" && dailyItems[0]) {
@@ -135,10 +136,6 @@ export function WritingGame({
 
   if (mode === "library") {
     return (
-      <section className="space-y-5">
-        <button type="button" onClick={backToMenu} className="text-sm font-black text-sky-600">
-          ← 返回汉字探险岛
-        </button>
         <HanziLibraryProgress
           progress={progress}
           idiomProgress={idiomProgress}
@@ -146,8 +143,8 @@ export function WritingGame({
           selectedIds={browserSelectedIds}
           onSelectionChange={(ids) => { setSelectedHanziIds(ids); setSelectionTouched(true); }}
           onStartSelection={onStartSelection}
+          onBack={backToMenu}
         />
-      </section>
     );
   }
 

@@ -16,7 +16,7 @@ export const TABS: { key: TabKey; label: string; emoji: string }[] = [
 
 export function FactionTabs({ active, onChange }: { active: TabKey; onChange: (t: TabKey) => void }) {
   return (
-    <nav className="scroll-hide flex gap-2 overflow-x-auto py-1">
+    <nav aria-label="三国专题栏目" className="scroll-hide flex gap-2 overflow-x-auto py-1">
       {TABS.map((t) => {
         const on = active === t.key;
         return (
@@ -24,7 +24,7 @@ export function FactionTabs({ active, onChange }: { active: TabKey; onChange: (t
             key={t.key}
             onClick={() => onChange(t.key)}
             aria-current={on}
-            className="shrink-0 rounded-2xl px-4 py-2 text-base font-black transition active:translate-y-0.5"
+            className="min-h-11 shrink-0 rounded-2xl px-4 py-2 text-base font-black transition active:translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
             style={{
               fontFamily: SERIF,
               letterSpacing: "1px",

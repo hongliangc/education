@@ -13,6 +13,8 @@ import { MathPath } from "@/components/games/math/MathPath";
 import { getMathCurriculum } from "@/content/math/curriculum";
 import { useGameStore } from "@/store/gameStore";
 import { resolveChildGrade, type Grade } from "@/lib/grades";
+import { useVisualQa } from "@/lib/visual-qa";
+import { VisualEnglishQuiz } from "@/components/visual-qa/VisualEnglishQuiz";
 
 // Math, alphabet, word matching and Hanzi learning generate grade-appropriate content.
 const GRADE_AWARE = new Set<Slug>(["math", "alphabet", "words", "writing"]);
@@ -39,6 +41,7 @@ export default function PlayPage({
   const child = useGameStore((s) => s.activeChild);
   const activeGrade = useGameStore((s) => s.activeGrade);
   const bumpStars = useGameStore((s) => s.bumpStars);
+  const visualQa = useVisualQa();
 
   // The practice grade comes from the shared HUD selector; before any switch it follows the
   // child's profile grade (inferred before confirmation).
@@ -98,6 +101,10 @@ export default function PlayPage({
       // 网络错误：忽略，下次会话补传机制可后续加
     }
   };
+
+  if (visualQa && slug === "alphabet") {
+    return <main className="min-h-screen px-4 pb-8 pt-20"><VisualEnglishQuiz /></main>;
+  }
 
   return (
     <GameModal title={meta.label} emoji={meta.emoji} color={meta.color} onClose={back} hideHeader={slug === "writing"} wide={slug === "writing"}>

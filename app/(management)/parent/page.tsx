@@ -28,42 +28,43 @@ export default async function ParentOverviewPage() {
   ];
 
   return (
-    <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16 }}>家庭总览</h1>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+    <div className="space-y-8">
+      <header>
+        <p className="mb-1 text-sm font-medium text-blue-600">家庭中心</p>
+        <h1 className="text-2xl font-bold text-slate-950">家庭总览</h1>
+        <p className="mt-2 text-sm text-slate-600">快速查看家庭奖励、兑换和孩子的星星。</p>
+      </header>
+      <section aria-label="家庭数据" className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {cards.map((card) => (
           <Link
             key={card.label}
             href={card.href}
-            style={{
-              display: "block",
-              padding: 20,
-              borderRadius: 16,
-              background: "#fff",
-              border: "1px solid #f1f5f9",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-            }}
+            className="group rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white hover:shadow-md focus-visible:outline-2 focus-visible:outline-blue-500"
           >
-            <div style={{ color: "#64748b", fontSize: 14 }}>{card.label}</div>
-            <div style={{ color: card.accent, fontSize: 32, fontWeight: 700 }}>{card.value}</div>
+            <span className="text-sm font-medium text-slate-600">{card.label}</span>
+            <strong className="mt-2 block text-3xl font-bold" style={{ color: card.accent }}>
+              {card.value}
+            </strong>
+            <span className="mt-3 block text-xs font-medium text-blue-600 opacity-0 transition group-hover:opacity-100">查看详情 →</span>
           </Link>
         ))}
-      </div>
+      </section>
 
-      <h2 style={{ fontSize: 18, fontWeight: 700, margin: "28px 0 12px" }}>孩子的星星</h2>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+      <section aria-labelledby="children-stars-title">
+        <h2 id="children-stars-title" className="mb-3 text-lg font-bold text-slate-900">孩子的星星</h2>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {children.map((child) => (
-          <div
-            key={child.id}
-            style={{ padding: "12px 18px", borderRadius: 14, background: "#fff", border: "1px solid #f1f5f9" }}
-          >
-            <span style={{ fontSize: 20, marginRight: 8 }}>{child.avatar}</span>
-            <span style={{ fontWeight: 600 }}>{child.name}</span>
-            <span style={{ marginLeft: 10, color: "#f59e0b", fontWeight: 700 }}>⭐ {child.totalStars}</span>
+          <div key={child.id} className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4">
+            <span className="text-2xl" aria-hidden="true">{child.avatar}</span>
+            <span className="min-w-0 flex-1 truncate font-semibold text-slate-900">{child.name}</span>
+            <span className="font-bold text-amber-600"><span aria-hidden="true">⭐</span> {child.totalStars}</span>
           </div>
         ))}
-        {children.length === 0 && <span style={{ color: "#94a3b8" }}>还没有添加孩子。</span>}
-      </div>
+        {children.length === 0 ? (
+          <p className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">还没有添加孩子，孩子账号创建后会显示在这里。</p>
+        ) : null}
+        </div>
+      </section>
     </div>
   );
 }

@@ -25,27 +25,24 @@ export default async function AdminOverviewPage() {
   ];
 
   return (
-    <div>
-      <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 16 }}>平台总览</h1>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+    <div className="space-y-6">
+      <header>
+        <p className="mb-1 text-sm font-medium text-violet-600">运营概览</p>
+        <h1 className="text-2xl font-bold text-slate-950">平台总览</h1>
+        <p className="mt-2 text-sm text-slate-600">查看平台当前需要处理的数据。</p>
+      </header>
+      <section aria-label="平台数据" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {cards.map((card) => (
           <Link
             key={card.label}
             href={card.href}
-            style={{
-              display: "block",
-              padding: 20,
-              borderRadius: 16,
-              background: "#fff",
-              border: "1px solid #f1f5f9",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
-            }}
+            className="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-white hover:shadow-md focus-visible:outline-2 focus-visible:outline-blue-500"
           >
-            <div style={{ color: "#64748b", fontSize: 14 }}>{card.label}</div>
-            <div style={{ color: card.accent, fontSize: 32, fontWeight: 700 }}>{card.value}</div>
+            <span className="text-sm font-medium text-slate-600">{card.label}</span>
+            <strong className="mt-2 block text-3xl font-bold" style={{ color: card.accent }}>{card.value}</strong>
           </Link>
         ))}
-      </div>
+      </section>
     </div>
   );
 }

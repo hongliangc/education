@@ -7,7 +7,7 @@ import { speakText, type SpeechController } from "@/lib/speech";
 import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
 import { HanziWriterPad } from "./HanziWriterPad";
-import { HanziScreenHeader } from "./HanziScreenHeader";
+import { HanziShell } from "./HanziShell";
 
 const WORD_ROUND_SIZE = 3;
 
@@ -40,8 +40,8 @@ export function HanziWordWritingPractice({ items, onResult, onComplete, onExit, 
     setWordIndex(0); setCharIndex(0); setStrokeTicks(0); setDemoRequest(0); setDone(false); setRoundKey((value) => value + 1); startedAt.current = Date.now();
   };
 
-  if (done) return <GameDone starsEarned={3} correctQ={words.length} totalQ={words.length} onAgain={() => restart()} onClose={onExit} onChangeMode={onCharacters} changeModeLabel="单字练习" />;
-  if (!currentWord || !item) return <div className="py-8 text-center font-bold text-slate-500">所选单元的重点词语还在准备中。</div>;
+  if (done) return <HanziShell title="词语书写完成" subtitle="会写，也会用" onBack={onExit}><div className="mx-auto max-w-2xl rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-5 shadow-[0_6px_0_#cfad70]"><GameDone starsEarned={3} correctQ={words.length} totalQ={words.length} onAgain={() => restart()} onClose={onExit} onChangeMode={onCharacters} changeModeLabel="单字练习" /></div></HanziShell>;
+  if (!currentWord || !item) return <HanziShell title="词语书写" subtitle="在词语中练汉字" onBack={onExit}><div className="mx-auto max-w-2xl rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-6 text-center font-bold text-[#706056] shadow-[0_6px_0_#cfad70]">所选单元的重点词语还在准备中。</div></HanziShell>;
 
   const next = () => {
     speechRef.current?.stop();
@@ -54,15 +54,16 @@ export function HanziWordWritingPractice({ items, onResult, onComplete, onExit, 
     setDone(true);
   };
 
-  return <div className="h-[min(94vh,64rem)] space-y-4 overflow-y-auto bg-[#fffdf9] p-4 sm:p-6">
-    <HanziScreenHeader title="词语书写" subtitle="在词语中练汉字" onBack={onExit} progress={`${wordIndex + 1}/${words.length}`} />
-    <div className="grid grid-cols-2 gap-2"><button type="button" onClick={onCharacters} className="rounded-2xl bg-white py-3 font-black text-slate-600 ring-1 ring-slate-200">单字练习</button><button type="button" className="rounded-2xl bg-pink-500 py-3 font-black text-white">词语练习</button></div>
-    <section className="rounded-3xl bg-amber-50 p-4 text-center ring-1 ring-amber-100"><div className="text-xs font-black text-amber-600">重点词语 {wordIndex + 1}/{words.length}</div><div className="mt-1 text-4xl font-black tracking-widest text-slate-800">{currentWord.items.map((wordItem, index) => <span key={`${wordItem.id}-${index}`} className={index === charIndex ? "text-pink-600 underline decoration-amber-300 decoration-4 underline-offset-8" : ""}>{wordItem.char}</span>)}</div><p className="mt-4 text-sm font-bold text-slate-500">{currentWord.example}</p><button type="button" onClick={() => { speechRef.current?.stop(); speechRef.current = speakText(currentWord.word, { lang: "zh-CN" }); }} className="mt-3 rounded-full bg-white px-4 py-2 text-sm font-black text-amber-700">🔊 朗读词语</button></section>
-    <div className="text-center"><div className="text-sm font-black text-pink-500">当前要写</div><div className="text-6xl font-black text-slate-800">{item.char}</div><div className="text-lg font-black text-pink-500">{item.pinyin}</div></div>
+  return <HanziShell title="词语书写" subtitle="在词语中练汉字" onBack={onExit} progress={`${wordIndex + 1}/${words.length}`}>
+    <div className="mx-auto max-w-4xl space-y-4 rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-4 shadow-[0_6px_0_#cfad70] sm:p-6">
+    <div className="grid grid-cols-2 gap-2"><button type="button" onClick={onCharacters} className="min-h-11 rounded-2xl bg-white py-3 font-black text-[#665950] ring-1 ring-[#ead8b8]">单字练习</button><button type="button" aria-pressed="true" className="min-h-11 rounded-2xl bg-[#ef4f86] py-3 font-black text-white shadow-[0_3px_0_#bd3765]">词语练习</button></div>
+    <section className="rounded-3xl bg-[#fff7e7] p-4 text-center ring-1 ring-[#efd8ad]"><div className="text-xs font-black text-[#d87435]">重点词语 {wordIndex + 1}/{words.length}</div><div className="mt-1 text-4xl font-black tracking-widest text-[#17365f]">{currentWord.items.map((wordItem, index) => <span key={`${wordItem.id}-${index}`} className={index === charIndex ? "text-[#ef4f86] underline decoration-[#efc45e] decoration-4 underline-offset-8" : ""}>{wordItem.char}</span>)}</div><p className="mt-4 text-sm font-bold text-[#706056]">{currentWord.example}</p><button type="button" onClick={() => { speechRef.current?.stop(); speechRef.current = speakText(currentWord.word, { lang: "zh-CN" }); }} className="mt-3 min-h-11 rounded-full bg-white px-4 py-2 text-sm font-black text-[#a8652b]">🔊 朗读词语</button></section>
+    <div className="text-center"><div className="text-sm font-black text-[#ef4f86]">当前要写</div><div className="text-6xl font-black text-[#17365f]">{item.char}</div><div className="text-lg font-black text-[#ef4f86]">{item.pinyin}</div></div>
     <HanziWriterPad item={item} demoRequest={demoRequest} onStrokeCorrect={() => setStrokeTicks((value) => value + 1)} />
     <div className="flex justify-center gap-3"><Btn variant="secondary" onClick={() => setDemoRequest((value) => value + 1)}>演示笔顺</Btn><Btn onClick={next}>{charIndex + 1 < currentWord.items.length ? "下一个字" : wordIndex + 1 < words.length ? "完成这个词" : "完成练习"} ✓</Btn></div>
     <p className="text-center text-xs font-bold text-slate-400">已写对 {strokeTicks} 笔</p>
-  </div>;
+    </div>
+  </HanziShell>;
 }
 
 function shuffled<T>(items: readonly T[]): T[] {

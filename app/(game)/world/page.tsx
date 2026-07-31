@@ -1,18 +1,22 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
-import { FairyBubble } from "@/components/fairy/FairyBubble";
-import { FairyChat } from "@/components/fairy/FairyChat";
 import { useSFX } from "@/components/audio/useSFX";
-import { MODULES, MODULE_META, type ModuleId } from "@/lib/utils";
+import { MODULE_META, type ModuleId } from "@/lib/utils";
+import { MODULE_ART } from "@/lib/ui-assets";
+import { KingdomBG } from "@/components/KingdomBG";
 import {
   indexGradeProgress,
   LEGACY_GRADE,
   progressKey,
   resolveChildGrade,
 } from "@/lib/grades";
+import { useVisualQa } from "@/lib/visual-qa";
+import { VisualWorldMap } from "@/components/visual-qa/VisualWorldMap";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 interface NodeProgress {
   module: string;
@@ -22,36 +26,16 @@ interface NodeProgress {
   masteryPct: number;
 }
 
-type WorldNode =
-  | { kind: "module"; id: ModuleId; x: number; y: number }
-  | {
-      kind: "theater";
-      id: "THEATER";
-      x: number;
-      y: number;
-      label: string;
-      emoji: string;
-      color: string;
-    };
+type WorldNode = { id: ModuleId; x: number; y: number };
 
-// 关卡节点在 SVG viewBox 0..1000 x 0..600 中的位置
 const NODES: WorldNode[] = [
-  { kind: "module", id: "WRITING",  x: 135, y: 460 },
-  { kind: "module", id: "ALPHABET", x: 310, y: 320 },
-  { kind: "module", id: "LITERATURE", x: 480, y: 150 },
-  { kind: "module", id: "MATH",     x: 480, y: 460 },
-  { kind: "module", id: "WORDS",    x: 665, y: 285 },
-  { kind: "module", id: "STORY",    x: 835, y: 455 },
-  { kind: "module", id: "HISTORY", x: 700, y: 470 },
-  {
-    kind: "theater",
-    id: "THEATER",
-    x: 905,
-    y: 225,
-    label: "视频影院",
-    emoji: "🎬",
-    color: "#fb7185",
-  },
+  { id: "WRITING", x: 12.5, y: 70 },
+  { id: "ALPHABET", x: 22, y: 25 },
+  { id: "LITERATURE", x: 50, y: 25 },
+  { id: "MATH", x: 78, y: 25 },
+  { id: "WORDS", x: 37.5, y: 70 },
+  { id: "STORY", x: 62.5, y: 70 },
+  { id: "HISTORY", x: 87.5, y: 70 },
 ];
 
 export default function WorldMapPage() {
@@ -59,24 +43,25 @@ export default function WorldMapPage() {
   const child = useGameStore((s) => s.activeChild);
   const activeGrade = useGameStore((s) => s.activeGrade);
   const [rows, setRows] = useState<NodeProgress[]>([]);
-  const [hello, setHello] = useState<string | null>(null);
-  const [chatOpen, setChatOpen] = useState(false);
   const { sfx } = useSFX();
+  const visualQa = useVisualQa();
 
   useEffect(() => {
     if (!child) {
       router.replace("/child-select");
       return;
     }
+    showFairyGuide({
+      event: "enter",
+      text: `今天好呀，${child.name}！你有 ${child.totalStars} 颗星，选一座小岛开始冒险吧！`,
+      autoHideMs: 6500,
+    });
     (async () => {
       const res = await fetch(`/api/progress/${child.id}`);
       if (res.ok) {
         const j = await res.json();
         setRows((j.progress ?? []) as NodeProgress[]);
       }
-      setHello(
-        `今天好呀，${child.name}！\n你现在有 ${child.totalStars} 颗星啦 ⭐\n选一个关卡开始冒险吧！`,
-      );
     })();
   }, [child, router]);
 
@@ -105,169 +90,129 @@ export default function WorldMapPage() {
   };
   const open = (m: ModuleId) => {
     sfx.click();
-    router.push(ROUTE_OVERRIDE[m] ?? `/play/${m.toLowerCase()}`);
+    const route = ROUTE_OVERRIDE[m] ?? `/play/${m.toLowerCase()}`;
+    router.push(visualQa ? `${route}?visual=1` : route);
   };
 
   const openTheater = () => {
     sfx.click();
-    router.push("/theater");
+    router.push(visualQa ? "/theater?visual=1" : "/theater");
   };
 
   const openShop = () => {
     sfx.click();
-    router.push("/shop");
+    router.push(visualQa ? "/shop?visual=1" : "/shop");
   };
 
-  return (
-    <main className="min-h-screen pt-20 px-4 pb-10">
-      <div className="max-w-5xl mx-auto">
-        {hello && (
-          <div className="mb-6">
-            <button
-              onClick={() => setChatOpen(true)}
-              className="block text-left"
-              aria-label="和精灵聊天"
-            >
-              <FairyBubble text={hello} mood="excited" />
-              <div className="mt-1 ml-2 text-xs font-bold text-white/90 drop-shadow animate-bounce">
-                👆 点我问问题
-              </div>
-            </button>
-          </div>
-        )}
+  if (visualQa) {
+    return <VisualWorldMap onOpen={open} onTheater={openTheater} onShop={openShop} />;
+  }
 
-        {/* 模块选择器（顶部） */}
-        <div className="mb-6">
-          <div className="mb-2 px-1">
-            <span className="text-sm font-bold text-white/90 drop-shadow">选一个去玩 🎮</span>
-          </div>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-            {MODULES.map((m) => {
-              const meta = MODULE_META[m];
+  return (
+    <main className="relative z-10 min-h-screen pt-20 px-4 pb-10">
+      <KingdomBG priority />
+      <div className="relative z-10 mx-auto max-w-7xl">
+        <div className="mb-2 px-1 text-center text-sm font-bold text-white/90 drop-shadow">
+          选择一座小岛开始冒险 🎮
+        </div>
+        <div className="grid grid-cols-2 gap-4 sm:hidden">
+          {NODES.map((node) => {
+            const meta = MODULE_META[node.id];
+            const stars = moduleProgress(node.id)?.stars ?? 0;
+            return (
+              <button
+                key={node.id}
+                type="button"
+                aria-label={`进入${meta.label}`}
+                onClick={() => open(node.id)}
+                className="group overflow-hidden rounded-3xl bg-white/88 p-2 text-left shadow-lg ring-1 ring-white/70 transition active:scale-[0.98]"
+              >
+                <Image
+                  src={MODULE_ART[node.id]}
+                  alt=""
+                  width={320}
+                  height={240}
+                  loading={node.id === "WRITING" || node.id === "MATH" ? "eager" : "lazy"}
+                  className="aspect-[4/3] w-full object-contain transition group-active:scale-95"
+                />
+                <span className="flex items-center justify-between px-2 pb-2">
+                  <span className="font-bold text-slate-700">{meta.label}</span>
+                  <span className="text-sm font-bold text-amber-500">⭐ {stars}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <div className="relative hidden aspect-[16/9] overflow-hidden rounded-[2.5rem] bg-sky-200 shadow-2xl ring-2 ring-white/60 sm:block">
+          <Image
+            src="/ui/world/world-bg-desktop-v1.png"
+            alt="魔法学习王国地图"
+            fill
+            loading="eager"
+            sizes="(max-width: 1024px) 100vw, 1024px"
+            className="object-cover"
+          />
+          {NODES.map((n) => {
+              const meta = MODULE_META[n.id];
+              const prog = moduleProgress(n.id);
+              const stars = prog?.stars ?? 0;
               return (
                 <button
-                  key={m}
-                  onClick={() => open(m)}
+                  key={n.id}
+                  type="button"
                   aria-label={`进入${meta.label}`}
-                  className="rounded-2xl bg-white/80 py-3 shadow ring-1 ring-white backdrop-blur transition hover:scale-105"
+                  onClick={() => open(n.id)}
+                  className="group absolute w-[16%] -translate-x-1/2 -translate-y-1/2 rounded-3xl focus-visible:outline-white"
+                  style={{
+                    left: `${n.x}%`,
+                    top: `${n.y}%`,
+                  }}
                 >
-                  <div className="text-3xl">{meta.emoji}</div>
-                  <div className="text-xs font-bold text-slate-700">{meta.label}</div>
+                  <Image
+                    src={MODULE_ART[n.id]}
+                    alt=""
+                    width={360}
+                    height={270}
+                    loading={n.id === "MATH" ? "eager" : "lazy"}
+                    className="w-full object-contain drop-shadow-xl transition duration-200 group-hover:-translate-y-1 group-hover:scale-105 group-active:scale-95"
+                  />
+                  <span className="mx-auto -mt-3 block w-max max-w-full rounded-full bg-white/90 px-3 py-1 text-sm font-black text-slate-700 shadow-md backdrop-blur lg:text-base">
+                    {meta.label}
+                    <span className="ml-2 text-amber-500">
+                      {Array.from({ length: 3 })
+                      .map((_, i) => (i < Math.min(3, Math.floor(stars / 3)) ? "★" : "☆"))
+                      .join("")}
+                    </span>
+                  </span>
                 </button>
               );
             })}
-            <button
-              onClick={openTheater}
-              aria-label="进入视频影院"
-              className="rounded-2xl bg-white/80 py-3 shadow ring-1 ring-white backdrop-blur transition hover:scale-105"
-            >
-              <div className="text-3xl">🎬</div>
-              <div className="text-xs font-bold text-slate-700">视频影院</div>
-            </button>
-            <button
-              onClick={openShop}
-              aria-label="进入星星商店"
-              className="rounded-2xl bg-white/80 py-3 shadow ring-1 ring-white backdrop-blur transition hover:scale-105"
-            >
-              <div className="text-3xl">🏪</div>
-              <div className="text-xs font-bold text-slate-700">星星商店</div>
-            </button>
-          </div>
         </div>
 
-        <div className="relative rounded-[2.5rem] bg-white/30 backdrop-blur ring-1 ring-white/40 shadow-xl overflow-hidden">
-          <svg viewBox="0 0 1000 600" className="w-full h-auto block">
-            {/* 节点之间的虚线路径 */}
-            {NODES.slice(0, -1).map((n, i) => {
-              const m = NODES[i + 1];
-              return (
-                <path
-                  key={i}
-                  d={`M${n.x},${n.y} Q${(n.x + m.x) / 2},${Math.min(n.y, m.y) - 80} ${m.x},${m.y}`}
-                  fill="none"
-                  stroke="#ffffff"
-                  strokeWidth="6"
-                  strokeDasharray="14 14"
-                  strokeLinecap="round"
-                  opacity="0.85"
-                />
-              );
-            })}
-
-            {NODES.map((n) => {
-              const meta =
-                n.kind === "module"
-                  ? MODULE_META[n.id]
-                  : { label: n.label, emoji: n.emoji, color: n.color };
-              const prog = n.kind === "module" ? moduleProgress(n.id) : undefined;
-              const stars = prog?.stars ?? 0;
-              return (
-                <g
-                  key={n.id}
-                  transform={`translate(${n.x} ${n.y})`}
-                  className="cursor-pointer"
-                  onClick={() => (n.kind === "module" ? open(n.id) : openTheater())}
-                >
-                  <circle r="56" fill="white" opacity="0.7" />
-                  <circle
-                    r="48"
-                    fill={meta.color}
-                    className="anim-pulse-soft"
-                    stroke="white"
-                    strokeWidth="6"
-                  />
-                  <text
-                    textAnchor="middle"
-                    y="14"
-                    fontSize="42"
-                  >
-                    {meta.emoji}
-                  </text>
-                  <text
-                    textAnchor="middle"
-                    y="86"
-                    fontSize="22"
-                    fontWeight="bold"
-                    fill="#fff"
-                    stroke="#0006"
-                    strokeWidth="0.5"
-                  >
-                    {meta.label}
-                  </text>
-                  <text
-                    textAnchor="middle"
-                    y="108"
-                    fontSize="18"
-                    fill="#fde047"
-                  >
-                    {n.kind === "module"
-                      ? Array.from({ length: 3 })
-                          .map((_, i) => (i < Math.min(3, Math.floor(stars / 3)) ? "★" : "☆"))
-                          .join("")
-                      : "看视频"}
-                  </text>
-                </g>
-              );
-            })}
-          </svg>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <button
+            onClick={openTheater}
+            className="flex items-center gap-3 rounded-3xl bg-white/85 p-4 text-left shadow-lg ring-1 ring-white/60 transition hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Image src="/ui/locations/cinema.webp" alt="" width={80} height={60} className="h-14 w-auto object-contain" />
+            <span>
+              <span className="block font-bold text-slate-700">视频影院</span>
+              <span className="block text-sm text-slate-500">看精彩故事</span>
+            </span>
+          </button>
+          <button
+            onClick={openShop}
+            className="flex items-center gap-3 rounded-3xl bg-white/85 p-4 text-left shadow-lg ring-1 ring-white/60 transition hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <Image src="/ui/locations/shop.webp" alt="" width={80} height={60} className="h-14 w-auto object-contain" />
+            <span>
+              <span className="block font-bold text-slate-700">星星商店</span>
+              <span className="block text-sm text-slate-500">兑换小奖励</span>
+            </span>
+          </button>
         </div>
 
-        {/* 每日任务条 */}
-        <div className="mt-5 rounded-3xl bg-white/85 backdrop-blur p-4 shadow-xl ring-1 ring-white/40 flex items-center gap-3">
-          <div className="text-3xl">🎯</div>
-          <div className="flex-1">
-            <div className="text-sm text-slate-500">今日任务</div>
-            <div className="font-bold text-slate-700">完成 3 个关卡赢取额外 ⭐⭐⭐</div>
-          </div>
-        </div>
       </div>
-
-      {chatOpen && (
-        <FairyChat
-          child={{ name: child.name, totalStars: child.totalStars }}
-          onClose={() => setChatOpen(false)}
-        />
-      )}
     </main>
   );
 }

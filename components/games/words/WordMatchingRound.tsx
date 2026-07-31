@@ -8,6 +8,7 @@ import { shuffle } from "@/lib/utils";
 import { GRADE_LABELS, type Grade } from "@/lib/grades";
 import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 const ROUND_SIZE = 4;
 
@@ -71,6 +72,11 @@ export function WordMatchingRound({
     }
     const ok = selectedId === w.id;
     setFlash({ id: w.id, ok });
+    showFairyGuide({
+      event: ok ? "correct" : "incorrect",
+      text: ok ? "配对成功！继续找下一组。" : "先读一遍中文词，再观察图片表示什么。",
+      autoHideMs: 3200,
+    });
     if (ok) {
       sfx.coin();
       const next = new Set(matched);
@@ -86,6 +92,11 @@ export function WordMatchingRound({
           durationSec: Math.round((Date.now() - startedAt.current) / 1000),
           starsEarned: stars,
         });
+        showFairyGuide({
+          event: "complete",
+          text: `全部配对完成，获得 ${stars} 颗星！`,
+          autoHideMs: 6000,
+        });
         setTimeout(() => setDone(true), 350);
       }
     } else {
@@ -97,8 +108,9 @@ export function WordMatchingRound({
   };
 
   return (
-    <div>
-      <p className="text-center text-slate-600 mb-4">点击中文词，再点出对应的图片 🔍</p>
+    <div className="mx-auto max-w-3xl">
+      <h3 className="text-center text-xl font-black text-slate-800">先选中文词，再找对应图片</h3>
+      <p className="mb-4 mt-1 text-center text-sm text-slate-500">完成一组后，它们会一起变绿。</p>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
@@ -111,7 +123,7 @@ export function WordMatchingRound({
                 onClick={() => onPickZh(w)}
                 disabled={isMatched}
                 aria-label={`配对：${w.zh}`}
-                className={`w-full py-4 rounded-2xl text-xl font-bold transition shadow ${
+                className={`min-h-24 w-full rounded-2xl py-4 text-xl font-bold transition shadow ${
                   isMatched
                     ? "bg-emerald-100 text-emerald-700 line-through opacity-70"
                     : isSelected
@@ -135,7 +147,7 @@ export function WordMatchingRound({
                 onClick={() => onPickEmoji(w)}
                 disabled={isMatched}
                 aria-label={`图：${w.emoji} 代表 ${w.zh}`}
-                className={`w-full py-4 rounded-2xl text-5xl transition shadow ${
+                className={`min-h-24 w-full rounded-2xl py-4 text-4xl transition shadow ${
                   isMatched ? "bg-emerald-100 opacity-70" : "bg-white ring-2 ring-sky-200 hover:bg-sky-50"
                 } ${showOk ? "anim-correct" : ""}`}
               >

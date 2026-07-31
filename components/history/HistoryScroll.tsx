@@ -6,6 +6,7 @@ import { useEffect, useRef, useState, type CSSProperties } from "react";
 import { useRouter } from "next/navigation";
 import { DYNASTY_TIMELINE, type DynastyItem } from "@/content/history/dynastyTimeline";
 import { DynastyCard } from "@/components/history/DynastyCard";
+import { BackButton } from "@/components/BackButton";
 
 const KIT = "/history/kit/png/";
 const BRUSH = "var(--font-history)";
@@ -142,7 +143,10 @@ export function HistoryScroll() {
   let idx = 0;
   return (
     <div style={rootStyle}>
-      <div style={{ textAlign: "center", zIndex: 3, padding: isMobile ? "76px 16px 8px" : "92px 20px 12px" }}>
+      <div className="z-10 w-full max-w-7xl px-4 pt-20 sm:px-6">
+        <BackButton label="返回世界" onClick={() => router.push("/world")} />
+      </div>
+      <div style={{ textAlign: "center", zIndex: 3, padding: isMobile ? "12px 16px 8px" : "16px 20px 12px" }}>
         <div style={titleStyle}>上下五千年历史长卷</div>
         <div style={{ fontFamily: SERIF, color: "#d8c7a0", fontSize: isMobile ? "13px" : "16px", letterSpacing: "2px", marginTop: "12px", opacity: 0.92, padding: "0 12px" }}>
           从三皇五帝到新时代，展开长卷，认识朝代更迭，解锁经典故事。
@@ -153,9 +157,11 @@ export function HistoryScroll() {
         {[{ id: "all", tab: "全部" }, ...DYNASTY_TIMELINE.map((g) => ({ id: g.id, tab: g.tab }))].map((e) => {
           const on = activeEra === e.id;
           return (
-            <div
+            <button
+              type="button"
               key={e.id}
               onClick={() => gotoEra(e.id)}
+              aria-current={on}
               style={{
                 fontFamily: SERIF, fontSize: isMobile ? "13px" : "14px", padding: isMobile ? "6px 13px" : "7px 16px",
                 borderRadius: "4px", cursor: "pointer", letterSpacing: "2px", whiteSpace: "nowrap", transition: "all .2s ease", userSelect: "none",
@@ -165,7 +171,7 @@ export function HistoryScroll() {
               }}
             >
               {e.tab}
-            </div>
+            </button>
           );
         })}
       </div>
@@ -219,15 +225,17 @@ export function HistoryScroll() {
         maxHeight: open ? "0px" : "240px", opacity: open ? 0 : 1, overflow: "hidden",
         padding: open ? "0" : "30px 24px 8px", pointerEvents: open ? "none" : "auto",
         transition: "opacity .4s ease, max-height .5s ease, padding .5s ease", zIndex: 3 }}>
-        <div
+        <button
+          type="button"
           onClick={() => setOpen(true)}
-          style={{ fontFamily: BRUSH, fontSize: "25px", letterSpacing: "7px", color: "#fce9b0", padding: "13px 50px", borderRadius: "7px",
-            border: "2px solid #e8c45a", background: "linear-gradient(180deg,#7a2a1e,#561a11)", cursor: "pointer",
-            boxShadow: "0 6px 18px rgba(0,0,0,.45), inset 0 0 0 2px rgba(232,196,90,.18)", animation: "ctaPulse 2.4s ease-in-out infinite" }}
+          style={{ fontFamily: BRUSH, fontSize: "25px", letterSpacing: "7px", color: "#3a1d0c", padding: "14px 52px", borderRadius: "9px",
+            border: "2px solid #ffe7a0", background: "linear-gradient(180deg,#f6da83,#c9972c)", cursor: "pointer",
+            boxShadow: "0 7px 22px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.55), 0 0 22px rgba(232,196,90,.28)", animation: "ctaPulse 2.4s ease-in-out infinite" }}
+          aria-label="展开长卷"
         >
           展开长卷
-        </div>
-        <div style={{ fontFamily: SERIF, fontSize: "13px", color: "#9e8456", letterSpacing: "2px" }}>点击展开历史长卷 · 收集朝代卡片</div>
+        </button>
+        <div style={{ fontFamily: SERIF, fontSize: "14px", color: "#d8c7a0", letterSpacing: "2px" }}>点击展开 · 从三国开始今天的历史冒险</div>
       </div>
 
       <div style={{ position: "fixed", left: "50%", bottom: "46px",

@@ -127,8 +127,8 @@ export function RewardEditor({ rewards, baseUrl }: { rewards: RewardRow[]; baseU
   return (
     <>
       <div style={{ marginBottom: 16 }}>
-        <Button type="primary" onClick={openCreate}>
-          + 新增奖励
+        <Button type="primary" onClick={openCreate} className="min-h-11">
+          新增奖励
         </Button>
       </div>
       <Table
@@ -137,14 +137,16 @@ export function RewardEditor({ rewards, baseUrl }: { rewards: RewardRow[]; baseU
         dataSource={data}
         pagination={{ pageSize: 10, hideOnSinglePage: true }}
         size="small"
+        scroll={{ x: "max-content" }}
+        locale={{ emptyText: "还没有奖励，点击“新增奖励”创建第一项。" }}
       />
       <Drawer
         title={editing ? "编辑奖励" : "新增奖励"}
         open={open}
         onClose={() => setOpen(false)}
-        width={380}
+        width="min(420px, 100vw)"
         extra={
-          <Button type="primary" loading={saving} onClick={submit}>
+          <Button type="primary" loading={saving} disabled={saving} onClick={submit}>
             保存
           </Button>
         }

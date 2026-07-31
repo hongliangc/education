@@ -12,7 +12,8 @@ import {
 } from "@/content/hanzi";
 import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
-import { HanziScreenHeader } from "./HanziScreenHeader";
+import { HanziShell } from "./HanziShell";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 export function HanziRecognitionRound({
   onResult,
@@ -76,30 +77,26 @@ export function HanziRecognitionRound({
   if (done) {
     const stars = Math.max(1, Math.round((correctQ / round.length) * 3));
     return (
-      <GameDone
-        starsEarned={stars}
-        correctQ={correctQ}
-        totalQ={round.length}
-        onAgain={() => restart()}
-        onClose={onExit}
-        onChangeMode={onChangeMode}
-        changeModeLabel="去练写字"
-      />
+      <HanziShell title="认字完成" subtitle="今天又认识了新朋友" onBack={onExit}>
+        <div className="mx-auto max-w-2xl rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-5 shadow-[0_6px_0_#cfad70]">
+          <GameDone starsEarned={stars} correctQ={correctQ} totalQ={round.length} onAgain={() => restart()} onClose={onExit} onChangeMode={onChangeMode} changeModeLabel="去练写字" />
+        </div>
+      </HanziShell>
     );
   }
 
   if (!question) {
     return (
-      <div className="space-y-5 text-center">
-        <div className="rounded-3xl bg-emerald-50 p-6 text-emerald-700 ring-1 ring-emerald-100">
-          <div className="text-4xl">✅</div>
-          <div className="mt-2 text-lg font-bold">这个年级暂时都掌握了</div>
-          <div className="mt-1 text-sm">到复习时间后，这些字会自动回到练习里。</div>
+      <HanziShell title="认字闯关" subtitle="复习已经完成" onBack={onExit}>
+        <div className="mx-auto max-w-2xl space-y-5 rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-5 text-center shadow-[0_6px_0_#cfad70]">
+          <div className="rounded-3xl bg-emerald-50 p-6 text-emerald-700 ring-1 ring-emerald-100">
+            <div className="text-4xl">✅</div>
+            <div className="mt-2 text-lg font-bold">这个年级暂时都掌握了</div>
+            <div className="mt-1 text-sm">到复习时间后，这些字会自动回到练习里。</div>
+          </div>
+          <Btn variant="ghost" onClick={onChangeMode}>✏️ 去练写字</Btn>
         </div>
-        <Btn variant="ghost" onClick={onChangeMode}>
-          ✏️ 去练写字
-        </Btn>
-      </div>
+      </HanziShell>
     );
   }
 
@@ -110,6 +107,11 @@ export function HanziRecognitionRound({
     const ok = choiceId === question.answerId;
     onResult(question.answerId, ok);
     setFeedback(ok ? "correct" : "wrong");
+    showFairyGuide({
+      event: ok ? "correct" : "incorrect",
+      text: ok ? "认对啦！把这个字再读一遍。" : "先听读音，再比较每个字的样子。",
+      autoHideMs: 3200,
+    });
     if (ok) {
       sfx.correct();
       setCorrectQ((value) => value + 1);
@@ -128,6 +130,11 @@ export function HanziRecognitionRound({
           durationSec: Math.round((Date.now() - startedAt.current) / 1000),
           starsEarned: stars,
         });
+        showFairyGuide({
+          event: "complete",
+          text: `认字闯关完成！答对 ${correct} 题，获得 ${stars} 颗星。`,
+          autoHideMs: 6500,
+        });
         setDone(true);
       } else {
         setQi((value) => value + 1);
@@ -136,10 +143,9 @@ export function HanziRecognitionRound({
   };
 
   return (
-    <div className="h-[min(94vh,64rem)] space-y-5 overflow-y-auto bg-[#fffdf9] p-4 sm:p-6">
-      <HanziScreenHeader title={title} subtitle="识字校验" onBack={onExit} progress={`${qi + 1}/${round.length}`} />
-
-      <div className="rounded-3xl bg-sky-50 p-5 text-center ring-1 ring-sky-100">
+    <HanziShell title={title} subtitle="识字校验" onBack={onExit} progress={`${qi + 1}/${round.length}`}>
+      <div className="mx-auto max-w-3xl rounded-[2rem] border-2 border-[#e7c990] bg-[#fffaf0] p-4 shadow-[0_6px_0_#cfad70] sm:p-6">
+      <div className="rounded-3xl border border-[#b9dff0] bg-[#eaf7ff] p-5 text-center">
         <div className="text-sm font-bold text-pink-500">第 {qi + 1} 题 / 共 {round.length} 题</div>
         <div className="mt-2 text-2xl font-bold text-slate-800">{question.prompt}</div>
         <button
@@ -152,7 +158,7 @@ export function HanziRecognitionRound({
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-3">
         {question.choices.map((choice) => {
           const answer = choice.id === question.answerId;
           return (
@@ -161,7 +167,7 @@ export function HanziRecognitionRound({
               type="button"
               onClick={() => choose(choice.id)}
               disabled={!!feedback}
-                className={`rounded-3xl bg-white p-5 text-center shadow ring-2 transition ${
+                className={`min-h-28 rounded-3xl bg-white p-5 text-center shadow-[0_4px_0_#dfd4c0] ring-2 transition ${
                 feedback && answer
                   ? "ring-emerald-300 bg-emerald-50 anim-correct"
                   : "ring-slate-100 hover:bg-sky-50"
@@ -178,6 +184,7 @@ export function HanziRecognitionRound({
           ✏️ 去练写字
         </Btn>
       </div>
-    </div>
+      </div>
+    </HanziShell>
   );
 }

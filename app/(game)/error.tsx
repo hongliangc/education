@@ -7,10 +7,10 @@ import { FairyBubble } from "@/components/fairy/FairyBubble";
 
 export default function GameError({
   error,
-  reset,
+  unstable_retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  unstable_retry: () => void;
 }) {
   const router = useRouter();
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function GameError({
         <Btn variant="ghost" onClick={() => router.push("/world")}>
           回地图
         </Btn>
-        <Btn variant="primary" onClick={() => reset()}>
+        <Btn variant="primary" onClick={() => unstable_retry()}>
           再试一次 ✨
         </Btn>
       </div>

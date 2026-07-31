@@ -23,12 +23,14 @@ export function StoryPlayer({
   onFinish,
   cover,
   fallbackEmoji = "📖",
+  fallbackImage = "/ui/story/storybook-hero-v1.png",
 }: {
   text: string;
   images: string[];
   onFinish: () => void;
   cover?: string;
   fallbackEmoji?: string;
+  fallbackImage?: string;
 }) {
   const [rate, setRate] = useState(1);
   const [status, setStatus] = useState<"idle" | "playing" | "paused">("idle");
@@ -98,10 +100,11 @@ export function StoryPlayer({
         images={images}
         imgIndex={imgIndex}
         fallbackEmoji={fallbackEmoji}
+        fallbackImage={fallbackImage}
         cover={cover}
       />
 
-      <div className="mt-3 rounded-2xl bg-amber-50 px-4 py-3 ring-1 ring-amber-100">
+      <div className="mt-3 rounded-2xl bg-[#fffdf7] px-4 py-4 shadow-inner ring-2 ring-amber-100">
         <SubtitleLine
           text={text}
           lines={lines}

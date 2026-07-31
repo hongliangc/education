@@ -67,7 +67,7 @@ export default function DeckPage({
           className="mb-3"
           onClick={() => router.push("/literature")}
         />
-        <div className="rounded-3xl bg-white/90 backdrop-blur p-5 shadow-xl ring-1 ring-white/60">
+        <div className="rounded-[2rem] bg-[#fffdf7] p-4 shadow-xl ring-2 ring-emerald-100 sm:p-6">
           <QuoteDeckPlayer
             deck={deck}
             onComplete={onComplete}

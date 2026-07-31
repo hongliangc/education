@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useGameStore } from "@/store/gameStore";
 import { HistoryScroll } from "@/components/history/HistoryScroll";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 export default function HistoryPage() {
   const router = useRouter();
@@ -13,6 +14,7 @@ export default function HistoryPage() {
 
   useEffect(() => {
     if (!child) router.replace("/child-select");
+    else showFairyGuide({ event: "enter", text: "先点“展开长卷”，再从三国开始今天的历史冒险吧！", autoHideMs: 5600 });
   }, [child, router]);
 
   if (!child) return null;

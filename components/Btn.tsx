@@ -31,6 +31,7 @@ export function Btn({
   className,
   type = "button",
   ariaLabel,
+  ariaPressed,
 }: {
   children: React.ReactNode;
   onClick?: () => void;
@@ -40,6 +41,7 @@ export function Btn({
   className?: string;
   type?: "button" | "submit" | "reset";
   ariaLabel?: string;
+  ariaPressed?: boolean;
 }) {
   return (
     <button
@@ -47,8 +49,9 @@ export function Btn({
       onClick={onClick}
       disabled={disabled}
       aria-label={ariaLabel}
+      aria-pressed={ariaPressed}
       className={cn(
-        "inline-flex items-center justify-center gap-2 font-bold transition-all select-none",
+        "inline-flex min-h-11 items-center justify-center gap-2 font-bold transition-all select-none focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white/80",
         "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0",
         SIZES[size],
         VARIANTS[variant],

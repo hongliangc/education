@@ -58,3 +58,14 @@ test("management shell derives the active menu from the current pathname", () =>
     /\{area === "admin" \? "平台管理后台" : "家长管理中心"\}/,
   );
 });
+
+test("management shell exposes accessible navigation and child return", () => {
+  const source = readFileSync("components/management/ManagementShell.tsx", "utf8");
+
+  assert.match(source, /aria-label="管理导航"/);
+  assert.match(
+    source,
+    /aria-current=\{activeMenuKey === item\.key \? "page" : undefined\}/,
+  );
+  assert.match(source, /href="\/world"/);
+});

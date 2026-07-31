@@ -1,11 +1,12 @@
 "use client";
 
 import { Suspense, useState, useTransition } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Btn } from "@/components/Btn";
-import { CloudBG } from "@/components/CloudBG";
+import { KingdomBG } from "@/components/KingdomBG";
 
 function LoginForm() {
   const router = useRouter();
@@ -45,20 +46,32 @@ function LoginForm() {
 
   return (
     <>
-      <CloudBG />
-      <main className="min-h-screen flex items-center justify-center px-5 py-10">
+      <KingdomBG priority />
+      <main className="relative z-10 flex min-h-screen items-center justify-start px-5 pt-10 sm:justify-center sm:py-10">
         <div className={`w-full max-w-sm ${shake ? "anim-shake" : ""} anim-slide-up`}>
-          <div className="text-center mb-6">
-            <div className="text-7xl anim-float inline-block">🧚</div>
-            <h1 className="text-4xl font-bold text-white drop-shadow-lg mt-2">
-              魔法学习王国
-            </h1>
-            <p className="text-white/90 mt-1">和精灵小星一起冒险吧 ✨</p>
+          <div className="mb-3 text-center sm:mb-4">
+            <Image
+              src="/ui/brand/kingdom-logo-v1.png"
+              alt="魔法学习王国"
+              width={360}
+              height={150}
+              preload
+              className="mx-auto h-auto w-64 max-w-full object-contain drop-shadow-xl sm:w-[18rem]"
+            />
+            <Image
+              src="/ui/mascot/fairy-guide.webp"
+              alt="向导精灵小星"
+              width={128}
+              height={174}
+              loading="eager"
+              className="anim-float mx-auto -mt-3 h-40 w-auto object-contain sm:h-40"
+            />
+            <h1 className="sr-only">魔法学习王国</h1>
           </div>
 
           <form
             onSubmit={submit}
-            className="rounded-3xl bg-white/80 backdrop-blur p-6 shadow-2xl ring-1 ring-white/40"
+            className="storybook-paper rounded-3xl p-5 backdrop-blur sm:p-6"
           >
             <h2 className="text-xl font-bold text-slate-700 mb-4">家长登录</h2>
 
@@ -98,11 +111,10 @@ function LoginForm() {
               {pending ? "登录中…" : "开始冒险 🚀"}
             </Btn>
 
-            <div className="flex items-center justify-between text-sm mt-4 text-slate-500">
+            <div className="mt-4 text-center text-sm text-slate-500">
               <Link href="/register" className="underline decoration-pink-400">
                 还没账号？去注册
               </Link>
-              <span className="text-xs">微信/Google 登录待接入</span>
             </div>
           </form>
         </div>
@@ -114,7 +126,7 @@ function LoginForm() {
 // useSearchParams 需要 Suspense 边界，否则 next build 预渲染 /login 会失败
 export default function LoginPage() {
   return (
-    <Suspense fallback={<CloudBG />}>
+    <Suspense fallback={<KingdomBG priority />}>
       <LoginForm />
     </Suspense>
   );

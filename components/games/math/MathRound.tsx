@@ -7,6 +7,7 @@ import type { MathProblem } from "@/content/math";
 import { addMistake, removeMistake, toMistake } from "@/lib/math/mistakes";
 import { MathGuide } from "./MathGuide";
 import { MathVisual } from "./MathVisual";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 export function MathRound({
   childId,
@@ -45,6 +46,11 @@ export function MathRound({
       setFeedback(null);
       setGuideReason(null);
       if (questionIndex + 1 >= problems.length) {
+        showFairyGuide({
+          event: "complete",
+          text: `数学练习完成！你答对了 ${nextCorrect} 题。`,
+          autoHideMs: 6000,
+        });
         onFinish(nextCorrect);
         return;
       }
@@ -60,6 +66,11 @@ export function MathRound({
     if (feedback) return;
     const correct = choice === current.answer;
     setFeedback(correct ? "correct" : "wrong");
+    showFairyGuide({
+      event: correct ? "correct" : "incorrect",
+      text: correct ? "算对啦！看看图形里是怎么表示的。" : "别着急，我会带你一步一步拆开这道题。",
+      autoHideMs: 3400,
+    });
 
     if (correct) {
       sfx.correct();
@@ -93,19 +104,26 @@ export function MathRound({
 
   return (
     <div>
-      <div className="h-3 w-full overflow-hidden rounded-full bg-slate-100">
+      <div
+        role="progressbar"
+        aria-label="数学答题进度"
+        aria-valuemin={0}
+        aria-valuemax={problems.length}
+        aria-valuenow={questionIndex + 1}
+        className="h-3 w-full overflow-hidden rounded-full bg-indigo-100"
+      >
         <div
-          className="h-full bg-gradient-to-r from-amber-400 to-orange-500 transition-all"
-          style={{ width: `${(questionIndex / problems.length) * 100}%` }}
+          className="h-full bg-gradient-to-r from-sky-400 to-violet-500 transition-all"
+          style={{ width: `${((questionIndex + 1) / problems.length) * 100}%` }}
         />
       </div>
 
       <div
-        className={`mt-5 rounded-3xl bg-gradient-to-br from-amber-50 to-yellow-100 p-5 text-center anim-pop-in ${
+        className={`mt-5 rounded-3xl bg-[#fffdf7] p-5 text-center shadow-inner ring-2 ring-indigo-100 anim-pop-in ${
           feedback === "correct" ? "anim-correct" : feedback === "wrong" ? "anim-shake" : ""
         }`}
       >
-        <div className="text-3xl font-bold text-amber-700 sm:text-4xl">
+        <div className="text-3xl font-bold text-indigo-700 sm:text-4xl">
           {current.prompt}
           {current.kind === "arithmetic" ? " = ?" : ""}
         </div>

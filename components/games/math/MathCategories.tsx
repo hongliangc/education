@@ -13,6 +13,7 @@ import type { OnComplete } from "../types";
 import { GameDone } from "../GameDone";
 import { MathLesson } from "./MathLesson";
 import { MathRound } from "./MathRound";
+import { showFairyGuide } from "@/lib/fairy-guide";
 
 interface ReviewState {
   category: MathCategory;
@@ -45,7 +46,12 @@ export function MathCategories({
 
   useEffect(() => {
     refresh();
-  }, [refresh]);
+    showFairyGuide({
+      event: "enter",
+      text: `推荐先走“${GRADE_LABELS[grade]}按年级闯关”，一步一步学习今天的数学。`,
+      autoHideMs: 6500,
+    });
+  }, [grade, refresh]);
 
   if (activeCategory) {
     return (
@@ -108,20 +114,23 @@ export function MathCategories({
   return (
     <div className="anim-pop-in">
       <div className="mb-5 text-center">
-        <div className="text-5xl anim-bob">🧮</div>
         <h3 className="mt-2 text-2xl font-bold text-slate-700">今天想学什么？</h3>
-        <p className="mt-1 text-sm font-bold text-amber-600">
-          {GRADE_LABELS[grade]} · 选一种方法开始练习
+        <p className="mt-1 text-sm font-bold text-indigo-600">
+          {GRADE_LABELS[grade]} · 推荐从年级路线开始
         </p>
+        <Btn variant="primary" className="mt-4 w-full py-4 text-lg" onClick={onPath}>
+          按年级闯关
+        </Btn>
       </div>
 
+      <h4 className="mb-3 font-black text-slate-700">或选择专项练习</h4>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {MATH_CATEGORIES.map((category) => {
           const categoryMistakes = mistakesForCategory(category, mistakes);
           return (
             <div
               key={category.key}
-              className="rounded-3xl bg-gradient-to-br from-amber-50 to-yellow-100 p-3 ring-1 ring-amber-200"
+              className="rounded-3xl bg-gradient-to-br from-sky-50 to-violet-100 p-3 ring-1 ring-indigo-200"
             >
               <Btn
                 variant="ghost"
@@ -157,9 +166,6 @@ export function MathCategories({
       </div>
 
       <div className="mt-5 flex flex-wrap justify-center gap-3">
-        <Btn variant="secondary" onClick={onPath}>
-          🗺️ 按年级闯关
-        </Btn>
         <Btn variant="ghost" onClick={onClassic}>
           🎯 综合练习
         </Btn>
